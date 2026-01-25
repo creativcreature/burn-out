@@ -1,0 +1,73 @@
+{
+  "project": "BurnOut",
+  "version": "0.1.0",
+  "lastUpdated": "2026-01-25",
+  "sprints": {
+    "sprint1": {
+      "name": "Foundation + Dev Environment",
+      "status": "in_progress",
+      "tasks": [
+        { "id": "1.1", "name": "Project structure", "status": "completed" },
+        { "id": "1.2", "name": "CLAUDE.md", "status": "completed" },
+        { "id": "1.3", "name": "CHANGELOG.md", "status": "completed" },
+        { "id": "1.4", "name": "VERSION.md", "status": "completed" },
+        { "id": "1.5", "name": "Slash commands", "status": "completed" },
+        { "id": "1.6", "name": "Agent definitions", "status": "completed" },
+        { "id": "1.7", "name": "React + Vite + TypeScript", "status": "in_progress" },
+        { "id": "1.8", "name": "Company infrastructure docs", "status": "completed" }
+      ]
+    },
+    "sprint2": {
+      "name": "Core Systems",
+      "status": "pending",
+      "tasks": [
+        { "id": "2.1", "name": "Unified storage layer", "status": "pending" },
+        { "id": "2.2", "name": "Global theme system", "status": "pending" },
+        { "id": "2.3", "name": "Shared component library", "status": "pending" },
+        { "id": "2.4", "name": "Navigation system", "status": "pending" },
+        { "id": "2.5", "name": "Fix chat input visibility", "status": "pending" }
+      ]
+    },
+    "sprint3": {
+      "name": "Task Processing Pipeline",
+      "status": "pending",
+      "tasks": [
+        { "id": "3.1", "name": "Core Task Identification", "status": "pending" },
+        { "id": "3.2", "name": "Daily Scheduling Engine", "status": "pending" },
+        { "id": "3.3", "name": "Contextual Intelligence Layer", "status": "pending" }
+      ]
+    },
+    "sprint4": {
+      "name": "AI Chat + Smart Features",
+      "status": "pending",
+      "tasks": [
+        { "id": "4.1", "name": "AI Chat (Brain Dump)", "status": "pending" },
+        { "id": "4.2", "name": "Smart Scheduling", "status": "pending" },
+        { "id": "4.3", "name": "Drag-and-drop", "status": "pending" }
+      ]
+    },
+    "sprint5": {
+      "name": "Pages + Polish",
+      "status": "pending",
+      "tasks": [
+        { "id": "5.1", "name": "Now page", "status": "pending" },
+        { "id": "5.2", "name": "Organize page", "status": "pending" },
+        { "id": "5.3", "name": "Timer overlay", "status": "pending" },
+        { "id": "5.4", "name": "Reflections/Garden", "status": "pending" },
+        { "id": "5.5", "name": "Settings", "status": "pending" },
+        { "id": "5.6", "name": "Onboarding flow", "status": "pending" }
+      ]
+    },
+    "sprint6": {
+      "name": "PWA + Launch",
+      "status": "pending",
+      "tasks": [
+        { "id": "6.1", "name": "Service worker + offline", "status": "pending" },
+        { "id": "6.2", "name": "PWA manifest", "status": "pending" },
+        { "id": "6.3", "name": "Accessibility audit", "status": "pending" },
+        { "id": "6.4", "name": "Performance optimization", "status": "pending" },
+        { "id": "6.5", "name": "Deploy to Cloudflare Pages", "status": "pending" }
+      ]
+    }
+  }
+}
