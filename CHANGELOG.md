@@ -9,6 +9,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ### Fixed
 ### Removed
 
+## [0.3.0] - 2026-01-25
+### Added
+- **AI Chat Integration**: Claude API integration for brain dump to task conversion
+- **useAI Hook**: Chat history persistence, task extraction from AI responses
+- **Habits Tab**: Full habits management UI in Organize page (create, view, delete)
+- **AI Utility**: Tone-aware and burnout-mode-aware prompting
+- **Task Auto-Creation**: AI responses can automatically create tasks from conversations
+- **Chat History**: Persistent chat history with task creation tracking
+
 ## [0.2.0] - 2026-01-25
 ### Added
 - **Core Hooks**: useGoals, useProjects, useHabits, useTimer, useOnboarding, useEnergy

@@ -4,15 +4,17 @@ import { Card, Button, Input, Modal, Toast } from '../components/shared'
 import { useTasks } from '../hooks/useTasks'
 import { useGoals } from '../hooks/useGoals'
 import { useProjects } from '../hooks/useProjects'
+import { useHabits } from '../hooks/useHabits'
 import { VERB_LABEL_EXAMPLES, TIME_ESTIMATES, FEED_LEVELS } from '../data/constants'
-import type { FeedLevel, TimeOfDay } from '../data/types'
+import type { FeedLevel, TimeOfDay, HabitFrequency } from '../data/types'
 
-type TabType = 'tasks' | 'goals' | 'projects'
+type TabType = 'tasks' | 'goals' | 'projects' | 'habits'
 
 export function OrganizePage() {
   const { pendingTasks, completedTasks, addTask, deleteTask, reorderTasks, isLoading: tasksLoading } = useTasks()
   const { activeGoals, addGoal, deleteGoal, isLoading: goalsLoading } = useGoals()
   const { projects, addProject, deleteProject, isLoading: projectsLoading } = useProjects()
+  const { habits, addHabit, deleteHabit, isLoading: habitsLoading } = useHabits()
 
   const [activeTab, setActiveTab] = useState<TabType>('tasks')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -35,10 +37,20 @@ export function OrganizePage() {
   // Project form state
   const [newProject, setNewProject] = useState({ title: '', description: '', goalId: '' })
 
+  // Habit form state
+  const [newHabit, setNewHabit] = useState({
+    verbLabel: '',
+    habitBody: '',
+    frequency: 'daily' as HabitFrequency,
+    timeOfDay: 'anytime' as TimeOfDay,
+    feedLevel: 'medium' as FeedLevel,
+    goalId: ''
+  })
+
   // Drag state
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
-  const isLoading = tasksLoading || goalsLoading || projectsLoading
+  const isLoading = tasksLoading || goalsLoading || projectsLoading || habitsLoading
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index)
@@ -110,6 +122,30 @@ export function OrganizePage() {
     setNewProject({ title: '', description: '', goalId: '' })
     setShowAddModal(false)
     setToast({ message: 'Project created!', type: 'success', visible: true })
+  }
+
+  const handleAddHabit = async () => {
+    if (!newHabit.verbLabel || !newHabit.habitBody) return
+
+    await addHabit({
+      verbLabel: newHabit.verbLabel,
+      habitBody: newHabit.habitBody,
+      frequency: newHabit.frequency,
+      timeOfDay: newHabit.timeOfDay,
+      feedLevel: newHabit.feedLevel,
+      goalId: newHabit.goalId || undefined
+    })
+
+    setNewHabit({
+      verbLabel: '',
+      habitBody: '',
+      frequency: 'daily',
+      timeOfDay: 'anytime',
+      feedLevel: 'medium',
+      goalId: ''
+    })
+    setShowAddModal(false)
+    setToast({ message: 'Habit created!', type: 'success', visible: true })
   }
 
   const contentStyle: CSSProperties = {
@@ -192,10 +228,13 @@ export function OrganizePage() {
           <button style={tabStyle(activeTab === 'projects')} onClick={() => setActiveTab('projects')}>
             Projects ({projects.length})
           </button>
+          <button style={tabStyle(activeTab === 'habits')} onClick={() => setActiveTab('habits')}>
+            Habits ({habits.length})
+          </button>
         </div>
 
         <Button variant="primary" onClick={() => setShowAddModal(true)}>
-          Add {activeTab === 'tasks' ? 'Task' : activeTab === 'goals' ? 'Goal' : 'Project'}
+          Add {activeTab === 'tasks' ? 'Task' : activeTab === 'goals' ? 'Goal' : activeTab === 'projects' ? 'Project' : 'Habit'}
         </Button>
 
         {activeTab === 'tasks' && (
@@ -329,12 +368,53 @@ export function OrganizePage() {
             )}
           </section>
         )}
+
+        {activeTab === 'habits' && (
+          <section style={sectionStyle}>
+            {habits.length === 0 ? (
+              <Card>
+                <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
+                  No habits yet. Habits are recurring routines that keep you on track.
+                </p>
+              </Card>
+            ) : (
+              habits.map(habit => {
+                const goal = activeGoals.find(g => g.id === habit.goalId)
+                return (
+                  <Card key={habit.id}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
+                          {habit.verbLabel}
+                        </div>
+                        <div style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                          {habit.habitBody}
+                        </div>
+                        {goal && (
+                          <div style={{ color: 'var(--accent-secondary)', fontSize: 'var(--text-xs)', marginTop: 'var(--space-xs)' }}>
+                            {goal.title}
+                          </div>
+                        )}
+                        <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', marginTop: 'var(--space-xs)' }}>
+                          {habit.frequency} · {habit.timeOfDay} · {habit.feedLevel} energy
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => deleteHabit(habit.id)}>
+                        ×
+                      </Button>
+                    </div>
+                  </Card>
+                )
+              })
+            )}
+          </section>
+        )}
       </main>
 
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title={`Add ${activeTab === 'tasks' ? 'Task' : activeTab === 'goals' ? 'Goal' : 'Project'}`}
+        title={`Add ${activeTab === 'tasks' ? 'Task' : activeTab === 'goals' ? 'Goal' : activeTab === 'projects' ? 'Project' : 'Habit'}`}
       >
         {activeTab === 'tasks' && (
           <div style={formStyle}>
@@ -453,6 +533,87 @@ export function OrganizePage() {
             <Button variant="primary" onClick={handleAddProject} disabled={!newProject.goalId}>
               Create Project
             </Button>
+          </div>
+        )}
+
+        {activeTab === 'habits' && (
+          <div style={formStyle}>
+            <Input
+              label="Verb Label (max 12 chars)"
+              placeholder="e.g., Hydrate"
+              value={newHabit.verbLabel}
+              onChange={(value) => setNewHabit(prev => ({ ...prev, verbLabel: value.slice(0, 12) }))}
+              maxLength={12}
+            />
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+              Examples: Rise + Stretch, Hydrate, Wind Down, Meditate
+            </div>
+            <Input
+              label="Habit"
+              placeholder="What's the routine?"
+              value={newHabit.habitBody}
+              onChange={(value) => setNewHabit(prev => ({ ...prev, habitBody: value }))}
+            />
+            <div>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+                Frequency
+              </label>
+              <select
+                style={selectStyle}
+                value={newHabit.frequency}
+                onChange={(e) => setNewHabit(prev => ({ ...prev, frequency: e.target.value as HabitFrequency }))}
+              >
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly (Mondays)</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+                Time of Day
+              </label>
+              <select
+                style={selectStyle}
+                value={newHabit.timeOfDay}
+                onChange={(e) => setNewHabit(prev => ({ ...prev, timeOfDay: e.target.value as TimeOfDay }))}
+              >
+                <option value="morning">Morning</option>
+                <option value="afternoon">Afternoon</option>
+                <option value="evening">Evening</option>
+                <option value="anytime">Anytime</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+                Energy Required
+              </label>
+              <select
+                style={selectStyle}
+                value={newHabit.feedLevel}
+                onChange={(e) => setNewHabit(prev => ({ ...prev, feedLevel: e.target.value as FeedLevel }))}
+              >
+                {FEED_LEVELS.map(f => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+            </div>
+            {activeGoals.length > 0 && (
+              <div>
+                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+                  Goal (optional)
+                </label>
+                <select
+                  style={selectStyle}
+                  value={newHabit.goalId}
+                  onChange={(e) => setNewHabit(prev => ({ ...prev, goalId: e.target.value }))}
+                >
+                  <option value="">No goal</option>
+                  {activeGoals.map(g => (
+                    <option key={g.id} value={g.id}>{g.title}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <Button variant="primary" onClick={handleAddHabit}>Create Habit</Button>
           </div>
         )}
       </Modal>

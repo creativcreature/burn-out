@@ -1,17 +1,12 @@
-import { useState, useRef, useEffect, CSSProperties } from 'react'
+import { useRef, useEffect, useState, CSSProperties } from 'react'
 import { AppLayout, Header } from '../components/layout'
-import { Card, Button } from '../components/shared'
-
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-}
+import { Card, Button, Toast } from '../components/shared'
+import { useAI } from '../hooks/useAI'
 
 export function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([])
+  const { messages, isLoading, send, loadHistory } = useAI()
   const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error' | 'info', visible: false })
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -19,7 +14,24 @@ export function ChatPage() {
   }
 
   useEffect(() => {
+    loadHistory()
+  }, [loadHistory])
+
+  useEffect(() => {
     scrollToBottom()
+  }, [messages])
+
+  // Show toast when tasks are created
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage?.role === 'assistant' && lastMessage.tasksCreated?.length) {
+      const count = lastMessage.tasksCreated.length
+      setToast({
+        message: `${count} task${count > 1 ? 's' : ''} added to your list`,
+        type: 'success',
+        visible: true
+      })
+    }
   }, [messages])
 
   const containerStyle: CSSProperties = {
@@ -46,10 +58,10 @@ export function ChatPage() {
     alignSelf: isUser ? 'flex-end' : 'flex-start',
     background: isUser ? 'var(--accent-primary)' : 'var(--bg-card)',
     color: isUser ? 'white' : 'var(--text-primary)',
-    border: isUser ? 'none' : '1px solid var(--border-color)'
+    border: isUser ? 'none' : '1px solid var(--border-color)',
+    whiteSpace: 'pre-wrap'
   })
 
-  // Input container positioned above navigation
   const inputContainerStyle: CSSProperties = {
     position: 'fixed',
     bottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-md))',
@@ -96,29 +108,9 @@ export function ChatPage() {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return
-
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: input
-    }
-
-    setMessages(prev => [...prev, userMessage])
+    const message = input
     setInput('')
-    setIsLoading(true)
-
-    // Simulate AI response (replace with actual Claude API call)
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: `I hear you. Let me help you break that down into manageable tasks. What feels most urgent or important right now?
-
-(Note: AI integration coming soon. For now, use the Organize page to add tasks manually.)`
-      }
-      setMessages(prev => [...prev, assistantMessage])
-      setIsLoading(false)
-    }, 1000)
+    await send(message)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -129,9 +121,9 @@ export function ChatPage() {
   }
 
   const suggestions = [
-    'I have too much to do today...',
-    'I need to plan my week',
-    'Help me break down this project'
+    "I have too much to do today...",
+    "I need to plan my week",
+    "Help me break down this project"
   ]
 
   return (
@@ -165,8 +157,20 @@ export function ChatPage() {
         ) : (
           <div style={messagesStyle}>
             {messages.map(msg => (
-              <div key={msg.id} style={bubbleStyle(msg.role === 'user')}>
-                {msg.content}
+              <div key={msg.id}>
+                <div style={bubbleStyle(msg.role === 'user')}>
+                  {msg.content}
+                </div>
+                {msg.tasksCreated && msg.tasksCreated.length > 0 && (
+                  <div style={{
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--accent-primary)',
+                    marginTop: 'var(--space-xs)',
+                    paddingLeft: 'var(--space-sm)'
+                  }}>
+                    {msg.tasksCreated.length} task{msg.tasksCreated.length > 1 ? 's' : ''} created
+                  </div>
+                )}
               </div>
             ))}
             {isLoading && (
@@ -198,6 +202,13 @@ export function ChatPage() {
           </Button>
         </div>
       </div>
+
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.visible}
+        onClose={() => setToast(t => ({ ...t, visible: false }))}
+      />
     </AppLayout>
   )
 }
