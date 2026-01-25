@@ -197,7 +197,7 @@ export function SettingsPage() {
 
         <Card>
           <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-            <p style={{ marginBottom: 'var(--space-sm)' }}>BurnOut v0.1.0</p>
+            <p style={{ marginBottom: 'var(--space-sm)' }}>BurnOut v0.3.0</p>
             <p style={{ fontSize: 'var(--text-xs)' }}>
               Work with your energy, not against it.
             </p>
