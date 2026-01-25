@@ -57,7 +57,6 @@ export function useAI() {
     try {
       const data = await getData()
       const config = {
-        apiKey: data.settings.apiKey || '',
         burnoutMode: data.user.burnoutMode,
         tonePreference: data.user.tonePreference
       }
@@ -97,7 +96,7 @@ export function useAI() {
       const errorMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: "Something went wrong. Please try again."
+        content: 'Something went wrong. Please try again.'
       }
       setMessages(prev => [...prev, errorMessage])
     } finally {

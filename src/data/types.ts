@@ -102,6 +102,15 @@ export interface ChatMessage {
   tasksCreated?: string[]
 }
 
+export interface JournalEntry {
+  id: string
+  date: string           // YYYY-MM-DD
+  content: string
+  mood?: 'struggling' | 'okay' | 'good' | 'great'
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Settings {
   notifications: boolean
   dailyReminder: string | null  // Time like "09:00"
@@ -125,6 +134,7 @@ export interface BurnOutData {
   tasks: Task[]
   habits: Habit[]
   completedTasks: CompletedTask[]
+  journalEntries: JournalEntry[]
   chatHistory: ChatMessage[]
   settings: Settings
   onboarding: OnboardingData

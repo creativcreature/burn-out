@@ -166,8 +166,8 @@ export function OrganizePage() {
   const tabStyle = (isActive: boolean): CSSProperties => ({
     flex: 1,
     padding: 'var(--space-sm)',
-    background: isActive ? 'var(--accent-primary)' : 'transparent',
-    color: isActive ? 'white' : 'var(--text-secondary)',
+    background: isActive ? 'var(--orb-orange)' : 'transparent',
+    color: isActive ? 'white' : 'var(--text-muted)',
     border: 'none',
     borderRadius: 'var(--radius-sm)',
     cursor: 'pointer',
@@ -192,9 +192,9 @@ export function OrganizePage() {
     padding: 'var(--space-sm) var(--space-md)',
     fontSize: 'var(--text-md)',
     background: 'var(--bg-card)',
-    border: '1px solid var(--border-color)',
+    border: '1px solid var(--border)',
     borderRadius: 'var(--radius-md)',
-    color: 'var(--text-primary)'
+    color: 'var(--text)'
   }
 
   const formStyle: CSSProperties = {
@@ -258,10 +258,10 @@ export function OrganizePage() {
                   <Card>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
-                        <div style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--orb-orange)' }}>
                           {task.verbLabel}
                         </div>
-                        <div style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                        <div style={{ color: 'var(--text)', fontSize: 'var(--text-sm)' }}>
                           {task.taskBody}
                         </div>
                         <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', marginTop: 'var(--space-xs)' }}>
@@ -279,7 +279,7 @@ export function OrganizePage() {
 
             {completedTasks.length > 0 && (
               <>
-                <h3 style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-md)' }}>
+                <h3 style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-md)' }}>
                   Completed ({completedTasks.length})
                 </h3>
                 {completedTasks.slice(0, 3).map(task => (
@@ -307,9 +307,9 @@ export function OrganizePage() {
                 <Card key={goal.id}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{goal.title}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--text)' }}>{goal.title}</div>
                       {goal.description && (
-                        <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+                        <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
                           {goal.description}
                         </div>
                       )}
@@ -343,14 +343,14 @@ export function OrganizePage() {
                   <Card key={project.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{project.title}</div>
+                        <div style={{ fontWeight: 600, color: 'var(--text)' }}>{project.title}</div>
                         {goal && (
-                          <div style={{ color: 'var(--accent-primary)', fontSize: 'var(--text-xs)' }}>
+                          <div style={{ color: 'var(--orb-orange)', fontSize: 'var(--text-xs)' }}>
                             {goal.title}
                           </div>
                         )}
                         {project.description && (
-                          <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+                          <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
                             {project.description}
                           </div>
                         )}
@@ -384,10 +384,10 @@ export function OrganizePage() {
                   <Card key={habit.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
-                        <div style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--orb-orange)' }}>
                           {habit.verbLabel}
                         </div>
-                        <div style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                        <div style={{ color: 'var(--text)', fontSize: 'var(--text-sm)' }}>
                           {habit.habitBody}
                         </div>
                         {goal && (
@@ -435,7 +435,7 @@ export function OrganizePage() {
               onChange={(value) => setNewTask(prev => ({ ...prev, taskBody: value }))}
             />
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
                 Time Estimate
               </label>
               <select
@@ -449,7 +449,7 @@ export function OrganizePage() {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
                 Energy Required
               </label>
               <select
@@ -464,7 +464,7 @@ export function OrganizePage() {
             </div>
             {activeGoals.length > 0 && (
               <div>
-                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
                   Goal (optional)
                 </label>
                 <select
@@ -510,7 +510,7 @@ export function OrganizePage() {
               onChange={(value) => setNewProject(prev => ({ ...prev, title: value }))}
             />
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
                 Goal *
               </label>
               <select
@@ -555,7 +555,7 @@ export function OrganizePage() {
               onChange={(value) => setNewHabit(prev => ({ ...prev, habitBody: value }))}
             />
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
                 Frequency
               </label>
               <select
@@ -568,7 +568,7 @@ export function OrganizePage() {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
                 Time of Day
               </label>
               <select
@@ -583,7 +583,7 @@ export function OrganizePage() {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
                 Energy Required
               </label>
               <select
@@ -598,7 +598,7 @@ export function OrganizePage() {
             </div>
             {activeGoals.length > 0 && (
               <div>
-                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
                   Goal (optional)
                 </label>
                 <select

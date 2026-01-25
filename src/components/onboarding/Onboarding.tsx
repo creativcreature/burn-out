@@ -41,11 +41,11 @@ export function Onboarding() {
   const titleStyle: CSSProperties = {
     fontFamily: 'var(--font-display)',
     fontSize: 'var(--text-2xl)',
-    color: 'var(--text-primary)'
+    color: 'var(--text)'
   }
 
   const subtitleStyle: CSSProperties = {
-    color: 'var(--text-secondary)',
+    color: 'var(--text-muted)',
     fontSize: 'var(--text-md)'
   }
 
@@ -58,10 +58,10 @@ export function Onboarding() {
 
   const optionStyle = (isSelected: boolean): CSSProperties => ({
     padding: 'var(--space-md)',
-    background: isSelected ? 'var(--accent-primary)' : 'var(--bg-card)',
-    color: isSelected ? 'white' : 'var(--text-primary)',
+    background: isSelected ? 'var(--orb-orange)' : 'var(--bg-card)',
+    color: isSelected ? 'white' : 'var(--text)',
     borderRadius: 'var(--radius-md)',
-    border: `2px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+    border: `2px solid ${isSelected ? 'var(--orb-orange)' : 'var(--border)'}`,
     cursor: 'pointer',
     transition: 'all var(--transition-fast)',
     textAlign: 'left' as const
@@ -77,7 +77,7 @@ export function Onboarding() {
     width: 8,
     height: 8,
     borderRadius: '50%',
-    background: isActive ? 'var(--accent-primary)' : 'var(--border-color)'
+    background: isActive ? 'var(--orb-orange)' : 'var(--border)'
   })
 
   const actionsStyle: CSSProperties = {
@@ -102,120 +102,120 @@ export function Onboarding() {
     width: 36,
     height: 36,
     borderRadius: 'var(--radius-sm)',
-    border: `2px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-    background: isSelected ? 'var(--accent-primary)' : 'transparent',
-    color: isSelected ? 'white' : 'var(--text-primary)',
+    border: `2px solid ${isSelected ? 'var(--orb-orange)' : 'var(--border)'}`,
+    background: isSelected ? 'var(--orb-orange)' : 'transparent',
+    color: isSelected ? 'white' : 'var(--text)',
     cursor: 'pointer',
     fontWeight: 600
   })
 
   const renderStep = () => {
     switch (state.step) {
-      case 1:
-        return (
-          <>
-            <Orb size="md" breathing />
-            <h1 style={titleStyle}>Welcome to BurnOut</h1>
-            <p style={subtitleStyle}>
+    case 1:
+      return (
+        <>
+          <Orb size="md" breathing />
+          <h1 style={titleStyle}>Welcome to BurnOut</h1>
+          <p style={subtitleStyle}>
               Work with your energy, not against it.
-            </p>
-            <Button variant="primary" size="lg" onClick={nextStep}>
+          </p>
+          <Button variant="primary" size="lg" onClick={nextStep}>
               Get Started
-            </Button>
-            <Button variant="ghost" size="sm" onClick={skipOnboarding}>
+          </Button>
+          <Button variant="ghost" size="sm" onClick={skipOnboarding}>
               Skip for now
-            </Button>
-          </>
-        )
+          </Button>
+        </>
+      )
 
-      case 2:
-        return (
-          <>
-            <h1 style={titleStyle}>How are you feeling?</h1>
-            <p style={subtitleStyle}>This helps us tailor the experience to your needs.</p>
-            <div style={optionsStyle}>
-              {([
-                { value: 'recovery', label: 'Recovery Mode', desc: 'I\'m burnt out and need gentle support' },
-                { value: 'prevention', label: 'Prevention Mode', desc: 'I want to avoid burning out' },
-                { value: 'balanced', label: 'Balanced Mode', desc: 'I\'m doing okay, just want to stay productive' }
-              ] as const).map(option => (
-                <div
-                  key={option.value}
-                  style={optionStyle(state.burnoutMode === option.value)}
-                  onClick={() => setBurnoutMode(option.value)}
-                >
-                  <strong>{option.label}</strong>
-                  <div style={{ fontSize: 'var(--text-sm)', opacity: 0.8, marginTop: 4 }}>
-                    {option.desc}
-                  </div>
+    case 2:
+      return (
+        <>
+          <h1 style={titleStyle}>How are you feeling?</h1>
+          <p style={subtitleStyle}>This helps us tailor the experience to your needs.</p>
+          <div style={optionsStyle}>
+            {([
+              { value: 'recovery', label: 'Recovery Mode', desc: 'I\'m burnt out and need gentle support' },
+              { value: 'prevention', label: 'Prevention Mode', desc: 'I want to avoid burning out' },
+              { value: 'balanced', label: 'Balanced Mode', desc: 'I\'m doing okay, just want to stay productive' }
+            ] as const).map(option => (
+              <div
+                key={option.value}
+                style={optionStyle(state.burnoutMode === option.value)}
+                onClick={() => setBurnoutMode(option.value)}
+              >
+                <strong>{option.label}</strong>
+                <div style={{ fontSize: 'var(--text-sm)', opacity: 0.8, marginTop: 4 }}>
+                  {option.desc}
                 </div>
-              ))}
-            </div>
-          </>
-        )
-
-      case 3:
-        return (
-          <>
-            <h1 style={titleStyle}>Your energy patterns</h1>
-            <p style={subtitleStyle}>When do you typically have the most energy?</p>
-            <Card>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                {(['morning', 'afternoon', 'evening'] as const).map(time => (
-                  <div key={time} style={energyRowStyle}>
-                    <span style={{ textTransform: 'capitalize' }}>{time}</span>
-                    <div style={energyButtonsStyle}>
-                      {([1, 2, 3, 4, 5] as EnergyLevel[]).map(level => (
-                        <button
-                          key={level}
-                          style={energyBtnStyle(state.energyDefaults[time] === level)}
-                          onClick={() => setEnergyDefaults({
-                            ...state.energyDefaults,
-                            [time]: level
-                          })}
-                        >
-                          {level}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
               </div>
-            </Card>
-            <p style={{ ...subtitleStyle, fontSize: 'var(--text-sm)' }}>
-              1 = very low, 5 = very high
-            </p>
-          </>
-        )
+            ))}
+          </div>
+        </>
+      )
 
-      case 4:
-        return (
-          <>
-            <h1 style={titleStyle}>How should I talk to you?</h1>
-            <p style={subtitleStyle}>Choose the tone that feels right.</p>
-            <div style={optionsStyle}>
-              {([
-                { value: 'gentle', label: 'Gentle', desc: 'Soft, supportive, and understanding' },
-                { value: 'direct', label: 'Direct', desc: 'Clear, concise, and to the point' },
-                { value: 'playful', label: 'Playful', desc: 'Light, fun, and encouraging' }
-              ] as const).map(option => (
-                <div
-                  key={option.value}
-                  style={optionStyle(state.tonePreference === option.value)}
-                  onClick={() => setTonePreference(option.value)}
-                >
-                  <strong>{option.label}</strong>
-                  <div style={{ fontSize: 'var(--text-sm)', opacity: 0.8, marginTop: 4 }}>
-                    {option.desc}
+    case 3:
+      return (
+        <>
+          <h1 style={titleStyle}>Your energy patterns</h1>
+          <p style={subtitleStyle}>When do you typically have the most energy?</p>
+          <Card>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              {(['morning', 'afternoon', 'evening'] as const).map(time => (
+                <div key={time} style={energyRowStyle}>
+                  <span style={{ textTransform: 'capitalize' }}>{time}</span>
+                  <div style={energyButtonsStyle}>
+                    {([1, 2, 3, 4, 5] as EnergyLevel[]).map(level => (
+                      <button
+                        key={level}
+                        style={energyBtnStyle(state.energyDefaults[time] === level)}
+                        onClick={() => setEnergyDefaults({
+                          ...state.energyDefaults,
+                          [time]: level
+                        })}
+                      >
+                        {level}
+                      </button>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
-          </>
-        )
+          </Card>
+          <p style={{ ...subtitleStyle, fontSize: 'var(--text-sm)' }}>
+              1 = very low, 5 = very high
+          </p>
+        </>
+      )
 
-      default:
-        return null
+    case 4:
+      return (
+        <>
+          <h1 style={titleStyle}>How should I talk to you?</h1>
+          <p style={subtitleStyle}>Choose the tone that feels right.</p>
+          <div style={optionsStyle}>
+            {([
+              { value: 'gentle', label: 'Gentle', desc: 'Soft, supportive, and understanding' },
+              { value: 'direct', label: 'Direct', desc: 'Clear, concise, and to the point' },
+              { value: 'playful', label: 'Playful', desc: 'Light, fun, and encouraging' }
+            ] as const).map(option => (
+              <div
+                key={option.value}
+                style={optionStyle(state.tonePreference === option.value)}
+                onClick={() => setTonePreference(option.value)}
+              >
+                <strong>{option.label}</strong>
+                <div style={{ fontSize: 'var(--text-sm)', opacity: 0.8, marginTop: 4 }}>
+                  {option.desc}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )
+
+    default:
+      return null
     }
   }
 

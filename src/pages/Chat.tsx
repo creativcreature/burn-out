@@ -56,9 +56,9 @@ export function ChatPage() {
     padding: 'var(--space-md)',
     borderRadius: 'var(--radius-lg)',
     alignSelf: isUser ? 'flex-end' : 'flex-start',
-    background: isUser ? 'var(--accent-primary)' : 'var(--bg-card)',
-    color: isUser ? 'white' : 'var(--text-primary)',
-    border: isUser ? 'none' : '1px solid var(--border-color)',
+    background: isUser ? 'var(--orb-orange)' : 'var(--bg-card)',
+    color: isUser ? 'white' : 'var(--text)',
+    border: isUser ? 'none' : '1px solid var(--border)',
     whiteSpace: 'pre-wrap'
   })
 
@@ -69,11 +69,11 @@ export function ChatPage() {
     right: 'var(--space-md)',
     display: 'flex',
     gap: 'var(--space-sm)',
-    background: 'var(--bg-card)',
+    background: 'var(--bg-card-solid)',
     padding: 'var(--space-sm)',
     borderRadius: 'var(--radius-lg)',
-    border: '1px solid var(--border-color)',
-    backdropFilter: 'var(--glass-blur)',
+    border: '1px solid var(--border)',
+    backdropFilter: 'blur(var(--glass-blur))',
     zIndex: 100
   }
 
@@ -83,7 +83,7 @@ export function ChatPage() {
     fontSize: 'var(--text-md)',
     background: 'transparent',
     border: 'none',
-    color: 'var(--text-primary)',
+    color: 'var(--text)',
     outline: 'none'
   }
 
@@ -121,9 +121,9 @@ export function ChatPage() {
   }
 
   const suggestions = [
-    "I have too much to do today...",
-    "I need to plan my week",
-    "Help me break down this project"
+    'I have too much to do today...',
+    'I need to plan my week',
+    'Help me break down this project'
   ]
 
   return (
@@ -140,14 +140,14 @@ export function ChatPage() {
               }}>
                 Brain Dump
               </h2>
-              <p style={{ color: 'var(--text-secondary)' }}>
+              <p style={{ color: 'var(--text-muted)' }}>
                 Share what's on your mind. I'll help you organize it into tasks.
               </p>
             </div>
             <div style={suggestionStyle}>
               {suggestions.map((suggestion, i) => (
                 <Card key={i} onClick={() => setInput(suggestion)} padding="sm">
-                  <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
                     "{suggestion}"
                   </span>
                 </Card>
@@ -164,7 +164,7 @@ export function ChatPage() {
                 {msg.tasksCreated && msg.tasksCreated.length > 0 && (
                   <div style={{
                     fontSize: 'var(--text-xs)',
-                    color: 'var(--accent-primary)',
+                    color: 'var(--orb-orange)',
                     marginTop: 'var(--space-xs)',
                     paddingLeft: 'var(--space-sm)'
                   }}>

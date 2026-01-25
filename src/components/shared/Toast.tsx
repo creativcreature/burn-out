@@ -19,9 +19,9 @@ export function Toast({ message, type = 'info', isVisible, onClose, duration = 3
   if (!isVisible) return null
 
   const colors = {
-    success: 'var(--accent-primary)',
-    error: 'var(--accent-tertiary)',
-    info: 'var(--text-secondary)'
+    success: 'var(--orb-orange)',
+    error: '#ef4444',
+    info: 'var(--text-muted)'
   }
 
   const containerStyle: CSSProperties = {
@@ -34,8 +34,8 @@ export function Toast({ message, type = 'info', isVisible, onClose, duration = 3
   }
 
   const toastStyle: CSSProperties = {
-    background: 'var(--bg-secondary)',
-    color: 'var(--text-primary)',
+    background: 'var(--bg-alt)',
+    color: 'var(--text)',
     padding: 'var(--space-sm) var(--space-md)',
     borderRadius: 'var(--radius-md)',
     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',

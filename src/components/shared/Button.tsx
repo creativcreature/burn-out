@@ -49,20 +49,21 @@ export function Button({
 
   const variantStyles: Record<string, CSSProperties> = {
     primary: {
-      background: 'var(--accent-primary)',
-      color: 'white'
+      background: 'transparent',
+      color: 'var(--orb-orange)',
+      border: '2px solid var(--orb-orange)'
     },
     secondary: {
       background: 'var(--bg-card)',
-      color: 'var(--text-primary)',
-      border: '1px solid var(--border-color)'
+      color: 'var(--text)',
+      border: '1px solid var(--border)'
     },
     ghost: {
       background: 'transparent',
-      color: 'var(--text-primary)'
+      color: 'var(--text-muted)'
     },
     danger: {
-      background: 'var(--accent-tertiary)',
+      background: '#ef4444',
       color: 'white'
     }
   }

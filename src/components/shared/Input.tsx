@@ -24,7 +24,7 @@ export function Input({
   const labelStyle: CSSProperties = {
     fontSize: 'var(--text-sm)',
     fontWeight: 500,
-    color: 'var(--text-secondary)'
+    color: 'var(--text-muted)'
   }
 
   const inputStyle: CSSProperties = {
@@ -32,16 +32,16 @@ export function Input({
     fontSize: 'var(--text-md)',
     fontFamily: 'var(--font-body)',
     background: 'var(--bg-card)',
-    border: `1px solid ${error ? 'var(--accent-tertiary)' : 'var(--border-color)'}`,
+    border: `1px solid ${error ? '#ef4444' : 'var(--border)'}`,
     borderRadius: 'var(--radius-md)',
-    color: 'var(--text-primary)',
+    color: 'var(--text)',
     outline: 'none',
     transition: 'border-color var(--transition-fast)'
   }
 
   const errorStyle: CSSProperties = {
     fontSize: 'var(--text-sm)',
-    color: 'var(--accent-tertiary)'
+    color: '#ef4444'
   }
 
   return (

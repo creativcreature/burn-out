@@ -31,7 +31,6 @@ When extracting tasks, return them in this JSON format at the end of your respon
 Verb label examples: Deep Work, Quick Win, Research, Draft, Review, Organize, Connect, Create, Plan, Rest`
 
 interface AIConfig {
-  apiKey: string
   burnoutMode: BurnoutMode
   tonePreference: TonePreference
 }
@@ -50,23 +49,23 @@ interface AIResponse {
 
 function getToneInstruction(tone: TonePreference): string {
   switch (tone) {
-    case 'gentle':
-      return 'Use a soft, supportive, and understanding tone. Be extra patient and validating.'
-    case 'direct':
-      return 'Be clear, concise, and to the point. Skip unnecessary pleasantries.'
-    case 'playful':
-      return 'Be light, fun, and encouraging. Use casual language.'
+  case 'gentle':
+    return 'Use a soft, supportive, and understanding tone. Be extra patient and validating.'
+  case 'direct':
+    return 'Be clear, concise, and to the point. Skip unnecessary pleasantries.'
+  case 'playful':
+    return 'Be light, fun, and encouraging. Use casual language.'
   }
 }
 
 function getModeInstruction(mode: BurnoutMode): string {
   switch (mode) {
-    case 'recovery':
-      return 'User is burnt out. Prioritize rest, suggest very small tasks, and validate that doing less is okay.'
-    case 'prevention':
-      return 'User wants to avoid burnout. Help them maintain boundaries and recognize warning signs.'
-    case 'balanced':
-      return 'User is doing okay. Help them stay productive while maintaining wellbeing.'
+  case 'recovery':
+    return 'User is burnt out. Prioritize rest, suggest very small tasks, and validate that doing less is okay.'
+  case 'prevention':
+    return 'User wants to avoid burnout. Help them maintain boundaries and recognize warning signs.'
+  case 'balanced':
+    return 'User is doing okay. Help them stay productive while maintaining wellbeing.'
   }
 }
 
@@ -74,9 +73,11 @@ export async function sendMessage(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   config: AIConfig
 ): Promise<AIResponse> {
-  if (!config.apiKey) {
+  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY
+
+  if (!apiKey) {
     return {
-      message: "I'd love to help, but I need an API key to work. You can add one in Settings.\n\nFor now, use the Organize page to add tasks manually.",
+      message: "I'd love to help, but I need an API key to work. Please add VITE_GOOGLE_API_KEY to your .env file.",
       tasks: []
     }
   }
@@ -86,29 +87,43 @@ export async function sendMessage(
 ${getToneInstruction(config.tonePreference)}
 ${getModeInstruction(config.burnoutMode)}`
 
+  // Convert messages to Gemini format
+  const geminiMessages = messages.map(m => ({
+    role: m.role === 'user' ? 'user' : 'model',
+    parts: [{ text: m.content }]
+  }))
+
+  // Add system instruction as first user message if not empty
+  if (geminiMessages.length > 0) {
+    geminiMessages[0] = {
+      role: 'user',
+      parts: [{ text: `${systemPrompt}\n\nUser message: ${messages[0].content}` }]
+    }
+  }
+
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': config.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: messages.map(m => ({
-          role: m.role,
-          content: m.content
-        }))
-      })
-    })
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: geminiMessages,
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024
+          }
+        })
+      }
+    )
 
     if (!response.ok) {
       const error = await response.json()
-      console.error('API Error:', error)
+      console.error('Gemini API Error:', error)
       return {
         message: "I'm having trouble connecting right now. Please try again in a moment.",
         tasks: []
@@ -116,7 +131,7 @@ ${getModeInstruction(config.burnoutMode)}`
     }
 
     const data = await response.json()
-    const content = data.content[0]?.text || ''
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
     // Extract tasks from the response
     const tasksMatch = content.match(/```tasks\n([\s\S]*?)\n```/)
@@ -137,7 +152,7 @@ ${getModeInstruction(config.burnoutMode)}`
   } catch (error) {
     console.error('AI Error:', error)
     return {
-      message: "Something went wrong. Please check your connection and try again.",
+      message: 'Something went wrong. Please check your connection and try again.',
       tasks: []
     }
   }

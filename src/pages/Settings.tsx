@@ -1,8 +1,8 @@
 import { useState, useEffect, CSSProperties } from 'react'
 import { AppLayout, Header } from '../components/layout'
-import { Card, Button, Input } from '../components/shared'
+import { Card, Button } from '../components/shared'
 import { useThemeContext } from '../components/shared/ThemeProvider'
-import { getData, updateData } from '../utils/storage'
+import { getData, updateData, seedSampleData } from '../utils/storage'
 import type { Settings as SettingsType } from '../data/types'
 
 export function SettingsPage() {
@@ -31,7 +31,7 @@ export function SettingsPage() {
     fontFamily: 'var(--font-display)',
     fontSize: 'var(--text-lg)',
     fontWeight: 600,
-    color: 'var(--text-primary)'
+    color: 'var(--text)'
   }
 
   const rowStyle: CSSProperties = {
@@ -42,20 +42,20 @@ export function SettingsPage() {
   }
 
   const labelStyle: CSSProperties = {
-    color: 'var(--text-primary)'
+    color: 'var(--text)'
   }
 
   const descStyle: CSSProperties = {
     fontSize: 'var(--text-sm)',
-    color: 'var(--text-secondary)'
+    color: 'var(--text-muted)'
   }
 
   const toggleStyle = (isActive: boolean): CSSProperties => ({
     width: 48,
     height: 28,
     borderRadius: 'var(--radius-full)',
-    background: isActive ? 'var(--accent-primary)' : 'var(--bg-secondary)',
-    border: '1px solid var(--border-color)',
+    background: isActive ? 'var(--orb-orange)' : 'var(--bg-alt)',
+    border: '1px solid var(--border)',
     position: 'relative',
     cursor: 'pointer',
     transition: 'background var(--transition-fast)'
@@ -172,31 +172,31 @@ export function SettingsPage() {
           </Card>
         </section>
 
-        <section style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>AI Integration</h2>
-          <Card>
-            <Input
-              label="Claude API Key"
-              type="password"
-              placeholder="sk-ant-..."
-              value={settings.apiKey || ''}
-              onChange={(value) => setSettings(prev => prev ? {
-                ...prev,
-                apiKey: value
-              } : null)}
-            />
-            <p style={{ ...descStyle, marginTop: 'var(--space-sm)' }}>
-              Required for AI chat features. Your key stays on your device.
-            </p>
-          </Card>
-        </section>
-
         <Button variant="primary" onClick={handleSave}>
           {saved ? 'Saved!' : 'Save Settings'}
         </Button>
 
         <section style={sectionStyle}>
           <h2 style={sectionTitleStyle}>Data</h2>
+          <Card>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+              <Button
+                variant="secondary"
+                fullWidth
+                onClick={async () => {
+                  if (confirm('Load sample data? This will replace your current data with demo content.')) {
+                    await seedSampleData()
+                    window.location.reload()
+                  }
+                }}
+              >
+                Load Sample Data
+              </Button>
+              <p style={descStyle}>
+                Populate the app with sample tasks, goals, and journal entries to explore features.
+              </p>
+            </div>
+          </Card>
           <Card>
             <Button
               variant="secondary"

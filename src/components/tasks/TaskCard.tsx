@@ -36,12 +36,12 @@ export function TaskCard({
 
   const verbStyle: CSSProperties = {
     fontWeight: 600,
-    color: 'var(--accent-primary)',
+    color: 'var(--orb-orange)',
     fontSize: 'var(--text-md)'
   }
 
   const bodyStyle: CSSProperties = {
-    color: 'var(--text-primary)',
+    color: 'var(--text)',
     fontSize: 'var(--text-sm)',
     marginBottom: 'var(--space-sm)'
   }
@@ -57,7 +57,7 @@ export function TaskCard({
     display: 'flex',
     gap: 'var(--space-sm)',
     marginTop: 'var(--space-md)',
-    borderTop: '1px solid var(--border-color)',
+    borderTop: '1px solid var(--border)',
     paddingTop: 'var(--space-sm)'
   }
 
@@ -65,9 +65,9 @@ export function TaskCard({
     flex: 1,
     padding: 'var(--space-xs) var(--space-sm)',
     background: 'transparent',
-    border: '1px solid var(--border-color)',
+    border: '1px solid var(--border)',
     borderRadius: 'var(--radius-sm)',
-    color: 'var(--text-secondary)',
+    color: 'var(--text-muted)',
     cursor: 'pointer',
     fontSize: 'var(--text-xs)',
     transition: 'all var(--transition-fast)'
@@ -84,8 +84,8 @@ export function TaskCard({
     borderRadius: 'var(--radius-full)',
     fontSize: 'var(--text-xs)',
     background: task.status === 'completed' ? '#10b981' :
-                task.status === 'deferred' ? '#fbbf24' : 'var(--border-color)',
-    color: task.status === 'pending' ? 'var(--text-secondary)' : 'white'
+      task.status === 'deferred' ? '#fbbf24' : 'var(--border)',
+    color: task.status === 'pending' ? 'var(--text-muted)' : 'white'
   }
 
   return (
@@ -113,7 +113,7 @@ export function TaskCard({
         {showActions && task.status === 'pending' && (
           <div style={actionsStyle} onClick={e => e.stopPropagation()}>
             {onStart && (
-              <button style={{ ...actionBtnStyle, background: 'var(--accent-primary)', color: 'white', border: 'none' }} onClick={onStart}>
+              <button style={{ ...actionBtnStyle, background: 'var(--orb-orange)', color: 'white', border: 'none' }} onClick={onStart}>
                 Start
               </button>
             )}
@@ -123,7 +123,7 @@ export function TaskCard({
               </button>
             )}
             {onDelete && (
-              <button style={{ ...actionBtnStyle, color: 'var(--accent-tertiary)' }} onClick={onDelete}>
+              <button style={{ ...actionBtnStyle, color: '#ef4444' }} onClick={onDelete}>
                 Delete
               </button>
             )}

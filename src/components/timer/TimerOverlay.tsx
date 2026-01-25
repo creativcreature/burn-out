@@ -44,7 +44,7 @@ export function TimerOverlay({ task, isOpen, onComplete, onCancel }: TimerOverla
     fontFamily: 'var(--font-display)',
     fontSize: '72px',
     fontWeight: 600,
-    color: 'var(--text-primary)',
+    color: 'var(--text)',
     letterSpacing: '-2px'
   }
 
@@ -55,13 +55,13 @@ export function TimerOverlay({ task, isOpen, onComplete, onCancel }: TimerOverla
   }
 
   const verbStyle: CSSProperties = {
-    color: 'var(--accent-primary)',
+    color: 'var(--orb-orange)',
     fontSize: 'var(--text-lg)',
     fontWeight: 600
   }
 
   const bodyStyle: CSSProperties = {
-    color: 'var(--text-secondary)',
+    color: 'var(--text-muted)',
     fontSize: 'var(--text-md)'
   }
 
@@ -74,14 +74,14 @@ export function TimerOverlay({ task, isOpen, onComplete, onCancel }: TimerOverla
   const progressStyle: CSSProperties = {
     width: 200,
     height: 4,
-    background: 'var(--border-color)',
+    background: 'var(--border)',
     borderRadius: 'var(--radius-full)',
     overflow: 'hidden'
   }
 
   const progressBarStyle: CSSProperties = {
     height: '100%',
-    background: 'var(--accent-primary)',
+    background: 'var(--orb-orange)',
     width: `${timer.progress * 100}%`,
     transition: 'width 1s linear'
   }

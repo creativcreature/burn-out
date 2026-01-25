@@ -28,19 +28,19 @@ export function ReflectionsPage() {
     fontFamily: 'var(--font-display)',
     fontSize: 'var(--text-3xl)',
     fontWeight: 600,
-    color: 'var(--accent-primary)'
+    color: 'var(--orb-orange)'
   }
 
   const statLabelStyle: CSSProperties = {
     fontSize: 'var(--text-sm)',
-    color: 'var(--text-secondary)'
+    color: 'var(--text-muted)'
   }
 
   const sectionTitleStyle: CSSProperties = {
     fontFamily: 'var(--font-display)',
     fontSize: 'var(--text-lg)',
     fontWeight: 600,
-    color: 'var(--text-primary)',
+    color: 'var(--text)',
     marginBottom: 'var(--space-sm)'
   }
 
@@ -101,7 +101,7 @@ export function ReflectionsPage() {
         </section>
 
         <section>
-          <h2 style={sectionTitleStyle}>Your Garden</h2>
+          <h2 style={sectionTitleStyle}>Journal</h2>
           <Card>
             <Garden />
           </Card>
@@ -110,7 +110,7 @@ export function ReflectionsPage() {
         <p style={noteStyle}>
           This is a place to reflect on your journey, not to compete.
           <br />
-          Progress happens at your own pace.
+          Take time to check in with yourself.
         </p>
       </main>
     </AppLayout>

@@ -47,7 +47,7 @@ export function Modal({ isOpen, onClose, title, children, showClose = true }: Mo
   }
 
   const modalStyle: CSSProperties = {
-    background: 'var(--bg-secondary)',
+    background: 'var(--bg-alt)',
     borderRadius: 'var(--radius-lg)',
     padding: 'var(--space-lg)',
     maxWidth: 480,
@@ -68,7 +68,7 @@ export function Modal({ isOpen, onClose, title, children, showClose = true }: Mo
     fontFamily: 'var(--font-display)',
     fontSize: 'var(--text-xl)',
     fontWeight: 600,
-    color: 'var(--text-primary)'
+    color: 'var(--text)'
   }
 
   return (

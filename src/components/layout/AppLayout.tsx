@@ -1,25 +1,28 @@
-import { ReactNode, CSSProperties } from 'react'
+import { ReactNode } from 'react'
 import { Navigation } from './Navigation'
 
 interface AppLayoutProps {
   children: ReactNode
   showNav?: boolean
-  fullHeight?: boolean
+  showOrb?: boolean
 }
 
-export function AppLayout({ children, showNav = true, fullHeight = true }: AppLayoutProps) {
-  const layoutStyle: CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: fullHeight ? '100vh' : 'auto',
-    paddingBottom: showNav ? 'var(--nav-height)' : 0,
-    background: 'var(--bg-primary)'
-  }
-
+export function AppLayout({ children, showNav = true, showOrb = true }: AppLayoutProps) {
   return (
-    <div style={layoutStyle}>
-      {children}
+    <>
+      {/* Full-screen Orb Background */}
+      {showOrb && (
+        <div className="orb-background">
+          <div className="orb-main" />
+        </div>
+      )}
+
+      {/* App Shell */}
+      <div className="app-shell">
+        {children}
+      </div>
+
       {showNav && <Navigation />}
-    </div>
+    </>
   )
 }

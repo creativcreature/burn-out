@@ -20,7 +20,7 @@ export function Card({ children, padding = 'md', onClick, className = '' }: Card
     backdropFilter: 'var(--glass-blur)',
     WebkitBackdropFilter: 'var(--glass-blur)',
     borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--border-color)',
+    border: '1px solid var(--border)',
     boxShadow: 'var(--shadow)',
     padding: paddingMap[padding],
     cursor: onClick ? 'pointer' : 'default',

@@ -1,23 +1,30 @@
 import { useState, CSSProperties } from 'react'
-import { AppLayout } from '../components/layout'
-import { Orb, Card, Button, Toast } from '../components/shared'
+import { AppLayout, Header } from '../components/layout'
+import { Button, Toast } from '../components/shared'
 import { TimerOverlay } from '../components/timer'
-import { useThemeContext } from '../components/shared/ThemeProvider'
 import { useTasks } from '../hooks/useTasks'
 import { useEnergy } from '../hooks/useEnergy'
-import type { Task } from '../data/types'
+import type { Task, EnergyLevel } from '../data/types'
 
 export function NowPage() {
-  const { toggleTheme, isDark } = useThemeContext()
   const { pendingTasks, completeTask, deferTask } = useTasks()
-  const { currentEnergy, setEnergy, getSuggestedTask } = useEnergy()
+  const {
+    currentEnergy,
+    setEnergy,
+    getSuggestedTask,
+    sortTasksByEnergy,
+    getGreeting,
+    getMomentumMessage
+  } = useEnergy()
 
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [showTimer, setShowTimer] = useState(false)
   const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error' | 'info', visible: false })
 
-  // Get energy-sorted task
+  // Sort tasks by energy-aware scoring
+  const sortedTasks = sortTasksByEnergy(pendingTasks)
   const suggestedTask = getSuggestedTask(pendingTasks)
+  const upcomingTasks = sortedTasks.filter(t => t.id !== suggestedTask?.id).slice(0, 3)
 
   const handleStartTask = (task: Task) => {
     setActiveTask(task)
@@ -30,190 +37,145 @@ export function NowPage() {
       setShowTimer(false)
       setActiveTask(null)
       setToast({ message: 'Nice work! Task completed.', type: 'success', visible: true })
+      // Refresh the page to update momentum
+      window.location.reload()
     }
   }
 
-  const handleDeferTask = async (taskId: string) => {
-    await deferTask(taskId)
+  const handleDeferTask = async (task: Task) => {
+    await deferTask(task.id)
     setToast({ message: 'Task moved to tomorrow.', type: 'info', visible: true })
   }
 
-  const containerStyle: CSSProperties = {
-    flex: 1,
+  const getEnergyBolts = (level: string) => {
+    const num = level === 'low' ? 1 : level === 'medium' ? 2 : 3
+    return Array(3).fill(0).map((_, i) => (
+      <span key={i} className={`energy-bolt ${i >= num ? 'empty' : ''}`}>*</span>
+    ))
+  }
+
+  const energySelectorStyle: CSSProperties = {
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 'var(--space-lg)',
-    gap: 'var(--space-xl)',
-    textAlign: 'center'
-  }
-
-  const energyBarStyle: CSSProperties = {
-    position: 'absolute',
-    top: 'calc(var(--safe-top) + var(--space-md))',
-    left: 'var(--space-md)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 'var(--space-sm)'
-  }
-
-  const energyBtnStyle = (level: number): CSSProperties => ({
-    width: 28,
-    height: 28,
-    borderRadius: 'var(--radius-sm)',
-    border: `2px solid ${currentEnergy === level ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-    background: currentEnergy === level ? 'var(--accent-primary)' : 'transparent',
-    color: currentEnergy === level ? 'white' : 'var(--text-secondary)',
-    cursor: 'pointer',
-    fontWeight: 600,
-    fontSize: 'var(--text-xs)'
-  })
-
-  const themeButtonStyle: CSSProperties = {
-    position: 'absolute',
-    top: 'calc(var(--safe-top) + var(--space-md))',
-    right: 'var(--space-md)',
-    width: 40,
-    height: 40,
-    borderRadius: 'var(--radius-full)',
+    gap: 'var(--space-sm)',
+    padding: 'var(--space-sm) var(--space-md)',
     background: 'var(--bg-card)',
-    border: '1px solid var(--border-color)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    color: 'var(--text-primary)'
-  }
-
-  const taskContainerStyle: CSSProperties = {
-    width: '100%',
-    maxWidth: 400
-  }
-
-  const verbLabelStyle: CSSProperties = {
-    fontFamily: 'var(--font-display)',
-    fontSize: 'var(--text-lg)',
-    fontWeight: 600,
-    color: 'var(--accent-primary)',
-    marginBottom: 'var(--space-xs)'
-  }
-
-  const taskBodyStyle: CSSProperties = {
-    fontSize: 'var(--text-md)',
-    color: 'var(--text-primary)',
+    borderRadius: 'var(--radius-full)',
     marginBottom: 'var(--space-md)'
   }
 
-  const timeStyle: CSSProperties = {
+  const energyButtonStyle = (level: EnergyLevel): CSSProperties => ({
+    width: 32,
+    height: 32,
+    borderRadius: '50%',
+    border: currentEnergy === level ? '2px solid var(--orb-orange)' : '1px solid var(--border)',
+    background: currentEnergy === level ? 'var(--orb-orange)' : 'transparent',
+    color: currentEnergy === level ? 'white' : 'var(--text-muted)',
+    cursor: 'pointer',
     fontSize: 'var(--text-sm)',
-    color: 'var(--text-secondary)'
-  }
+    fontWeight: 500,
+    transition: 'all var(--transition-fast)'
+  })
 
-  const actionsStyle: CSSProperties = {
-    display: 'flex',
-    gap: 'var(--space-md)',
-    marginTop: 'var(--space-lg)'
-  }
-
-  const emptyStateStyle: CSSProperties = {
-    color: 'var(--text-secondary)',
-    fontSize: 'var(--text-lg)'
-  }
-
-  const energyLabelStyle: CSSProperties = {
-    fontSize: 'var(--text-xs)',
-    color: 'var(--text-muted)'
-  }
+  const momentumMessage = getMomentumMessage()
 
   return (
     <AppLayout>
-      <div style={energyBarStyle}>
-        <span style={energyLabelStyle}>Energy:</span>
-        {[1, 2, 3, 4, 5].map(level => (
-          <button
-            key={level}
-            style={energyBtnStyle(level)}
-            onClick={() => setEnergy(level as 1|2|3|4|5)}
-            title={`Set energy to ${level}`}
-          >
-            {level}
-          </button>
-        ))}
-      </div>
+      <Header showLogo showDate />
 
-      <button
-        style={themeButtonStyle}
-        onClick={toggleTheme}
-        aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-      >
-        {isDark ? (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="5" />
-            <line x1="12" y1="1" x2="12" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="23" />
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-            <line x1="1" y1="12" x2="3" y2="12" />
-            <line x1="21" y1="12" x2="23" y2="12" />
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-          </svg>
-        ) : (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
+      <main className="main-area">
+        {/* Energy Selector */}
+        <div style={energySelectorStyle}>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginRight: 'var(--space-xs)' }}>
+            Energy:
+          </span>
+          {([1, 2, 3, 4, 5] as EnergyLevel[]).map(level => (
+            <button
+              key={level}
+              style={energyButtonStyle(level)}
+              onClick={() => setEnergy(level)}
+              title={`Energy level ${level}`}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
+
+        {/* Momentum Message */}
+        {momentumMessage && (
+          <div style={{
+            textAlign: 'center',
+            fontSize: 'var(--text-sm)',
+            color: 'var(--orb-orange)',
+            marginBottom: 'var(--space-md)'
+          }}>
+            {momentumMessage}
+          </div>
         )}
-      </button>
 
-      <div style={containerStyle}>
-        <Orb
-          size="lg"
-          breathing={true}
-          onClick={suggestedTask ? () => handleStartTask(suggestedTask) : undefined}
-        />
-
-        {suggestedTask ? (
-          <div style={taskContainerStyle}>
-            <Card>
-              <div style={verbLabelStyle}>{suggestedTask.verbLabel}</div>
-              <div style={taskBodyStyle}>{suggestedTask.taskBody}</div>
-              <div style={timeStyle}>
-                {suggestedTask.timeEstimate} min · {suggestedTask.feedLevel} energy
+        <div className="task-display">
+          {suggestedTask ? (
+            <div className="glass-card-transparent task-card">
+              <div className="task-header">
+                <h1 className="task-title">{suggestedTask.verbLabel}.</h1>
+                <p className="task-subtitle">{suggestedTask.taskBody}</p>
               </div>
-              <div style={actionsStyle}>
-                <Button
-                  variant="primary"
-                  fullWidth
-                  onClick={() => handleStartTask(suggestedTask)}
-                >
-                  Start Now
+
+              <div className="due-row">
+                <div className="due-item">
+                  <span className="due-label">Energy</span>
+                  <div className="energy-display">
+                    {getEnergyBolts(suggestedTask.feedLevel)}
+                  </div>
+                </div>
+                <div className="due-item">
+                  <span className="due-label">Duration</span>
+                  <span className="due-value">{suggestedTask.timeEstimate}m</span>
+                </div>
+              </div>
+
+              <div className="task-actions">
+                <Button variant="primary" onClick={() => handleStartTask(suggestedTask)}>
+                  Start Task
                 </Button>
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  onClick={() => handleDeferTask(suggestedTask.id)}
-                >
+                <Button variant="ghost" onClick={() => handleDeferTask(suggestedTask)}>
                   Not Today
                 </Button>
               </div>
-            </Card>
+            </div>
+          ) : (
+            <div className="empty-state">
+              <h2 className="empty-title">{getGreeting()}.</h2>
+              <p className="empty-text">Nothing to do right now. Enjoy the moment.</p>
+            </div>
+          )}
+        </div>
 
-            {pendingTasks.length > 1 && (
-              <p style={{ ...emptyStateStyle, fontSize: 'var(--text-sm)', marginTop: 'var(--space-md)' }}>
-                {pendingTasks.length - 1} more task{pendingTasks.length > 2 ? 's' : ''} waiting
-              </p>
-            )}
-          </div>
-        ) : (
-          <div>
-            <p style={emptyStateStyle}>No tasks for now.</p>
-            <p style={{ ...emptyStateStyle, fontSize: 'var(--text-sm)', marginTop: 'var(--space-sm)' }}>
-              Take a breath. You deserve it.
-            </p>
-          </div>
+        {/* Upcoming section */}
+        {upcomingTasks.length > 0 && (
+          <section className="upcoming-section">
+            <div className="upcoming-header">
+              <span className="upcoming-toggle">
+                Up Next ({upcomingTasks.length})
+              </span>
+            </div>
+            <div className="upcoming-list">
+              {upcomingTasks.map((task, i) => (
+                <div key={task.id} className="upcoming-card" onClick={() => handleStartTask(task)}>
+                  <div className="priority-num">{i + 2}</div>
+                  <div className="upcoming-info">
+                    <div className="upcoming-title">{task.verbLabel}</div>
+                    <div className="upcoming-meta">
+                      {task.timeEstimate}m · {task.feedLevel} energy
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
-      </div>
+      </main>
 
       {activeTask && (
         <TimerOverlay
