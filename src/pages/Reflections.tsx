@@ -1,6 +1,7 @@
 import { CSSProperties } from 'react'
 import { AppLayout, Header } from '../components/layout'
 import { Card } from '../components/shared'
+import { Garden } from '../components/garden'
 import { useTasks } from '../hooks/useTasks'
 
 export function ReflectionsPage() {
@@ -51,7 +52,7 @@ export function ReflectionsPage() {
     padding: 'var(--space-lg)'
   }
 
-  // Calculate some basic stats (no gamification - just informational)
+  // Calculate stats (informational, NOT gamified)
   const totalCompleted = completedTasks.length
   const totalPending = tasks.filter(t => t.status === 'pending').length
   const thisWeekCompleted = completedTasks.filter(t => {
@@ -61,7 +62,6 @@ export function ReflectionsPage() {
     return completedDate >= weekAgo
   }).length
 
-  // Average time estimate per task
   const avgTime = completedTasks.length > 0
     ? Math.round(completedTasks.reduce((sum, t) => sum + (t.timeEstimate || 0), 0) / completedTasks.length)
     : 0
@@ -101,24 +101,15 @@ export function ReflectionsPage() {
         </section>
 
         <section>
-          <h2 style={sectionTitleStyle}>Garden</h2>
+          <h2 style={sectionTitleStyle}>Your Garden</h2>
           <Card>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: 200,
-              color: 'var(--text-muted)'
-            }}>
-              Your garden will grow here as you complete tasks.
-              <br />
-              (Coming soon)
-            </div>
+            <Garden />
           </Card>
         </section>
 
         <p style={noteStyle}>
           This is a place to reflect on your journey, not to compete.
+          <br />
           Progress happens at your own pace.
         </p>
       </main>

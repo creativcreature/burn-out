@@ -1,13 +1,14 @@
 # BurnOut Version
 
-Current Version: **0.1.0**
+Current Version: **0.2.0**
 
 ## Version History
 
-| Version | Date       | Summary                          |
-|---------|------------|----------------------------------|
-| 0.1.0   | 2026-01-25 | Project initialization & structure |
-| 0.0.0   | -          | Pre-development                  |
+| Version | Date       | Summary                                      |
+|---------|------------|----------------------------------------------|
+| 0.2.0   | 2026-01-25 | Full app implementation (Sprints 2-6)        |
+| 0.1.0   | 2026-01-25 | Project initialization & structure           |
+| 0.0.0   | -          | Pre-development                              |
 
 ## Versioning Rules
 

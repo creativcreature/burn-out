@@ -1,15 +1,42 @@
-import { CSSProperties } from 'react'
+import { useState, CSSProperties } from 'react'
 import { AppLayout } from '../components/layout'
-import { Orb, Card, Button } from '../components/shared'
+import { Orb, Card, Button, Toast } from '../components/shared'
+import { TimerOverlay } from '../components/timer'
 import { useThemeContext } from '../components/shared/ThemeProvider'
 import { useTasks } from '../hooks/useTasks'
+import { useEnergy } from '../hooks/useEnergy'
+import type { Task } from '../data/types'
 
 export function NowPage() {
   const { toggleTheme, isDark } = useThemeContext()
-  const { pendingTasks, completeTask, deferTask, isLoading } = useTasks()
+  const { pendingTasks, completeTask, deferTask } = useTasks()
+  const { currentEnergy, setEnergy, getSuggestedTask } = useEnergy()
 
-  // Get the first pending task to show
-  const currentTask = pendingTasks[0]
+  const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [showTimer, setShowTimer] = useState(false)
+  const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error' | 'info', visible: false })
+
+  // Get energy-sorted task
+  const suggestedTask = getSuggestedTask(pendingTasks)
+
+  const handleStartTask = (task: Task) => {
+    setActiveTask(task)
+    setShowTimer(true)
+  }
+
+  const handleCompleteTask = async (duration: number) => {
+    if (activeTask) {
+      await completeTask(activeTask.id, duration)
+      setShowTimer(false)
+      setActiveTask(null)
+      setToast({ message: 'Nice work! Task completed.', type: 'success', visible: true })
+    }
+  }
+
+  const handleDeferTask = async (taskId: string) => {
+    await deferTask(taskId)
+    setToast({ message: 'Task moved to tomorrow.', type: 'info', visible: true })
+  }
 
   const containerStyle: CSSProperties = {
     flex: 1,
@@ -22,10 +49,41 @@ export function NowPage() {
     textAlign: 'center'
   }
 
-  const orbContainerStyle: CSSProperties = {
+  const energyBarStyle: CSSProperties = {
+    position: 'absolute',
+    top: 'calc(var(--safe-top) + var(--space-md))',
+    left: 'var(--space-md)',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    gap: 'var(--space-sm)'
+  }
+
+  const energyBtnStyle = (level: number): CSSProperties => ({
+    width: 28,
+    height: 28,
+    borderRadius: 'var(--radius-sm)',
+    border: `2px solid ${currentEnergy === level ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+    background: currentEnergy === level ? 'var(--accent-primary)' : 'transparent',
+    color: currentEnergy === level ? 'white' : 'var(--text-secondary)',
+    cursor: 'pointer',
+    fontWeight: 600,
+    fontSize: 'var(--text-xs)'
+  })
+
+  const themeButtonStyle: CSSProperties = {
+    position: 'absolute',
+    top: 'calc(var(--safe-top) + var(--space-md))',
+    right: 'var(--space-md)',
+    width: 40,
+    height: 40,
+    borderRadius: 'var(--radius-full)',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border-color)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    color: 'var(--text-primary)'
   }
 
   const taskContainerStyle: CSSProperties = {
@@ -63,35 +121,27 @@ export function NowPage() {
     fontSize: 'var(--text-lg)'
   }
 
-  const themeButtonStyle: CSSProperties = {
-    position: 'absolute' as const,
-    top: 'calc(var(--safe-top) + var(--space-md))',
-    right: 'var(--space-md)',
-    width: 40,
-    height: 40,
-    borderRadius: 'var(--radius-full)',
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border-color)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    color: 'var(--text-primary)'
-  }
-
-  if (isLoading) {
-    return (
-      <AppLayout>
-        <div style={containerStyle}>
-          <Orb size="lg" breathing={true} />
-          <p style={emptyStateStyle}>Loading...</p>
-        </div>
-      </AppLayout>
-    )
+  const energyLabelStyle: CSSProperties = {
+    fontSize: 'var(--text-xs)',
+    color: 'var(--text-muted)'
   }
 
   return (
     <AppLayout>
+      <div style={energyBarStyle}>
+        <span style={energyLabelStyle}>Energy:</span>
+        {[1, 2, 3, 4, 5].map(level => (
+          <button
+            key={level}
+            style={energyBtnStyle(level)}
+            onClick={() => setEnergy(level as 1|2|3|4|5)}
+            title={`Set energy to ${level}`}
+          >
+            {level}
+          </button>
+        ))}
+      </div>
+
       <button
         style={themeButtonStyle}
         onClick={toggleTheme}
@@ -117,46 +167,72 @@ export function NowPage() {
       </button>
 
       <div style={containerStyle}>
-        <div style={orbContainerStyle}>
-          <Orb
-            size="lg"
-            breathing={true}
-            onClick={currentTask ? () => completeTask(currentTask.id) : undefined}
-          />
-        </div>
+        <Orb
+          size="lg"
+          breathing={true}
+          onClick={suggestedTask ? () => handleStartTask(suggestedTask) : undefined}
+        />
 
-        {currentTask ? (
+        {suggestedTask ? (
           <div style={taskContainerStyle}>
             <Card>
-              <div style={verbLabelStyle}>{currentTask.verbLabel}</div>
-              <div style={taskBodyStyle}>{currentTask.taskBody}</div>
+              <div style={verbLabelStyle}>{suggestedTask.verbLabel}</div>
+              <div style={taskBodyStyle}>{suggestedTask.taskBody}</div>
               <div style={timeStyle}>
-                {currentTask.timeEstimate} min
+                {suggestedTask.timeEstimate} min · {suggestedTask.feedLevel} energy
               </div>
               <div style={actionsStyle}>
                 <Button
                   variant="primary"
                   fullWidth
-                  onClick={() => completeTask(currentTask.id)}
+                  onClick={() => handleStartTask(suggestedTask)}
                 >
                   Start Now
                 </Button>
                 <Button
                   variant="secondary"
                   fullWidth
-                  onClick={() => deferTask(currentTask.id)}
+                  onClick={() => handleDeferTask(suggestedTask.id)}
                 >
                   Not Today
                 </Button>
               </div>
             </Card>
+
+            {pendingTasks.length > 1 && (
+              <p style={{ ...emptyStateStyle, fontSize: 'var(--text-sm)', marginTop: 'var(--space-md)' }}>
+                {pendingTasks.length - 1} more task{pendingTasks.length > 2 ? 's' : ''} waiting
+              </p>
+            )}
           </div>
         ) : (
-          <p style={emptyStateStyle}>
-            No tasks for now. Take a breath.
-          </p>
+          <div>
+            <p style={emptyStateStyle}>No tasks for now.</p>
+            <p style={{ ...emptyStateStyle, fontSize: 'var(--text-sm)', marginTop: 'var(--space-sm)' }}>
+              Take a breath. You deserve it.
+            </p>
+          </div>
         )}
       </div>
+
+      {activeTask && (
+        <TimerOverlay
+          task={activeTask}
+          isOpen={showTimer}
+          onComplete={handleCompleteTask}
+          onCancel={() => {
+            setShowTimer(false)
+            setActiveTask(null)
+          }}
+        />
+      )}
+
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.visible}
+        onClose={() => setToast(t => ({ ...t, visible: false }))}
+      />
     </AppLayout>
   )
 }

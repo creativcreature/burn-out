@@ -1,0 +1,94 @@
+import { ReactNode, useEffect, CSSProperties } from 'react'
+import { Button } from './Button'
+
+interface ModalProps {
+  isOpen: boolean
+  onClose: () => void
+  title?: string
+  children: ReactNode
+  showClose?: boolean
+}
+
+export function Modal({ isOpen, onClose, title, children, showClose = true }: ModalProps) {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
+
+  const overlayStyle: CSSProperties = {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0, 0, 0, 0.6)',
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 'var(--space-md)',
+    zIndex: 2000,
+    animation: 'fade-in 200ms ease'
+  }
+
+  const modalStyle: CSSProperties = {
+    background: 'var(--bg-secondary)',
+    borderRadius: 'var(--radius-lg)',
+    padding: 'var(--space-lg)',
+    maxWidth: 480,
+    width: '100%',
+    maxHeight: '90vh',
+    overflow: 'auto',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+  }
+
+  const headerStyle: CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 'var(--space-md)'
+  }
+
+  const titleStyle: CSSProperties = {
+    fontFamily: 'var(--font-display)',
+    fontSize: 'var(--text-xl)',
+    fontWeight: 600,
+    color: 'var(--text-primary)'
+  }
+
+  return (
+    <div style={overlayStyle} onClick={onClose} role="dialog" aria-modal="true">
+      <div style={modalStyle} onClick={e => e.stopPropagation()}>
+        {(title || showClose) && (
+          <div style={headerStyle}>
+            {title && <h2 style={titleStyle}>{title}</h2>}
+            {showClose && (
+              <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </Button>
+            )}
+          </div>
+        )}
+        {children}
+      </div>
+    </div>
+  )
+}
