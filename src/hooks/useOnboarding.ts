@@ -89,11 +89,8 @@ export function useOnboarding() {
       }
     }))
 
-    setOnboarding({
-      completed: true,
-      completedAt: now,
-      skippedSteps: []
-    })
+    // Reload to trigger App re-initialization
+    window.location.reload()
   }, [state])
 
   const skipOnboarding = useCallback(async () => {
@@ -108,11 +105,8 @@ export function useOnboarding() {
       }
     }))
 
-    setOnboarding({
-      completed: true,
-      completedAt: now,
-      skippedSteps: ['all']
-    })
+    // Reload to trigger App re-initialization
+    window.location.reload()
   }, [])
 
   return {
