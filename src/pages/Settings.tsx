@@ -195,6 +195,27 @@ export function SettingsPage() {
           {saved ? 'Saved!' : 'Save Settings'}
         </Button>
 
+        <section style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>Data</h2>
+          <Card>
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={async () => {
+                if (confirm('Reset onboarding? You will need to go through setup again.')) {
+                  await updateData(data => ({
+                    ...data,
+                    onboarding: { completed: false, skippedSteps: [] }
+                  }))
+                  window.location.reload()
+                }
+              }}
+            >
+              Reset Onboarding
+            </Button>
+          </Card>
+        </section>
+
         <Card>
           <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
             <p style={{ marginBottom: 'var(--space-sm)' }}>BurnOut v0.3.0</p>
