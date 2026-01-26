@@ -1073,18 +1073,20 @@ html, body {
   padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-xl));
   z-index: 90;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   transform: translateX(-50%) translateY(calc(100% * (1 - var(--sheet-progress))));
   opacity: calc(0.3 + (var(--sheet-progress) * 0.7));
   pointer-events: auto;
-  transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+  transition: none;
 }
 
-/* When sheet is visible, lock it in place */
-.upcoming-sheet.sheet-visible {
-  transform: translateX(-50%) translateY(0);
+/* When sheet is animating, add smooth transition */
+.upcoming-sheet.animating {
+  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
 }
 
 [data-theme="dark"] .upcoming-sheet {

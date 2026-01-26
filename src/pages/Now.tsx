@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, CSSProperties, useRef, TouchEvent, WheelEvent } from 'react'
+import { useState, useCallback, useEffect, CSSProperties, useRef, TouchEvent as ReactTouchEvent, WheelEvent } from 'react'
 import { AppLayout, Header } from '../components/layout'
 import { Button, Toast, FloatingActionButton, QuickAddPanel, Tag } from '../components/shared'
 import { TimerOverlay } from '../components/timer'
@@ -66,7 +66,7 @@ export function NowPage() {
   }, [scrollProgress])
 
   // Touch handlers for the main area (opening the sheet)
-  const handleTouchStart = (e: TouchEvent) => {
+  const handleTouchStart = (e: ReactTouchEvent) => {
     if (animationFrame.current) {
       cancelAnimationFrame(animationFrame.current)
       animationFrame.current = null
@@ -78,7 +78,7 @@ export function NowPage() {
     canDragSheet.current = false
   }
 
-  const handleTouchMove = (e: TouchEvent) => {
+  const handleTouchMove = (e: ReactTouchEvent) => {
     if (!isDragging.current) return
 
     const currentY = e.touches[0].clientY
@@ -100,65 +100,11 @@ export function NowPage() {
     animateToSnap()
   }
 
-  // Touch handlers specifically for the sheet (closing)
-  const handleSheetTouchStart = (e: TouchEvent) => {
-    if (animationFrame.current) {
-      cancelAnimationFrame(animationFrame.current)
-      animationFrame.current = null
-    }
-    touchStartY.current = e.touches[0].clientY
-    lastTouchY.current = e.touches[0].clientY
-    velocity.current = 0
-    isDragging.current = true
+  // Track if we're in "drag to close" mode
+  const dragToCloseActive = useRef<boolean>(false)
+  const totalDragDistance = useRef<number>(0)
 
-    // Check if sheet is scrolled to top - if so, we can drag to close
-    const sheet = sheetRef.current
-    canDragSheet.current = sheet ? sheet.scrollTop <= 5 : true
-  }
-
-  const handleSheetTouchMove = (e: TouchEvent) => {
-    if (!isDragging.current) return
-
-    const currentY = e.touches[0].clientY
-    const deltaY = lastTouchY.current - currentY // positive = up, negative = down
-    const isSwipingDown = deltaY < 0
-    const sheet = sheetRef.current
-
-    // Re-check scroll position on each move
-    if (sheet && sheet.scrollTop <= 5) {
-      canDragSheet.current = true
-    }
-
-    // If swiping down and sheet is at top (or we started at top), drag sheet
-    if (isSwipingDown && canDragSheet.current) {
-      e.preventDefault()
-      e.stopPropagation()
-
-      velocity.current = deltaY
-      lastTouchY.current = currentY
-
-      const sensitivity = 250
-      const progressDelta = deltaY / sensitivity
-      const newProgress = Math.max(0, Math.min(1, progressRef.current + progressDelta))
-
-      progressRef.current = newProgress
-      setScrollProgress(newProgress)
-    } else {
-      // Swiping up or sheet has scrolled content - track velocity
-      lastTouchY.current = currentY
-      velocity.current = deltaY
-    }
-  }
-
-  const handleSheetTouchEnd = () => {
-    isDragging.current = false
-    // Always animate to snap if we've moved the sheet at all
-    if (progressRef.current < 0.95) {
-      animateToSnap()
-    }
-  }
-
-  const animateToSnap = () => {
+  const animateToSnap = useCallback(() => {
     const currentProgress = progressRef.current
     const currentVelocity = velocity.current
 
@@ -166,9 +112,10 @@ export function NowPage() {
       const animate = () => {
         const current = progressRef.current
         const diff = target - current
-        const step = diff * 0.15
+        // Use faster animation for more responsive feel
+        const step = diff * 0.2
 
-        if (Math.abs(diff) < 0.005) {
+        if (Math.abs(diff) < 0.01) {
           progressRef.current = target
           setScrollProgress(target)
           return
@@ -182,20 +129,25 @@ export function NowPage() {
       animationFrame.current = requestAnimationFrame(animate)
     }
 
-    const velocityThreshold = 5
+    // Lower threshold for more responsive snapping
+    const velocityThreshold = 3
 
+    // Velocity is negative when moving down (closing), positive when moving up (opening)
     if (currentVelocity > velocityThreshold) {
+      // Moving up - open fully
       animateToTarget(1)
     } else if (currentVelocity < -velocityThreshold) {
+      // Moving down - close
       animateToTarget(0)
     } else {
-      if (currentProgress > 0.5) {
+      // Use position-based decision with lower threshold for closing
+      if (currentProgress > 0.4) {
         animateToTarget(1)
       } else {
         animateToTarget(0)
       }
     }
-  }
+  }, [])
 
   // Handle mouse wheel for desktop
   const handleWheel = (e: WheelEvent) => {
@@ -238,6 +190,85 @@ export function NowPage() {
       }
     }
   }, [])
+
+  // Attach touch listeners with { passive: false } to allow preventDefault
+  useEffect(() => {
+    const sheet = sheetRef.current
+    if (!sheet) return
+
+    const onTouchStart = (e: globalThis.TouchEvent) => {
+      if (animationFrame.current) {
+        cancelAnimationFrame(animationFrame.current)
+        animationFrame.current = null
+      }
+      touchStartY.current = e.touches[0].clientY
+      lastTouchY.current = e.touches[0].clientY
+      velocity.current = 0
+      isDragging.current = true
+      totalDragDistance.current = 0
+
+      const atTop = sheet.scrollTop <= 1
+      canDragSheet.current = atTop
+      dragToCloseActive.current = false
+    }
+
+    const onTouchMove = (e: globalThis.TouchEvent) => {
+      if (!isDragging.current) return
+
+      const currentY = e.touches[0].clientY
+      const deltaFromStart = currentY - touchStartY.current
+      const deltaFromLast = currentY - lastTouchY.current
+      const isMovingDown = deltaFromLast > 0
+      const atTop = sheet.scrollTop <= 1
+
+      totalDragDistance.current += Math.abs(deltaFromLast)
+
+      // Key fix: activate drag-to-close mode early when at top and moving down
+      if (canDragSheet.current && isMovingDown && deltaFromStart > 2) {
+        dragToCloseActive.current = true
+      }
+
+      if (dragToCloseActive.current) {
+        // CRITICAL: prevent default to stop browser scroll
+        e.preventDefault()
+        e.stopPropagation()
+
+        velocity.current = -deltaFromLast
+        lastTouchY.current = currentY
+
+        const sensitivity = 300
+        const progressDelta = -deltaFromLast / sensitivity
+        const newProgress = Math.max(0, Math.min(1, progressRef.current + progressDelta))
+
+        progressRef.current = newProgress
+        setScrollProgress(newProgress)
+      } else {
+        velocity.current = -deltaFromLast
+        lastTouchY.current = currentY
+        if (atTop) canDragSheet.current = true
+      }
+    }
+
+    const onTouchEnd = () => {
+      const wasActive = dragToCloseActive.current
+      isDragging.current = false
+      dragToCloseActive.current = false
+      if (wasActive || progressRef.current < 0.98) {
+        animateToSnap()
+      }
+    }
+
+    // Add listeners with passive: false so preventDefault works
+    sheet.addEventListener('touchstart', onTouchStart, { passive: true })
+    sheet.addEventListener('touchmove', onTouchMove, { passive: false })
+    sheet.addEventListener('touchend', onTouchEnd, { passive: true })
+
+    return () => {
+      sheet.removeEventListener('touchstart', onTouchStart)
+      sheet.removeEventListener('touchmove', onTouchMove)
+      sheet.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [animateToSnap])
 
   // Calculate dynamic styles based on scroll progress
   const taskCardStyle: CSSProperties = {
@@ -501,27 +532,19 @@ export function NowPage() {
         )}
       </main>
 
-      {/* Upcoming Sheet Overlay */}
+      {/* Upcoming Sheet Overlay - native touch handlers attached via useEffect */}
       <div
         ref={sheetRef}
         className={`upcoming-sheet ${scrollProgress > 0.95 ? 'sheet-visible' : ''}`}
         style={upcomingSheetStyle}
-        onTouchStart={handleSheetTouchStart}
-        onTouchMove={handleSheetTouchMove}
-        onTouchEnd={handleSheetTouchEnd}
       >
-        {/* Sheet handle */}
+        {/* Sheet handle - always draggable, starts drag immediately */}
         <div
           className="sheet-handle"
-          onTouchStart={(e) => {
-            handleSheetTouchStart(e)
-            canDragSheet.current = true // Handle always allows drag
+          onTouchStart={() => {
+            canDragSheet.current = true
+            dragToCloseActive.current = true
           }}
-          onTouchMove={(e) => {
-            e.preventDefault()
-            handleSheetTouchMove(e)
-          }}
-          onTouchEnd={handleSheetTouchEnd}
         >
           <div className="sheet-handle-bar" />
         </div>
