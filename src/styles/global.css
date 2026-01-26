@@ -1058,15 +1058,15 @@ html, body {
   border: 0;
 }
 
-/* Floating Action Button */
 /* Upcoming Sheet Overlay */
 .upcoming-sheet {
   --sheet-progress: 0;
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
-  top: 20%;
+  left: 50%;
+  width: 100%;
+  max-width: 430px;
+  top: 15%;
   background: var(--bg-card-solid);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   padding: var(--space-md);
@@ -1076,10 +1076,15 @@ html, body {
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  transform: translateY(calc(100% * (1 - var(--sheet-progress))));
+  transform: translateX(-50%) translateY(calc(100% * (1 - var(--sheet-progress))));
   opacity: calc(0.3 + (var(--sheet-progress) * 0.7));
   pointer-events: auto;
   transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+}
+
+/* When sheet is visible, lock it in place */
+.upcoming-sheet.sheet-visible {
+  transform: translateX(-50%) translateY(0);
 }
 
 [data-theme="dark"] .upcoming-sheet {
@@ -1145,19 +1150,18 @@ html, body {
 }
 
 .sheet-close-hint {
-  position: fixed;
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-sm));
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-xs);
+  width: 100%;
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
   background: none;
   border: none;
   color: var(--text-subtle);
   font-size: var(--text-xs);
   cursor: pointer;
-  padding: var(--space-sm);
   transition: color var(--transition-fast);
 }
 
@@ -1171,11 +1175,7 @@ html, body {
 
 @media (min-width: 768px) {
   .upcoming-sheet {
-    left: 50%;
-    right: auto;
-    width: 100%;
     max-width: 480px;
-    transform: translateX(-50%) translateY(calc(100% * (1 - var(--sheet-progress))));
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
   }

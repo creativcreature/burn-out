@@ -247,6 +247,66 @@ export function SettingsPage() {
         </section>
 
         <section style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>AI Assistant</h2>
+          <Card>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              <div>
+                <div style={labelStyle}>AI Provider</div>
+                <div style={descStyle}>Choose which AI model powers your chat</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-sm)',
+                  padding: 'var(--space-sm) var(--space-md)',
+                  borderRadius: 'var(--radius-md)',
+                  border: `2px solid ${settings.aiProvider === 'gemini' ? 'var(--orb-orange)' : 'var(--border)'}`,
+                  background: settings.aiProvider === 'gemini' ? 'rgba(255, 107, 53, 0.1)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast)'
+                }}>
+                  <input
+                    type="radio"
+                    name="aiProvider"
+                    checked={settings.aiProvider === 'gemini'}
+                    onChange={() => setSettings(prev => prev ? { ...prev, aiProvider: 'gemini' } : null)}
+                    style={{ accentColor: 'var(--orb-orange)' }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 500 }}>Gemini</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Fast responses, good for quick tasks</div>
+                  </div>
+                </label>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-sm)',
+                  padding: 'var(--space-sm) var(--space-md)',
+                  borderRadius: 'var(--radius-md)',
+                  border: `2px solid ${settings.aiProvider === 'claude' ? 'var(--orb-orange)' : 'var(--border)'}`,
+                  background: settings.aiProvider === 'claude' ? 'rgba(255, 107, 53, 0.1)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast)'
+                }}>
+                  <input
+                    type="radio"
+                    name="aiProvider"
+                    checked={settings.aiProvider === 'claude'}
+                    onChange={() => setSettings(prev => prev ? { ...prev, aiProvider: 'claude' } : null)}
+                    style={{ accentColor: 'var(--orb-orange)' }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 500 }}>Claude</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Thoughtful, nuanced conversations</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </Card>
+        </section>
+
+        <section style={sectionStyle}>
           <h2 style={sectionTitleStyle}>Sounds & Haptics</h2>
           <Card>
             <div style={rowStyle}>

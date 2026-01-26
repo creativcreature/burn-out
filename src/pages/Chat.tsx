@@ -163,17 +163,12 @@ export function ChatPage() {
     }
   }
 
-  const handleDiscardTask = (index: number) => {
-    // Remove task from pending by filtering it out
-    // Since clearPendingTasks clears all, we'll handle one at a time
-    if (pendingTasks.length === 1) {
-      clearPendingTasks()
-    }
-    // For now, just clear all pending tasks when discarding
+  const handleDiscardTask = () => {
+    // Clear all pending tasks when discarding
     clearPendingTasks()
   }
 
-  const handleSaveTaskFromPending = async (index: number, taskData: ExtractedTask & { goalId?: string; projectId?: string }) => {
+  const handleSaveTaskFromPending = async (taskData: ExtractedTask & { goalId?: string; projectId?: string }) => {
     await handleSaveTask(taskData)
     // Clear pending tasks after saving
     clearPendingTasks()
@@ -198,7 +193,7 @@ export function ChatPage() {
 
   return (
     <AppLayout>
-      <Header title="Chat" rightContent={headerActions} />
+      <Header title="Chat" rightAction={headerActions} />
 
       <ChatSidebar
         isOpen={sidebarOpen}
@@ -267,8 +262,8 @@ export function ChatPage() {
                 task={task}
                 goals={goals}
                 projects={projects}
-                onSave={(taskData) => handleSaveTaskFromPending(index, taskData)}
-                onDiscard={() => handleDiscardTask(index)}
+                onSave={(taskData) => handleSaveTaskFromPending(taskData)}
+                onDiscard={handleDiscardTask}
               />
             ))}
 

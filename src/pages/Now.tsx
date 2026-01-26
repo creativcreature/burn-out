@@ -504,7 +504,7 @@ export function NowPage() {
       {/* Upcoming Sheet Overlay */}
       <div
         ref={sheetRef}
-        className="upcoming-sheet"
+        className={`upcoming-sheet ${scrollProgress > 0.95 ? 'sheet-visible' : ''}`}
         style={upcomingSheetStyle}
         onTouchStart={handleSheetTouchStart}
         onTouchMove={handleSheetTouchMove}

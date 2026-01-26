@@ -39,7 +39,9 @@
       "Bash(gh repo view:*)",
       "Bash(gh api:*)",
       "Bash(git commit:*)",
-      "Bash(vercel:*)"
+      "Bash(vercel:*)",
+      "Bash(git status:*)",
+      "Bash(git check-ignore:*)"
     ]
   }
 }
