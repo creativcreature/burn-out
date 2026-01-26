@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, CSSProperties, useRef, TouchEvent } from 'react'
+import { useState, useCallback, useEffect, CSSProperties, useRef, TouchEvent, WheelEvent } from 'react'
 import { AppLayout, Header } from '../components/layout'
 import { Button, Toast, FloatingActionButton, QuickAddPanel, Tag } from '../components/shared'
 import { TimerOverlay } from '../components/timer'
@@ -42,28 +42,86 @@ export function NowPage() {
     })
   }, [])
 
-  // Swipe handling
+  // Scroll/swipe progress for upcoming sheet animation
+  const [scrollProgress, setScrollProgress] = useState(0)
   const touchStartY = useRef<number>(0)
-  const touchEndY = useRef<number>(0)
+  const touchCurrentY = useRef<number>(0)
+  const isDragging = useRef<boolean>(false)
+  const sheetRef = useRef<HTMLDivElement>(null)
 
   const handleTouchStart = (e: TouchEvent) => {
     touchStartY.current = e.touches[0].clientY
+    touchCurrentY.current = e.touches[0].clientY
+    isDragging.current = true
   }
 
   const handleTouchMove = (e: TouchEvent) => {
-    touchEndY.current = e.touches[0].clientY
+    if (!isDragging.current) return
+    touchCurrentY.current = e.touches[0].clientY
+    const diff = touchStartY.current - touchCurrentY.current
+    // Calculate progress (0 to 1) based on drag distance
+    const maxDrag = 200
+    const progress = Math.max(0, Math.min(1, diff / maxDrag))
+
+    if (!showTodayView) {
+      setScrollProgress(progress)
+    } else {
+      // When closing, reverse the logic
+      const closeProgress = Math.max(0, Math.min(1, -diff / maxDrag))
+      setScrollProgress(1 - closeProgress)
+    }
   }
 
   const handleTouchEnd = () => {
-    const diff = touchStartY.current - touchEndY.current
-    // Swipe up threshold (50px)
-    if (diff > 50 && !showTodayView) {
+    isDragging.current = false
+    // Snap to open or closed based on progress
+    if (scrollProgress > 0.3 && !showTodayView) {
       setShowTodayView(true)
-    }
-    // Swipe down threshold
-    if (diff < -50 && showTodayView) {
+      setScrollProgress(1)
+    } else if (scrollProgress < 0.7 && showTodayView) {
       setShowTodayView(false)
+      setScrollProgress(0)
+    } else if (!showTodayView) {
+      setScrollProgress(0)
+    } else {
+      setScrollProgress(1)
     }
+  }
+
+  // Handle mouse wheel for desktop
+  const handleWheel = (e: WheelEvent) => {
+    if (e.deltaY > 0 && !showTodayView) {
+      // Scrolling down (wheel up motion) - open sheet
+      setShowTodayView(true)
+      setScrollProgress(1)
+    } else if (e.deltaY < 0 && showTodayView) {
+      // Scrolling up (wheel down motion) - close sheet
+      setShowTodayView(false)
+      setScrollProgress(0)
+    }
+  }
+
+  // Animate scroll progress when showTodayView changes
+  useEffect(() => {
+    if (showTodayView && scrollProgress !== 1) {
+      setScrollProgress(1)
+    } else if (!showTodayView && scrollProgress !== 0) {
+      setScrollProgress(0)
+    }
+  }, [showTodayView])
+
+  // Calculate dynamic styles based on scroll progress
+  const taskCardStyle: CSSProperties = {
+    filter: `blur(${scrollProgress * 12}px)`,
+    opacity: 1 - (scrollProgress * 0.6),
+    transform: `scale(${1 - (scrollProgress * 0.08)}) translateY(${scrollProgress * -20}px)`,
+    transition: isDragging.current ? 'none' : 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+  }
+
+  const upcomingSheetStyle: CSSProperties = {
+    transform: `translateY(${100 - (scrollProgress * 100)}%)`,
+    opacity: scrollProgress,
+    transition: isDragging.current ? 'none' : 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
   }
 
   // Get current objective from goals
@@ -166,6 +224,7 @@ export function NowPage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onWheel={handleWheel}
       >
         {/* Energy Selector */}
         <div style={energySelectorStyle}>
@@ -199,12 +258,15 @@ export function NowPage() {
         <div className="task-display">
           {suggestedTask ? (
             <div
-              className={`glass-card-transparent task-card ${showTodayView ? 'blurred' : ''} ${cardSettings?.cardBackgroundImage ? (cardSettings.cardBackgroundBrightness === 'light' ? 'bg-light' : 'bg-dark') : ''}`}
-              style={cardSettings?.cardBackgroundImage ? {
-                backgroundImage: `url(${cardSettings.cardBackgroundImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              } : undefined}
+              className={`glass-card-transparent task-card ${cardSettings?.cardBackgroundImage ? (cardSettings.cardBackgroundBrightness === 'light' ? 'bg-light' : 'bg-dark') : ''}`}
+              style={{
+                ...taskCardStyle,
+                ...(cardSettings?.cardBackgroundImage ? {
+                  backgroundImage: `url(${cardSettings.cardBackgroundImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                } : {})
+              }}
             >
               <div className="task-header">
                 <h1 className="task-title">{suggestedTask.verbLabel}.</h1>
@@ -274,95 +336,99 @@ export function NowPage() {
           )}
         </div>
 
-        {/* Upcoming section (visible when not in Today view) */}
-        {upcomingTasks.length > 0 && !showTodayView && (
-          <section className="upcoming-section">
-            <div className="upcoming-header">
-              <span className="upcoming-toggle">upcoming</span>
-            </div>
-            <div className="upcoming-list">
-              {upcomingTasks.map((task) => (
-                <div key={task.id} className="upcoming-card" onClick={() => handleStartTask(task)}>
-                  <div className="upcoming-card-header">
-                    <span className="upcoming-time">2:30pm</span>
-                    <div className="upcoming-energy">
-                      <span>{getEnergyBolts(task.feedLevel)}</span>
-                      <span>◷ {task.timeEstimate} mins</span>
-                    </div>
-                  </div>
-                  <div className="upcoming-title">{task.taskBody || task.verbLabel}</div>
-                </div>
-              ))}
-            </div>
-          </section>
+        {/* Scroll/swipe hint */}
+        {upcomingTasks.length > 0 && scrollProgress < 0.1 && (
+          <div className="scroll-hint" style={{
+            position: 'absolute',
+            bottom: 'var(--space-lg)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            color: 'var(--text-subtle)',
+            fontSize: 'var(--text-xs)',
+            animation: 'float 2s ease-in-out infinite'
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+            <span>scroll for upcoming</span>
+          </div>
         )}
       </main>
 
-      {/* Today View (slides up on swipe) */}
-      <div className={`today-view ${showTodayView ? 'visible' : ''}`}>
-        <h1 className="today-heading">Today</h1>
+      {/* Upcoming Sheet Overlay */}
+      <div
+        ref={sheetRef}
+        className="upcoming-sheet"
+        style={upcomingSheetStyle}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Sheet handle */}
+        <div className="sheet-handle">
+          <div className="sheet-handle-bar" />
+        </div>
+
+        <h2 className="sheet-title">Upcoming</h2>
 
         {suggestedTask && (
-          <>
-            <div className="today-section-label">now</div>
-            <div className="upcoming-card" onClick={() => { setShowTodayView(false); handleStartTask(suggestedTask) }}>
+          <div className="sheet-section">
+            <div className="sheet-section-label">current</div>
+            <div className="upcoming-card sheet-card" onClick={() => { setShowTodayView(false); setScrollProgress(0); handleStartTask(suggestedTask) }}>
               <div className="upcoming-card-header">
-                <span className="upcoming-time">◷ {suggestedTask.timeEstimate} min</span>
+                <span className="upcoming-time">Now</span>
                 <div className="upcoming-energy">
                   <span>{getEnergyBolts(suggestedTask.feedLevel)}</span>
-                  <span>{suggestedTask.feedLevel === 'high' ? 'High Energy' : suggestedTask.feedLevel === 'medium' ? 'Med Energy' : 'Low Energy'}</span>
+                  <span>◷ {suggestedTask.timeEstimate} min</span>
                 </div>
               </div>
               <div className="upcoming-title">{suggestedTask.verbLabel}.</div>
               <div className="tags-row" style={{ justifyContent: 'flex-start' }}>
                 <Tag variant="energy">Energy</Tag>
                 <Tag variant="focus">Focus</Tag>
-                <Tag variant="call">Call</Tag>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {upcomingTasks.length > 0 && (
-          <>
-            <div className="today-section-label" style={{ marginTop: 'var(--space-xl)' }}>upcoming</div>
+          <div className="sheet-section">
+            <div className="sheet-section-label">next up</div>
             <div className="upcoming-list">
-              {upcomingTasks.map((task) => (
-                <div key={task.id} className="upcoming-card" onClick={() => { setShowTodayView(false); handleStartTask(task) }}>
+              {upcomingTasks.map((task, index) => (
+                <div
+                  key={task.id}
+                  className="upcoming-card sheet-card"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                  onClick={() => { setShowTodayView(false); setScrollProgress(0); handleStartTask(task) }}
+                >
                   <div className="upcoming-card-header">
-                    <span className="upcoming-time">2:30pm</span>
+                    <span className="upcoming-time">Later</span>
                     <div className="upcoming-energy">
                       <span>{getEnergyBolts(task.feedLevel)}</span>
                       <span>◷ {task.timeEstimate} mins</span>
                     </div>
                   </div>
                   <div className="upcoming-title">{task.taskBody || task.verbLabel}</div>
-                  <div className="upcoming-tags">
-                    <Tag variant="love">Love</Tag>
-                    <Tag variant="love">Love</Tag>
-                  </div>
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
 
-        {/* Tap to close */}
+        {/* Close indicator */}
         <button
-          style={{
-            position: 'fixed',
-            bottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-md))',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-muted)',
-            fontSize: 'var(--text-sm)',
-            cursor: 'pointer'
-          }}
-          onClick={() => setShowTodayView(false)}
+          className="sheet-close-hint"
+          onClick={() => { setShowTodayView(false); setScrollProgress(0) }}
         >
-          ↓ swipe down to close
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 19V5M5 12l7-7 7 7" />
+          </svg>
+          <span>swipe down to close</span>
         </button>
       </div>
 

@@ -46,35 +46,33 @@ export function Navigation() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const navItemStyle = (isActive: boolean, isCenter: boolean): CSSProperties => ({
+  const navItemStyle = (isActive: boolean): CSSProperties => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: isCenter ? '2px' : '4px',
-    padding: isCenter ? '4px 16px' : '8px 12px',
+    gap: '4px',
+    padding: '8px 12px',
     color: isActive ? 'var(--orb-orange)' : 'var(--text-subtle)',
-    background: isCenter ? 'var(--bg)' : 'none',
-    border: isCenter ? '2px solid var(--orb-orange)' : 'none',
-    borderRadius: isCenter ? 'var(--radius-full)' : '0',
+    background: 'none',
+    border: 'none',
+    borderRadius: '0',
     cursor: 'pointer',
-    transition: 'all var(--transition-fast)',
-    minWidth: isCenter ? '64px' : '48px',
-    marginTop: isCenter ? '-12px' : '0',
-    boxShadow: isCenter ? '0 2px 8px rgba(255, 107, 53, 0.3)' : 'none'
+    transition: 'all var(--transition-normal)',
+    minWidth: '48px'
   })
 
-  const iconStyle = (isCenter: boolean): CSSProperties => ({
-    width: isCenter ? '26px' : '22px',
-    height: isCenter ? '26px' : '22px',
+  const iconStyle = (): CSSProperties => ({
+    width: '22px',
+    height: '22px',
     stroke: 'currentColor',
-    strokeWidth: isCenter ? 2 : 1.5,
+    strokeWidth: 1.5,
     fill: 'none'
   })
 
-  const labelStyle = (isCenter: boolean): CSSProperties => ({
-    fontSize: isCenter ? '11px' : '10px',
-    fontWeight: isCenter ? 600 : 500,
+  const labelStyle = (): CSSProperties => ({
+    fontSize: '10px',
+    fontWeight: 500,
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   })
@@ -87,14 +85,15 @@ export function Navigation() {
         return (
           <button
             key={item.path}
-            style={navItemStyle(isActive, item.isCenter)}
+            className="nav-item-btn"
+            style={navItemStyle(isActive)}
             onClick={() => navigate(item.path)}
             aria-current={isActive ? 'page' : undefined}
           >
-            <svg style={iconStyle(item.isCenter)} viewBox="0 0 24 24">
+            <svg style={iconStyle()} viewBox="0 0 24 24">
               {icons[item.icon].props.children}
             </svg>
-            <span style={labelStyle(item.isCenter)}>{item.label}</span>
+            <span style={labelStyle()}>{item.label}</span>
           </button>
         )
       })}
