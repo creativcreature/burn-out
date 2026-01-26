@@ -45,3 +45,4 @@ dev-dist/
 # Local development
 _reports/*.md
 !_reports/.gitkeep
+.vercel
