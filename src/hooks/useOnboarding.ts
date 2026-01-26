@@ -15,7 +15,11 @@ export interface OnboardingState {
 
 const TOTAL_STEPS = 4
 
-export function useOnboarding() {
+interface UseOnboardingOptions {
+  onComplete?: () => void
+}
+
+export function useOnboarding(options: UseOnboardingOptions = {}) {
   const [onboarding, setOnboarding] = useState<OnboardingData | null>(null)
   const [state, setState] = useState<OnboardingState>({
     step: 1,
@@ -74,7 +78,8 @@ export function useOnboarding() {
   const completeOnboarding = useCallback(async () => {
     const now = new Date().toISOString()
 
-    await updateData(data => ({
+    // Save with timeout - don't let storage issues block the user
+    const savePromise = updateData(data => ({
       ...data,
       onboarding: {
         completed: true,
@@ -89,14 +94,25 @@ export function useOnboarding() {
       }
     }))
 
-    // Reload to trigger App re-initialization
-    window.location.reload()
-  }, [state])
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Save timeout')), 3000)
+    )
+
+    try {
+      await Promise.race([savePromise, timeoutPromise])
+    } catch (error) {
+      console.error('Failed to save onboarding state:', error)
+    }
+
+    // Notify parent that onboarding is complete (even if save failed)
+    options.onComplete?.()
+  }, [state, options])
 
   const skipOnboarding = useCallback(async () => {
     const now = new Date().toISOString()
 
-    await updateData(data => ({
+    // Save with timeout - don't let storage issues block the user
+    const savePromise = updateData(data => ({
       ...data,
       onboarding: {
         completed: true,
@@ -105,9 +121,19 @@ export function useOnboarding() {
       }
     }))
 
-    // Reload to trigger App re-initialization
-    window.location.reload()
-  }, [])
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Save timeout')), 3000)
+    )
+
+    try {
+      await Promise.race([savePromise, timeoutPromise])
+    } catch (error) {
+      console.error('Failed to save skip state:', error)
+    }
+
+    // Notify parent that onboarding is complete (even if save failed)
+    options.onComplete?.()
+  }, [options])
 
   return {
     isCompleted: onboarding?.completed ?? false,

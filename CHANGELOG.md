@@ -6,6 +6,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 ### Added
 ### Changed
+- **Garden Page Rebuild**: Year-at-a-glance view inspired by GitHub contribution graphs and Year in Pixels
+  - GitHub-style horizontal layout (53 week columns × 7 day rows)
+  - Pixels/Garden view toggle (colored dots vs plant emoji)
+  - Year navigation with prev/next buttons
+  - Month labels along top row
+  - Today cell highlighted with orange glow + pulse animation
+  - Mood-based cell colors with glow effects (struggling/okay/good/great)
+  - Color legend showing mood scale (Less → Better)
+  - "Your Progress" stats card with gradient background
+    - Entries count (gradient text)
+    - Good days count (green)
+    - % tracked
+  - "Write today's entry" CTA button when no entry exists
+  - Only today is editable (past entries are view-only)
+  - Editor view with mood selector and gradient save button
 ### Fixed
 ### Removed
 

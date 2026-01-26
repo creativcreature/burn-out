@@ -1,0 +1,537 @@
+/* Garden Component Styles - One Year Inspired */
+
+/* ===== Animations ===== */
+
+/* Plant growth animation - organic unfold */
+@keyframes plant-grow {
+  0% {
+    transform: scale(0) translateY(10px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) translateY(-2px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Gentle sway for planted items */
+@keyframes plant-sway {
+  0%, 100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1deg);
+  }
+}
+
+/* Breathing glow for today's cell */
+@keyframes today-breathe {
+  0%, 100% {
+    box-shadow: 0 0 0 2px var(--orb-orange), 0 0 20px rgba(255, 69, 0, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--orb-orange), 0 0 30px rgba(255, 69, 0, 0.5);
+    transform: scale(1.02);
+  }
+}
+
+/* Seed pulse - waiting to be planted */
+@keyframes seed-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Fade in for grid items */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide in for editor */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Save confirmation bloom */
+@keyframes save-bloom {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ===== Container ===== */
+
+.garden-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  animation: fade-in-up 0.4s ease-out;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* ===== Header ===== */
+
+.garden-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--space-xs);
+}
+
+.garden-year-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.garden-year-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: var(--text-xl);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.garden-year-btn:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--bg-alt);
+}
+
+.garden-year-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.garden-year-label {
+  font-size: var(--text-xl);
+  font-family: var(--font-display);
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+  color: var(--text);
+}
+
+/* Theme toggle */
+.garden-theme-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-alt);
+  border-radius: var(--radius-full);
+  padding: 3px;
+}
+
+.garden-theme-btn {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  transition: all var(--transition-fast);
+}
+
+.garden-theme-btn.active {
+  background: var(--bg-card);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Days Counter ===== */
+
+.garden-days-counter {
+  text-align: center;
+  padding: var(--space-sm) 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.garden-days-counter strong {
+  color: var(--text);
+  font-weight: 600;
+  font-family: var(--font-display);
+}
+
+.garden-days-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text-subtle);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  padding: 4px 8px;
+  margin-left: var(--space-xs);
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.garden-days-toggle:hover {
+  color: var(--text-muted);
+}
+
+/* ===== Grid ===== */
+
+.garden-grid-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.garden-day-label {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-subtle);
+  font-weight: 500;
+  padding: 4px 0;
+}
+
+.garden-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 0 2px;
+}
+
+/* Individual day cell */
+.garden-cell {
+  position: relative;
+  padding-bottom: 100%; /* Square aspect ratio */
+}
+
+.garden-cell-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all var(--transition-fast);
+}
+
+/* Dots theme */
+.garden-cell-inner.dots {
+  border-radius: 50%;
+}
+
+.garden-cell-inner.dots.empty {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+}
+
+.garden-cell-inner.dots.filled {
+  background: var(--orb-orange);
+  border: none;
+  box-shadow: 0 2px 8px rgba(255, 69, 0, 0.25);
+}
+
+.garden-cell-inner.dots.future {
+  opacity: 0.3;
+}
+
+.garden-cell-inner.dots.today {
+  animation: today-breathe 3s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.garden-cell-inner.dots.today:hover {
+  transform: scale(1.05);
+}
+
+/* Garden theme */
+.garden-cell-inner.garden {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.garden-cell-inner.garden.empty {
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px dashed rgba(74, 222, 128, 0.2);
+}
+
+.garden-cell-inner.garden.filled {
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.garden-cell-inner.garden.future {
+  opacity: 0.25;
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+
+.garden-cell-inner.garden.today {
+  background: rgba(255, 69, 0, 0.1);
+  border: 2px solid var(--orb-orange);
+  animation: today-breathe 3s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.garden-cell-inner.garden.today:hover {
+  transform: scale(1.02);
+}
+
+/* Plant SVG container */
+.garden-plant {
+  width: 85%;
+  height: 85%;
+  animation: plant-grow 0.5s ease-out forwards;
+}
+
+.garden-plant svg {
+  width: 100%;
+  height: 100%;
+}
+
+.garden-plant.animated {
+  animation: plant-sway 4s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* Seed (today, unplanted) */
+.garden-seed {
+  width: 60%;
+  height: 60%;
+  color: var(--orb-orange);
+  animation: seed-pulse 2s ease-in-out infinite;
+}
+
+/* Month labels */
+.garden-month-label {
+  position: absolute;
+  top: -14px;
+  left: 0;
+  font-size: 10px;
+  color: var(--text-subtle);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ===== Editor ===== */
+
+.garden-editor {
+  animation: slide-in 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.garden-editor-header {
+  text-align: center;
+}
+
+.garden-editor-back {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.garden-editor-back:hover {
+  color: var(--text);
+}
+
+.garden-editor-date {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  margin-top: var(--space-md);
+  color: var(--text);
+}
+
+/* Plant preview in editor */
+.garden-editor-preview {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-md);
+}
+
+.garden-editor-plant {
+  width: 80px;
+  height: 80px;
+  animation: plant-sway 3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.garden-editor-plant svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Textarea */
+.garden-textarea-container {
+  position: relative;
+}
+
+.garden-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: var(--space-md);
+  padding-bottom: var(--space-xl);
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: var(--text-md);
+  font-family: var(--font-body);
+  resize: none;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  line-height: 1.6;
+}
+
+.garden-textarea:focus {
+  border-color: var(--orb-orange);
+}
+
+.garden-textarea::placeholder {
+  color: var(--text-subtle);
+}
+
+/* Word counter */
+.garden-word-counter {
+  position: absolute;
+  bottom: var(--space-sm);
+  right: var(--space-md);
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+  transition: color var(--transition-fast);
+}
+
+.garden-word-counter.near-limit {
+  color: var(--warning-500);
+}
+
+.garden-word-counter.at-limit {
+  color: var(--error-500);
+}
+
+/* Editor actions */
+.garden-editor-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+.garden-btn-cancel {
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  transition: color var(--transition-fast);
+}
+
+.garden-btn-cancel:hover {
+  color: var(--text);
+}
+
+.garden-btn-save {
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: linear-gradient(135deg, var(--orb-orange), var(--orb-red));
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.garden-btn-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 69, 0, 0.3);
+}
+
+.garden-btn-save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.garden-btn-save.saving {
+  animation: save-bloom 0.4s ease-out;
+}
+
+/* ===== CTA Button ===== */
+
+.garden-cta {
+  background: linear-gradient(135deg, var(--orb-orange), var(--orb-red));
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  color: white;
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 69, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  width: 100%;
+}
+
+.garden-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 69, 0, 0.4);
+}
+
+/* ===== Reduced Motion ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  .garden-plant,
+  .garden-seed,
+  .garden-cell-inner.today,
+  .garden-editor,
+  .garden-container {
+    animation: none !important;
+  }
+
+  .garden-plant.animated {
+    animation: none !important;
+  }
+}

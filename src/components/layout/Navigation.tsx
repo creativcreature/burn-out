@@ -1,23 +1,26 @@
 import { useLocation, useNavigate } from 'react-router-dom'
+import { CSSProperties } from 'react'
 
+// 5 tabs: Organize | Chat | Now (center, prominent) | Reflect | Settings
 const NAV_ITEMS = [
-  { path: '/now', label: 'Now', icon: 'now' },
-  { path: '/organize', label: 'Organize', icon: 'organize' },
-  { path: '/chat', label: 'Chat', icon: 'chat' },
-  { path: '/reflections', label: 'Reflect', icon: 'reflect' },
-  { path: '/settings', label: 'Settings', icon: 'settings' }
+  { path: '/organize', label: 'Organize', icon: 'link', isCenter: false },
+  { path: '/chat', label: 'Chat', icon: 'chat', isCenter: false },
+  { path: '/now', label: 'Now', icon: 'home', isCenter: true },
+  { path: '/reflections', label: 'Reflect', icon: 'check', isCenter: false },
+  { path: '/settings', label: 'Settings', icon: 'more', isCenter: false }
 ]
 
 const icons: Record<string, JSX.Element> = {
-  now: (
+  home: (
     <svg viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 6v6l4 2" />
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
   ),
-  organize: (
+  link: (
     <svg viewBox="0 0 24 24">
-      <path d="M3 6h18M3 12h18M3 18h18" />
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
     </svg>
   ),
   chat: (
@@ -25,16 +28,16 @@ const icons: Record<string, JSX.Element> = {
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   ),
-  reflect: (
+  check: (
     <svg viewBox="0 0 24 24">
-      <path d="M12 20v-8M12 12c-4 0-6-4-6-6 0 4 4 6 6 6z" />
-      <path d="M12 12c4 0 6-4 6-6 0 4-4 6-6 6z" />
+      <polyline points="20 6 9 17 4 12" />
     </svg>
   ),
-  settings: (
+  more: (
     <svg viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+      <circle cx="5" cy="12" r="1" />
     </svg>
   )
 }
@@ -43,19 +46,55 @@ export function Navigation() {
   const location = useLocation()
   const navigate = useNavigate()
 
+  const navItemStyle = (isActive: boolean, isCenter: boolean): CSSProperties => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: isCenter ? '2px' : '4px',
+    padding: isCenter ? '4px 16px' : '8px 12px',
+    color: isActive ? 'var(--orb-orange)' : 'var(--text-subtle)',
+    background: isCenter ? 'var(--bg)' : 'none',
+    border: isCenter ? '2px solid var(--orb-orange)' : 'none',
+    borderRadius: isCenter ? 'var(--radius-full)' : '0',
+    cursor: 'pointer',
+    transition: 'all var(--transition-fast)',
+    minWidth: isCenter ? '64px' : '48px',
+    marginTop: isCenter ? '-12px' : '0',
+    boxShadow: isCenter ? '0 2px 8px rgba(255, 107, 53, 0.3)' : 'none'
+  })
+
+  const iconStyle = (isCenter: boolean): CSSProperties => ({
+    width: isCenter ? '26px' : '22px',
+    height: isCenter ? '26px' : '22px',
+    stroke: 'currentColor',
+    strokeWidth: isCenter ? 2 : 1.5,
+    fill: 'none'
+  })
+
+  const labelStyle = (isCenter: boolean): CSSProperties => ({
+    fontSize: isCenter ? '11px' : '10px',
+    fontWeight: isCenter ? 600 : 500,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  })
+
   return (
     <nav className="bottom-nav" role="navigation" aria-label="Main navigation">
       {NAV_ITEMS.map(item => {
-        const isActive = location.pathname === item.path
+        const isActive = location.pathname === item.path ||
+          (item.path === '/now' && location.pathname === '/')
         return (
           <button
             key={item.path}
-            className={`nav-item ${isActive ? 'active' : ''}`}
+            style={navItemStyle(isActive, item.isCenter)}
             onClick={() => navigate(item.path)}
             aria-current={isActive ? 'page' : undefined}
           >
-            {icons[item.icon]}
-            <span>{item.label}</span>
+            <svg style={iconStyle(item.isCenter)} viewBox="0 0 24 24">
+              {icons[item.icon].props.children}
+            </svg>
+            <span style={labelStyle(item.isCenter)}>{item.label}</span>
           </button>
         )
       })}

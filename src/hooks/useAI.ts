@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { getData, updateData } from '../utils/storage'
-import { sendMessage } from '../utils/ai'
-import { useTasks } from './useTasks'
+import { sendMessage, type ExtractedTask } from '../utils/ai'
 import type { ChatMessage } from '../data/types'
 
 interface Message {
@@ -11,10 +10,14 @@ interface Message {
   tasksCreated?: string[]
 }
 
-export function useAI() {
+interface UseAIOptions {
+  onTasksCreated?: (tasks: ExtractedTask[]) => Promise<string[]>
+}
+
+export function useAI(options: UseAIOptions = {}) {
+  const { onTasksCreated } = options
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const { addTask } = useTasks()
 
   const loadHistory = useCallback(async () => {
     const data = await getData()
@@ -69,17 +72,10 @@ export function useAI() {
 
       const response = await sendMessage(history, config)
 
-      // Create tasks if any were extracted
-      const createdTaskIds: string[] = []
-      for (const taskData of response.tasks) {
-        const task = await addTask({
-          verbLabel: taskData.verbLabel.slice(0, 12),
-          taskBody: taskData.taskBody,
-          timeEstimate: taskData.timeEstimate,
-          feedLevel: taskData.feedLevel,
-          timeOfDay: 'anytime'
-        })
-        createdTaskIds.push(task.id)
+      // Create tasks via callback if any were extracted
+      let createdTaskIds: string[] = []
+      if (response.tasks.length > 0 && onTasksCreated) {
+        createdTaskIds = await onTasksCreated(response.tasks)
       }
 
       const assistantMessage: Message = {
@@ -102,7 +98,7 @@ export function useAI() {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, messages, saveMessage, addTask])
+  }, [isLoading, messages, saveMessage, onTasksCreated])
 
   const clearHistory = useCallback(async () => {
     await updateData(data => ({

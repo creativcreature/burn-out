@@ -65,17 +65,54 @@ Defines who is Responsible, Accountable, Consulted, and Informed for each activi
 | Process Changes | A | C | R | C | C | C | I |
 | Tool Selection | I | A | C | R | C | C | I |
 
+## Creative Activities
+
+| Activity | CEO | CTO | Creative Dir | Art Dir | Copywriter | Strategist |
+|----------|-----|-----|--------------|---------|------------|------------|
+| Brand Guidelines | A | C | R | C | C | C |
+| Visual Design | I | C | A | R | I | C |
+| UX/UI Design | I | A | C | R | I | C |
+| Design System | I | A | R | R | I | C |
+| Copywriting | I | I | A | I | R | C |
+| Video Production | I | I | A | C | C | C |
+| Social Media Content | I | I | A | C | C | R |
+| Campaign Strategy | A | C | C | C | C | R |
+| User Research | C | C | C | I | I | R |
+| Competitive Analysis | C | C | C | I | I | R |
+| Motion/Animation | I | C | A | R | I | I |
+
+## Agency Operations
+
+| Activity | CEO | COO | Creative Dir | Accounts | Logistics | Art Dir |
+|----------|-----|-----|--------------|----------|-----------|---------|
+| Project Intake | I | C | C | R | I | I |
+| Client Communication | C | I | C | R | I | I |
+| Resource Allocation | I | A | C | I | R | I |
+| Timeline Management | I | C | C | R | A | I |
+| Asset Management | I | I | I | I | R | C |
+| Tool Administration | I | I | C | I | R | I |
+| Budget Tracking | I | A | C | R | I | I |
+| Workflow Coordination | I | C | C | I | R | C |
+| Design Handoff to Eng | I | C | A | I | R | R |
+| Creative Review | I | I | A | I | I | R |
+| Junior Work Review | I | I | C | I | I | A |
+
 ## BurnOut-Specific Decisions
 
-| Decision | CEO | CTO | Eng Dir | QA Dir |
-|----------|-----|-----|---------|--------|
-| Add gamification | A (REJECT) | - | - | - |
-| Change theme system | C | A | R | C |
-| Modify data schema | C | A | R | I |
-| Add new page | A | C | R | C |
-| Remove feature | A | C | C | C |
-| PWA configuration | I | A | R | C |
-| AI integration | A | R | C | I |
+| Decision | CEO | CTO | Creative Dir | Eng Dir | QA Dir |
+|----------|-----|-----|--------------|---------|--------|
+| Add gamification | A (REJECT) | - | - | - | - |
+| Change theme system | C | A | C | R | C |
+| Visual style changes | C | C | A | I | I |
+| Modify data schema | C | A | I | R | I |
+| Add new page | A | C | C | R | C |
+| Remove feature | A | C | C | C | C |
+| PWA configuration | I | A | I | R | C |
+| AI integration | A | R | I | C | I |
+| Brand voice changes | A | I | R | I | I |
+| Animation/motion | I | C | A | R | I |
+| Color palette | C | C | A | I | I |
+| Typography | C | C | A | I | I |
 
 ## Decision-Making Framework
 
@@ -101,5 +138,13 @@ When RACI parties disagree:
 
 For BurnOut, the hierarchy is:
 ```
-CEO (Human) > CTO (Opus) > COO (Sonnet) > Directors > Workers
+CEO (Human) > CTO (Opus) / Creative Director (Opus) > COO (Sonnet) > Directors > Workers
 ```
+
+Note: CTO and Creative Director are peers at the Executive tier. Cross-functional conflicts escalate to CEO.
+
+### Creative vs Technical Conflicts
+When Creative Director and CTO disagree:
+1. Identify if issue is primarily visual (Creative Dir decides) or technical (CTO decides)
+2. If genuinely cross-functional, both present case to CEO
+3. CEO makes final decision

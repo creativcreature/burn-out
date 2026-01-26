@@ -3,44 +3,83 @@
 ## Organizational Chart
 
 ```
-                        ┌─────────────────┐
-                        │      CEO        │
-                        │   (You/Human)   │
-                        └────────┬────────┘
-                                 │
-                ┌────────────────┼────────────────┐
-                │                │                │
-        ┌───────┴───────┐ ┌──────┴──────┐ ┌──────┴───────┐
-        │     COO       │ │    CTO      │ │     CFO      │
-        │  Operations   │ │  Technical  │ │   Finance    │
-        │   (Sonnet)    │ │   (Opus)    │ │   (Haiku)    │
-        └───────┬───────┘ └──────┬──────┘ └──────────────┘
-                │                │
-    ┌───────────┤          ┌─────┴─────┐
-    │           │          │           │
-┌───┴────┐ ┌────┴────┐ ┌───┴───┐ ┌─────┴────┐
-│ Project│ │   QA    │ │  Eng  │ │ Security │
-│ Manager│ │Director │ │Director│ │ Director │
-│(Haiku) │ │(Sonnet) │ │(Sonnet)│ │ (Sonnet) │
-└────────┘ └─────────┘ └───┬───┘ └──────────┘
-                           │
-            ┌──────────────┼──────────────┐
-            │              │              │
-      ┌─────┴─────┐ ┌──────┴─────┐ ┌──────┴─────┐
-      │  Frontend │ │   Backend  │ │    PWA     │
-      │    Team   │ │    Team    │ │    Team    │
-      │  (Local)  │ │  (Local)   │ │  (Local)   │
-      └───────────┘ └────────────┘ └────────────┘
+                              ┌─────────────────┐
+                              │      CEO        │
+                              │   (You/Human)   │
+                              └────────┬────────┘
+                                       │
+                      ┌────────────────┼────────────────┐
+                      │                │                │
+              ┌───────┴───────┐ ┌──────┴──────┐ ┌──────┴───────┐
+              │     COO       │ │    CTO      │ │     CFO      │
+              │  Operations   │ │  Technical  │ │   Finance    │
+              │   (Sonnet)    │ │   (Opus)    │ │   (Haiku)    │
+              └───────┬───────┘ └──────┬──────┘ └──────────────┘
+                      │                │
+    ┌─────────────────┼─────────┐     │
+    │                 │         │     │
+┌───┴────┐ ┌─────────┴───┐ ┌───┴───┐ │
+│ Project│ │     QA      │ │Creative│ │
+│ Manager│ │  Director   │ │Director│ │
+│(Haiku) │ │  (Sonnet)   │ │ (Opus) │ │
+└────────┘ └─────────────┘ └───┬───┘ │
+                               │     │
+           ┌───────────────────┤     └──────────────┬──────────────┐
+           │                   │                    │              │
+    ┌──────┴──────┐    ┌───────┴───────┐     ┌──────┴──────┐ ┌─────┴────┐
+    │   CREATIVE  │    │  PRODUCTION   │     │     Eng     │ │ Security │
+    │    TEAM     │    │     TEAM      │     │  Director   │ │ Director │
+    └──────┬──────┘    └───────┬───────┘     │  (Sonnet)   │ │ (Sonnet) │
+           │                   │             └──────┬──────┘ └──────────┘
+    ┌──────┼──────┐     ┌──────┼──────┐            │
+    │      │      │     │      │      │     ┌──────┼──────┐
+Copywriter │   Art Dir  │   Social  Strategist    │      │
+(Sonnet) Art Dir (x2) Video  Media  (Sonnet)  ┌───┴───┐ ┌┴─────────┐
+         (Sonnet)    (Sonnet)(Sonnet)         │Frontend│ │ Backend  │
+              │                               │ Team   │ │  Team    │
+       ┌──────┼──────┐                        │(Local) │ │ (Local)  │
+    Jr Design (x3)                            └────────┘ └──────────┘
+      (Ollama)
+
+    ┌──────────────┐
+    │  OPERATIONS  │ (Under Creative Director)
+    │     TEAM     │
+    └──────┬───────┘
+           │
+    ┌──────┼──────┐
+ Accounts   Logistics
+  (Haiku)    (Haiku)
+```
+
+### Design Agency Structure (Detail)
+
+```
+                           Creative Director (Opus)
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        │                           │                           │
+  ┌─────┴─────┐               ┌─────┴─────┐               ┌─────┴─────┐
+  │  CREATIVE │               │ PRODUCTION│               │ OPERATIONS│
+  └─────┬─────┘               └─────┬─────┘               └─────┬─────┘
+        │                           │                           │
+  ┌─────┼─────┐             ┌───────┼───────┐             ┌─────┼─────┐
+  │     │     │             │       │       │             │           │
+Copywriter  Art Dir (x2)  Video  Social  Strategist   Accounts  Logistics
+(Sonnet)    (Sonnet)     (Sonnet)(Sonnet) (Sonnet)    (Haiku)   (Haiku)
+               │
+        ┌──────┼──────┐
+        │      │      │
+    Jr Design (x3 - Ollama)
 ```
 
 ## Agent Tiers
 
 | Tier | Model | Roles | Token Cost | Use Case |
 |------|-------|-------|------------|----------|
-| Executive | Opus | CTO, Security Review | $$$$ | Strategic decisions, complex architecture |
-| Manager | Sonnet | COO, Directors, QA | $$$ | Coordination, reviews, planning |
-| Worker | Haiku | Engineers, Testers | $ | Implementation, testing, docs |
-| Local | Ollama | Bulk tasks | Free | Repetitive tasks, initial drafts |
+| Executive | Opus | CTO, Creative Director | $$$$ | Strategic decisions, complex architecture, brand philosophy |
+| Manager | Sonnet | COO, Directors, Art Directors, Copywriter, Production Team | $$$ | Coordination, reviews, planning, creative execution |
+| Worker | Haiku | Project Manager, Accounts, Logistics | $ | Implementation, testing, docs, coordination |
+| Local | Ollama | Junior Designers, Bulk tasks | Free | Repetitive tasks, initial drafts, asset production |
 
 ## Role Definitions
 
@@ -94,6 +133,71 @@
 - Blocker escalation
 - Documentation
 
+---
+
+## Design Agency Roles
+
+### Creative Director (Opus)
+- Brand philosophy & strategy
+- Design system architecture
+- Visual language decisions
+- Final creative approval
+- Client/stakeholder presentations
+- Cross-functional alignment with CTO
+
+### Copywriter (Sonnet)
+- Brand voice & tone
+- UX copy & microcopy
+- Campaign messaging
+- Content strategy
+- Works alongside Creative Director
+
+### Art Director (Sonnet) x2-3
+- Visual direction for projects
+- Design system execution
+- Review junior work
+- Component design specs
+- Motion & interaction design
+
+### Junior Designer (Ollama) x3+
+- Asset production
+- Design implementation
+- Mockups & iterations
+- Documentation
+- Bulk design tasks
+
+### Videographer (Sonnet)
+- Video content creation
+- Motion graphics
+- Tutorial/demo videos
+- Brand films
+
+### Social Media Manager (Sonnet)
+- Content calendar
+- Platform strategy
+- Community engagement
+- Analytics & reporting
+
+### Strategist (Sonnet)
+- Campaign strategy
+- User research
+- Competitive analysis
+- Brand positioning
+
+### Accounts Manager (Haiku)
+- Project intake
+- Client communication
+- Timeline management
+- Budget tracking
+
+### Logistics Coordinator (Haiku)
+- Resource scheduling
+- Asset management
+- Tool administration
+- Workflow coordination
+
+---
+
 ## Communication Protocols
 
 ### Escalation Path
@@ -111,6 +215,17 @@ Worker → Director → CTO/COO → CEO
 | Release timing | COO + CEO |
 | Security issues | Security Director → CTO |
 | Budget/costs | CFO → CEO |
+| Brand guidelines | Creative Director |
+| Visual design | Creative Director |
+| UX/UI design | Creative Director + CTO (collab) |
+| Copy & messaging | Copywriter → Creative Director |
+| Video content | Videographer → Creative Director |
+| Social media | Social Media Manager → Creative Director |
+
+### Theme System Ownership
+- **Creative Director**: Owns visual direction & design decisions
+- **CTO**: Owns technical implementation & architecture
+- **Conflicts**: Escalate to CEO for final decision
 
 ### Reporting Cadence
 

@@ -1,22 +1,43 @@
 import { useState, CSSProperties } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AppLayout, Header } from '../components/layout'
 import { Card, Button, Input, Modal, Toast } from '../components/shared'
 import { useTasks } from '../hooks/useTasks'
 import { useGoals } from '../hooks/useGoals'
 import { useProjects } from '../hooks/useProjects'
-import { useHabits } from '../hooks/useHabits'
-import { VERB_LABEL_EXAMPLES, TIME_ESTIMATES, FEED_LEVELS } from '../data/constants'
-import type { FeedLevel, TimeOfDay, HabitFrequency } from '../data/types'
+import { useDragAndDrop } from '../hooks/useDragAndDrop'
+import { VERB_LABEL_EXAMPLES, TIME_ESTIMATES, FEED_LEVELS, GOAL_TIMEFRAMES } from '../data/constants'
+import type { FeedLevel, TimeOfDay, Task, Goal, GoalTimeframe } from '../data/types'
 
-type TabType = 'tasks' | 'goals' | 'projects' | 'habits'
+type TabType = 'goals' | 'projects' | 'tasks' | 'inbox'
 
 export function OrganizePage() {
-  const { pendingTasks, completedTasks, addTask, deleteTask, reorderTasks, isLoading: tasksLoading } = useTasks()
-  const { activeGoals, addGoal, deleteGoal, isLoading: goalsLoading } = useGoals()
-  const { projects, addProject, deleteProject, isLoading: projectsLoading } = useProjects()
-  const { habits, addHabit, deleteHabit, isLoading: habitsLoading } = useHabits()
+  const navigate = useNavigate()
+  const {
+    pendingTasks,
+    completedTasks,
+    addTask,
+    deleteTask,
+    reorderTasks,
+    isLoading: tasksLoading
+  } = useTasks()
+  const {
+    activeGoals,
+    addGoal,
+    deleteGoal,
+    setActiveGoal,
+    reorderGoals,
+    isLoading: goalsLoading
+  } = useGoals()
+  const {
+    projects,
+    addProject,
+    deleteProject,
+    getSubProjects,
+    isLoading: projectsLoading
+  } = useProjects()
 
-  const [activeTab, setActiveTab] = useState<TabType>('tasks')
+  const [activeTab, setActiveTab] = useState<TabType>('goals')
   const [showAddModal, setShowAddModal] = useState(false)
   const [toast, setToast] = useState({ message: '', type: 'success' as const, visible: false })
 
@@ -32,44 +53,35 @@ export function OrganizePage() {
   })
 
   // Goal form state
-  const [newGoal, setNewGoal] = useState({ title: '', description: '' })
-
-  // Project form state
-  const [newProject, setNewProject] = useState({ title: '', description: '', goalId: '' })
-
-  // Habit form state
-  const [newHabit, setNewHabit] = useState({
-    verbLabel: '',
-    habitBody: '',
-    frequency: 'daily' as HabitFrequency,
-    timeOfDay: 'anytime' as TimeOfDay,
-    feedLevel: 'medium' as FeedLevel,
-    goalId: ''
+  const [newGoal, setNewGoal] = useState({
+    title: '',
+    description: '',
+    timeframe: '1y' as GoalTimeframe
   })
 
-  // Drag state
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  // Project form state
+  const [newProject, setNewProject] = useState({
+    title: '',
+    description: '',
+    goalId: '',
+    parentProjectId: ''
+  })
 
-  const isLoading = tasksLoading || goalsLoading || projectsLoading || habitsLoading
+  // Drag and drop for each tab
+  const taskDrag = useDragAndDrop<Task>({
+    items: pendingTasks,
+    onReorder: reorderTasks
+  })
 
-  const handleDragStart = (index: number) => {
-    setDraggedIndex(index)
-  }
+  const goalDrag = useDragAndDrop<Goal>({
+    items: activeGoals,
+    onReorder: reorderGoals
+  })
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault()
-    if (draggedIndex === null || draggedIndex === index) return
+  // Orphan tasks: tasks with no goal and no project
+  const orphanTasks = pendingTasks.filter(t => !t.goalId && !t.projectId)
 
-    const newTasks = [...pendingTasks]
-    const [removed] = newTasks.splice(draggedIndex, 1)
-    newTasks.splice(index, 0, removed)
-    reorderTasks(newTasks)
-    setDraggedIndex(index)
-  }
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null)
-  }
+  const isLoading = tasksLoading || goalsLoading || projectsLoading
 
   const handleAddTask = async () => {
     if (!newTask.verbLabel || !newTask.taskBody) return
@@ -102,10 +114,13 @@ export function OrganizePage() {
 
     await addGoal({
       title: newGoal.title,
-      description: newGoal.description || undefined
+      description: newGoal.description || undefined,
+      timeframe: newGoal.timeframe,
+      isActive: activeGoals.length === 0,  // First goal is active by default
+      rank: activeGoals.length + 1
     })
 
-    setNewGoal({ title: '', description: '' })
+    setNewGoal({ title: '', description: '', timeframe: '1y' })
     setShowAddModal(false)
     setToast({ message: 'Goal created!', type: 'success', visible: true })
   }
@@ -116,38 +131,76 @@ export function OrganizePage() {
     await addProject({
       title: newProject.title,
       description: newProject.description || undefined,
-      goalId: newProject.goalId
+      goalId: newProject.goalId,
+      parentProjectId: newProject.parentProjectId || undefined
     })
 
-    setNewProject({ title: '', description: '', goalId: '' })
+    setNewProject({ title: '', description: '', goalId: '', parentProjectId: '' })
     setShowAddModal(false)
     setToast({ message: 'Project created!', type: 'success', visible: true })
   }
 
-  const handleAddHabit = async () => {
-    if (!newHabit.verbLabel || !newHabit.habitBody) return
-
-    await addHabit({
-      verbLabel: newHabit.verbLabel,
-      habitBody: newHabit.habitBody,
-      frequency: newHabit.frequency,
-      timeOfDay: newHabit.timeOfDay,
-      feedLevel: newHabit.feedLevel,
-      goalId: newHabit.goalId || undefined
-    })
-
-    setNewHabit({
-      verbLabel: '',
-      habitBody: '',
-      frequency: 'daily',
-      timeOfDay: 'anytime',
-      feedLevel: 'medium',
-      goalId: ''
-    })
-    setShowAddModal(false)
-    setToast({ message: 'Habit created!', type: 'success', visible: true })
+  const handleProjectClick = (projectId: string) => {
+    navigate(`/project/${projectId}`)
   }
 
+  // Render project with optional indentation for sub-projects
+  const renderProject = (project: typeof projects[0], indentLevel: number = 0) => {
+    const goal = activeGoals.find(g => g.id === project.goalId)
+    const subProjects = getSubProjects(project.id)
+    const projectTasks = pendingTasks.filter(t => t.projectId === project.id)
+    const completedProjectTasks = completedTasks.filter(t => t.projectId === project.id)
+    const totalTasks = projectTasks.length + completedProjectTasks.length
+
+    return (
+      <div key={project.id}>
+        <div style={{ marginLeft: `${indentLevel * 20}px` }}>
+          <Card onClick={() => handleProjectClick(project.id)}>
+            <div style={itemContentStyle}>
+              <div style={itemMainStyle}>
+                <div style={projectHeaderStyle}>
+                  {goal && !project.parentProjectId && (
+                    <span style={goalBadgeStyle}>{goal.title}</span>
+                  )}
+                  <span style={statusBadgeStyle(project.status)}>{project.status}</span>
+                </div>
+                <div style={itemTitleStyle}>{project.title}</div>
+                {project.parentProjectId && (
+                  <div style={itemMetaStyle}>Sub-project</div>
+                )}
+                {project.description && (
+                  <div style={{ ...itemDescStyle, marginTop: 'var(--space-xs)' }}>
+                    {project.description.length > 100
+                      ? project.description.slice(0, 100) + '...'
+                      : project.description}
+                  </div>
+                )}
+                <div style={taskProgressStyle}>
+                  {totalTasks > 0
+                    ? `${completedProjectTasks.length}/${totalTasks} tasks done`
+                    : 'No tasks yet'}
+                  {subProjects.length > 0 && ` · ${subProjects.length} sub-project(s)`}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  deleteProject(project.id)
+                }}
+              >
+                ×
+              </Button>
+            </div>
+          </Card>
+        </div>
+        {subProjects.map(sub => renderProject(sub, indentLevel + 1))}
+      </div>
+    )
+  }
+
+  // Styles
   const contentStyle: CSSProperties = {
     padding: 'var(--space-md)',
     display: 'flex',
@@ -182,11 +235,6 @@ export function OrganizePage() {
     gap: 'var(--space-sm)'
   }
 
-  const itemStyle = (isDragging: boolean): CSSProperties => ({
-    opacity: isDragging ? 0.5 : 1,
-    cursor: 'grab'
-  })
-
   const selectStyle: CSSProperties = {
     width: '100%',
     padding: 'var(--space-sm) var(--space-md)',
@@ -201,6 +249,148 @@ export function OrganizePage() {
     display: 'flex',
     flexDirection: 'column',
     gap: 'var(--space-md)'
+  }
+
+  const dragHandleStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 24,
+    height: 24,
+    color: 'var(--text-subtle)',
+    cursor: 'grab',
+    flexShrink: 0
+  }
+
+  const itemContentStyle: CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 'var(--space-sm)'
+  }
+
+  const itemMainStyle: CSSProperties = {
+    flex: 1,
+    minWidth: 0
+  }
+
+  const itemTitleStyle: CSSProperties = {
+    fontWeight: 600,
+    color: 'var(--text)'
+  }
+
+  const itemVerbStyle: CSSProperties = {
+    fontWeight: 600,
+    color: 'var(--orb-orange)'
+  }
+
+  const itemDescStyle: CSSProperties = {
+    color: 'var(--text)',
+    fontSize: 'var(--text-sm)'
+  }
+
+  const itemMetaStyle: CSSProperties = {
+    color: 'var(--text-muted)',
+    fontSize: 'var(--text-xs)',
+    marginTop: 'var(--space-xs)'
+  }
+
+  const dragHintStyle: CSSProperties = {
+    textAlign: 'center',
+    color: 'var(--text-subtle)',
+    fontSize: 'var(--text-xs)',
+    padding: 'var(--space-sm) 0'
+  }
+
+  const timeframeBadgeStyle: CSSProperties = {
+    display: 'inline-block',
+    padding: '2px 8px',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 600,
+    background: 'var(--bg-elevated)',
+    color: 'var(--text-muted)',
+    borderRadius: 'var(--radius-sm)',
+    marginRight: 'var(--space-xs)'
+  }
+
+  const activeBadgeStyle: CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '2px 8px',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 600,
+    background: 'var(--orb-orange)',
+    color: 'white',
+    borderRadius: 'var(--radius-sm)'
+  }
+
+  const goalHeaderStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-xs)',
+    marginBottom: 'var(--space-xs)'
+  }
+
+  const starButtonStyle = (isActive: boolean): CSSProperties => ({
+    width: 24,
+    height: 24,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: isActive ? 'var(--orb-orange)' : 'var(--text-subtle)',
+    padding: 0,
+    flexShrink: 0
+  })
+
+  const statusBadgeStyle = (status: string): CSSProperties => {
+    const bgColors: Record<string, string> = {
+      active: 'rgba(34, 197, 94, 0.15)',
+      paused: 'rgba(234, 179, 8, 0.15)',
+      completed: 'rgba(34, 197, 94, 0.25)'
+    }
+    const textColors: Record<string, string> = {
+      active: 'var(--success, #22c55e)',
+      paused: 'var(--warning, #eab308)',
+      completed: 'var(--success, #22c55e)'
+    }
+    return {
+      display: 'inline-block',
+      padding: '2px 8px',
+      fontSize: 'var(--text-xs)',
+      fontWeight: 500,
+      background: bgColors[status] || bgColors.active,
+      color: textColors[status] || textColors.active,
+      borderRadius: 'var(--radius-sm)',
+      marginLeft: 'var(--space-xs)',
+      textTransform: 'capitalize'
+    }
+  }
+
+  const projectHeaderStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 'var(--space-xs)',
+    marginBottom: 'var(--space-xs)'
+  }
+
+  const goalBadgeStyle: CSSProperties = {
+    display: 'inline-block',
+    padding: '2px 8px',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 500,
+    background: 'rgba(255, 107, 53, 0.15)',
+    color: 'var(--orb-orange)',
+    borderRadius: 'var(--radius-sm)'
+  }
+
+  const taskProgressStyle: CSSProperties = {
+    fontSize: 'var(--text-xs)',
+    color: 'var(--text-muted)'
   }
 
   if (isLoading) {
@@ -219,26 +409,30 @@ export function OrganizePage() {
       <Header title="Organize" />
       <main style={contentStyle}>
         <div style={tabsStyle}>
-          <button style={tabStyle(activeTab === 'tasks')} onClick={() => setActiveTab('tasks')}>
-            Tasks ({pendingTasks.length})
-          </button>
           <button style={tabStyle(activeTab === 'goals')} onClick={() => setActiveTab('goals')}>
-            Goals ({activeGoals.length})
+            Goals
           </button>
           <button style={tabStyle(activeTab === 'projects')} onClick={() => setActiveTab('projects')}>
-            Projects ({projects.length})
+            Projects
           </button>
-          <button style={tabStyle(activeTab === 'habits')} onClick={() => setActiveTab('habits')}>
-            Habits ({habits.length})
+          <button style={tabStyle(activeTab === 'tasks')} onClick={() => setActiveTab('tasks')}>
+            Tasks
+          </button>
+          <button style={tabStyle(activeTab === 'inbox')} onClick={() => setActiveTab('inbox')}>
+            Inbox {orphanTasks.length > 0 && `(${orphanTasks.length})`}
           </button>
         </div>
 
-        <Button variant="primary" onClick={() => setShowAddModal(true)}>
-          Add {activeTab === 'tasks' ? 'Task' : activeTab === 'goals' ? 'Goal' : activeTab === 'projects' ? 'Project' : 'Habit'}
-        </Button>
+        {activeTab !== 'inbox' && (
+          <Button variant="cta" onClick={() => setShowAddModal(true)}>
+            Add {activeTab === 'goals' ? 'Goal' :
+              activeTab === 'projects' ? 'Project' : 'Task'}
+          </Button>
+        )}
 
+        {/* Tasks Tab */}
         {activeTab === 'tasks' && (
-          <section style={sectionStyle}>
+          <section style={sectionStyle} data-drag-container>
             {pendingTasks.length === 0 ? (
               <Card>
                 <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
@@ -246,40 +440,63 @@ export function OrganizePage() {
                 </p>
               </Card>
             ) : (
-              pendingTasks.map((task, index) => (
-                <div
-                  key={task.id}
-                  style={itemStyle(draggedIndex === index)}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <Card>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <div style={{ fontWeight: 600, color: 'var(--orb-orange)' }}>
-                          {task.verbLabel}
+              <>
+                <div style={dragHintStyle}>Hold and drag to reorder</div>
+                {pendingTasks.map((task, index) => {
+                  const handlers = taskDrag.getDragHandlers(task.id, index)
+                  const style = taskDrag.getItemStyle(task.id, index)
+
+                  return (
+                    <div
+                      key={task.id}
+                      data-drag-id={task.id}
+                      style={style}
+                      {...handlers}
+                    >
+                      <Card>
+                        <div style={itemContentStyle}>
+                          <div style={dragHandleStyle}>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                              <circle cx="5" cy="3" r="1.5" />
+                              <circle cx="11" cy="3" r="1.5" />
+                              <circle cx="5" cy="8" r="1.5" />
+                              <circle cx="11" cy="8" r="1.5" />
+                              <circle cx="5" cy="13" r="1.5" />
+                              <circle cx="11" cy="13" r="1.5" />
+                            </svg>
+                          </div>
+                          <div style={itemMainStyle}>
+                            <div style={itemVerbStyle}>{task.verbLabel}</div>
+                            <div style={itemDescStyle}>{task.taskBody}</div>
+                            <div style={itemMetaStyle}>
+                              {task.timeEstimate} min · {task.feedLevel} energy
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteTask(task.id)
+                            }}
+                          >
+                            ×
+                          </Button>
                         </div>
-                        <div style={{ color: 'var(--text)', fontSize: 'var(--text-sm)' }}>
-                          {task.taskBody}
-                        </div>
-                        <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', marginTop: 'var(--space-xs)' }}>
-                          {task.timeEstimate} min · {task.feedLevel} energy
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => deleteTask(task.id)}>
-                        ×
-                      </Button>
+                      </Card>
                     </div>
-                  </Card>
-                </div>
-              ))
+                  )
+                })}
+              </>
             )}
 
             {completedTasks.length > 0 && (
               <>
-                <h3 style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-md)' }}>
+                <h3 style={{
+                  color: 'var(--text-muted)',
+                  fontSize: 'var(--text-sm)',
+                  marginTop: 'var(--space-md)'
+                }}>
                   Completed ({completedTasks.length})
                 </h3>
                 {completedTasks.slice(0, 3).map(task => (
@@ -294,8 +511,9 @@ export function OrganizePage() {
           </section>
         )}
 
+        {/* Goals Tab */}
         {activeTab === 'goals' && (
-          <section style={sectionStyle}>
+          <section style={sectionStyle} data-drag-container>
             {activeGoals.length === 0 ? (
               <Card>
                 <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
@@ -303,31 +521,81 @@ export function OrganizePage() {
                 </p>
               </Card>
             ) : (
-              activeGoals.map(goal => (
-                <Card key={goal.id}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ fontWeight: 600, color: 'var(--text)' }}>{goal.title}</div>
-                      {goal.description && (
-                        <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                          {goal.description}
+              <>
+                <div style={dragHintStyle}>Hold and drag to reorder · Tap star to set active goal</div>
+                {activeGoals.map((goal, index) => {
+                  const handlers = goalDrag.getDragHandlers(goal.id, index)
+                  const style = goalDrag.getItemStyle(goal.id, index)
+                  const timeframeLabel = GOAL_TIMEFRAMES.find(t => t.value === goal.timeframe)?.shortLabel || goal.timeframe
+
+                  return (
+                    <div
+                      key={goal.id}
+                      data-drag-id={goal.id}
+                      style={style}
+                      {...handlers}
+                    >
+                      <Card>
+                        <div style={itemContentStyle}>
+                          <div style={dragHandleStyle}>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                              <circle cx="5" cy="3" r="1.5" />
+                              <circle cx="11" cy="3" r="1.5" />
+                              <circle cx="5" cy="8" r="1.5" />
+                              <circle cx="11" cy="8" r="1.5" />
+                              <circle cx="5" cy="13" r="1.5" />
+                              <circle cx="11" cy="13" r="1.5" />
+                            </svg>
+                          </div>
+                          <button
+                            style={starButtonStyle(goal.isActive)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setActiveGoal(goal.id)
+                            }}
+                            aria-label={goal.isActive ? 'Active goal' : 'Set as active goal'}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill={goal.isActive ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                          </button>
+                          <div style={itemMainStyle}>
+                            <div style={goalHeaderStyle}>
+                              <span style={timeframeBadgeStyle}>{timeframeLabel}</span>
+                              {goal.isActive && (
+                                <span style={activeBadgeStyle}>Active</span>
+                              )}
+                            </div>
+                            <div style={itemTitleStyle}>{goal.title}</div>
+                            {goal.description && (
+                              <div style={itemDescStyle}>{goal.description}</div>
+                            )}
+                            <div style={itemMetaStyle}>
+                              {projects.filter(p => p.goalId === goal.id).length} project(s) ·{' '}
+                              {pendingTasks.filter(t => t.goalId === goal.id).length} task(s)
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteGoal(goal.id)
+                            }}
+                          >
+                            ×
+                          </Button>
                         </div>
-                      )}
-                      <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', marginTop: 'var(--space-xs)' }}>
-                        {projects.filter(p => p.goalId === goal.id).length} project(s) ·{' '}
-                        {pendingTasks.filter(t => t.goalId === goal.id).length} task(s)
-                      </div>
+                      </Card>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => deleteGoal(goal.id)}>
-                      ×
-                    </Button>
-                  </div>
-                </Card>
-              ))
+                  )
+                })}
+              </>
             )}
           </section>
         )}
 
+        {/* Projects Tab */}
         {activeTab === 'projects' && (
           <section style={sectionStyle}>
             {projects.length === 0 ? (
@@ -337,75 +605,51 @@ export function OrganizePage() {
                 </p>
               </Card>
             ) : (
-              projects.map(project => {
-                const goal = activeGoals.find(g => g.id === project.goalId)
-                return (
-                  <Card key={project.id}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text)' }}>{project.title}</div>
-                        {goal && (
-                          <div style={{ color: 'var(--orb-orange)', fontSize: 'var(--text-xs)' }}>
-                            {goal.title}
-                          </div>
-                        )}
-                        {project.description && (
-                          <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                            {project.description}
-                          </div>
-                        )}
-                        <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', marginTop: 'var(--space-xs)' }}>
-                          {pendingTasks.filter(t => t.projectId === project.id).length} task(s) · {project.status}
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => deleteProject(project.id)}>
-                        ×
-                      </Button>
-                    </div>
-                  </Card>
-                )
-              })
+              projects
+                .filter(p => !p.parentProjectId)
+                .map(project => renderProject(project))
             )}
           </section>
         )}
 
-        {activeTab === 'habits' && (
+        {/* Inbox Tab - Orphan tasks without goal or project */}
+        {activeTab === 'inbox' && (
           <section style={sectionStyle}>
-            {habits.length === 0 ? (
+            {orphanTasks.length === 0 ? (
               <Card>
                 <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
-                  No habits yet. Habits are recurring routines that keep you on track.
+                  No orphan tasks. All your tasks are linked to goals or projects.
                 </p>
               </Card>
             ) : (
-              habits.map(habit => {
-                const goal = activeGoals.find(g => g.id === habit.goalId)
-                return (
-                  <Card key={habit.id}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <div style={{ fontWeight: 600, color: 'var(--orb-orange)' }}>
-                          {habit.verbLabel}
-                        </div>
-                        <div style={{ color: 'var(--text)', fontSize: 'var(--text-sm)' }}>
-                          {habit.habitBody}
-                        </div>
-                        {goal && (
-                          <div style={{ color: 'var(--accent-secondary)', fontSize: 'var(--text-xs)', marginTop: 'var(--space-xs)' }}>
-                            {goal.title}
-                          </div>
-                        )}
-                        <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', marginTop: 'var(--space-xs)' }}>
-                          {habit.frequency} · {habit.timeOfDay} · {habit.feedLevel} energy
+              <>
+                <div style={dragHintStyle}>
+                  These tasks need to be organized. Link them to a goal or project.
+                </div>
+                {orphanTasks.map((task) => (
+                  <Card key={task.id}>
+                    <div style={itemContentStyle}>
+                      <div style={itemMainStyle}>
+                        <div style={itemVerbStyle}>{task.verbLabel}</div>
+                        <div style={itemDescStyle}>{task.taskBody}</div>
+                        <div style={itemMetaStyle}>
+                          {task.timeEstimate} min · {task.feedLevel} energy
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => deleteHabit(habit.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          deleteTask(task.id)
+                        }}
+                      >
                         ×
                       </Button>
                     </div>
                   </Card>
-                )
-              })
+                ))}
+              </>
             )}
           </section>
         )}
@@ -414,7 +658,8 @@ export function OrganizePage() {
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title={`Add ${activeTab === 'tasks' ? 'Task' : activeTab === 'goals' ? 'Goal' : activeTab === 'projects' ? 'Project' : 'Habit'}`}
+        title={`Add ${activeTab === 'goals' ? 'Goal' :
+          activeTab === 'projects' ? 'Project' : 'Task'}`}
       >
         {activeTab === 'tasks' && (
           <div style={formStyle}>
@@ -435,13 +680,21 @@ export function OrganizePage() {
               onChange={(value) => setNewTask(prev => ({ ...prev, taskBody: value }))}
             />
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+              <label style={{
+                fontSize: 'var(--text-sm)',
+                color: 'var(--text-muted)',
+                display: 'block',
+                marginBottom: 'var(--space-xs)'
+              }}>
                 Time Estimate
               </label>
               <select
                 style={selectStyle}
                 value={newTask.timeEstimate}
-                onChange={(e) => setNewTask(prev => ({ ...prev, timeEstimate: Number(e.target.value) }))}
+                onChange={(e) => setNewTask(prev => ({
+                  ...prev,
+                  timeEstimate: Number(e.target.value)
+                }))}
               >
                 {TIME_ESTIMATES.map(t => (
                   <option key={t.value} value={t.value}>{t.label}</option>
@@ -449,13 +702,21 @@ export function OrganizePage() {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+              <label style={{
+                fontSize: 'var(--text-sm)',
+                color: 'var(--text-muted)',
+                display: 'block',
+                marginBottom: 'var(--space-xs)'
+              }}>
                 Energy Required
               </label>
               <select
                 style={selectStyle}
                 value={newTask.feedLevel}
-                onChange={(e) => setNewTask(prev => ({ ...prev, feedLevel: e.target.value as FeedLevel }))}
+                onChange={(e) => setNewTask(prev => ({
+                  ...prev,
+                  feedLevel: e.target.value as FeedLevel
+                }))}
               >
                 {FEED_LEVELS.map(f => (
                   <option key={f.value} value={f.value}>{f.label}</option>
@@ -464,7 +725,12 @@ export function OrganizePage() {
             </div>
             {activeGoals.length > 0 && (
               <div>
-                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+                <label style={{
+                  fontSize: 'var(--text-sm)',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: 'var(--space-xs)'
+                }}>
                   Goal (optional)
                 </label>
                 <select
@@ -497,6 +763,28 @@ export function OrganizePage() {
               value={newGoal.description}
               onChange={(value) => setNewGoal(prev => ({ ...prev, description: value }))}
             />
+            <div>
+              <label style={{
+                fontSize: 'var(--text-sm)',
+                color: 'var(--text-muted)',
+                display: 'block',
+                marginBottom: 'var(--space-xs)'
+              }}>
+                Timeframe
+              </label>
+              <select
+                style={selectStyle}
+                value={newGoal.timeframe}
+                onChange={(e) => setNewGoal(prev => ({
+                  ...prev,
+                  timeframe: e.target.value as GoalTimeframe
+                }))}
+              >
+                {GOAL_TIMEFRAMES.map(t => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
             <Button variant="primary" onClick={handleAddGoal}>Create Goal</Button>
           </div>
         )}
@@ -510,13 +798,22 @@ export function OrganizePage() {
               onChange={(value) => setNewProject(prev => ({ ...prev, title: value }))}
             />
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+              <label style={{
+                fontSize: 'var(--text-sm)',
+                color: 'var(--text-muted)',
+                display: 'block',
+                marginBottom: 'var(--space-xs)'
+              }}>
                 Goal *
               </label>
               <select
                 style={selectStyle}
                 value={newProject.goalId}
-                onChange={(e) => setNewProject(prev => ({ ...prev, goalId: e.target.value }))}
+                onChange={(e) => setNewProject(prev => ({
+                  ...prev,
+                  goalId: e.target.value,
+                  parentProjectId: ''
+                }))}
               >
                 <option value="">Select a goal</option>
                 {activeGoals.map(g => (
@@ -524,6 +821,34 @@ export function OrganizePage() {
                 ))}
               </select>
             </div>
+            {newProject.goalId && projects.filter(p => p.goalId === newProject.goalId).length > 0 && (
+              <div>
+                <label style={{
+                  fontSize: 'var(--text-sm)',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: 'var(--space-xs)'
+                }}>
+                  Parent Project (optional - for sub-projects)
+                </label>
+                <select
+                  style={selectStyle}
+                  value={newProject.parentProjectId}
+                  onChange={(e) => setNewProject(prev => ({
+                    ...prev,
+                    parentProjectId: e.target.value
+                  }))}
+                >
+                  <option value="">No parent (root project)</option>
+                  {projects
+                    .filter(p => p.goalId === newProject.goalId)
+                    .map(p => (
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    ))
+                  }
+                </select>
+              </div>
+            )}
             <Input
               label="Description (optional)"
               placeholder="What does this project involve?"
@@ -536,86 +861,6 @@ export function OrganizePage() {
           </div>
         )}
 
-        {activeTab === 'habits' && (
-          <div style={formStyle}>
-            <Input
-              label="Verb Label (max 12 chars)"
-              placeholder="e.g., Hydrate"
-              value={newHabit.verbLabel}
-              onChange={(value) => setNewHabit(prev => ({ ...prev, verbLabel: value.slice(0, 12) }))}
-              maxLength={12}
-            />
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-              Examples: Rise + Stretch, Hydrate, Wind Down, Meditate
-            </div>
-            <Input
-              label="Habit"
-              placeholder="What's the routine?"
-              value={newHabit.habitBody}
-              onChange={(value) => setNewHabit(prev => ({ ...prev, habitBody: value }))}
-            />
-            <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
-                Frequency
-              </label>
-              <select
-                style={selectStyle}
-                value={newHabit.frequency}
-                onChange={(e) => setNewHabit(prev => ({ ...prev, frequency: e.target.value as HabitFrequency }))}
-              >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly (Mondays)</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
-                Time of Day
-              </label>
-              <select
-                style={selectStyle}
-                value={newHabit.timeOfDay}
-                onChange={(e) => setNewHabit(prev => ({ ...prev, timeOfDay: e.target.value as TimeOfDay }))}
-              >
-                <option value="morning">Morning</option>
-                <option value="afternoon">Afternoon</option>
-                <option value="evening">Evening</option>
-                <option value="anytime">Anytime</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
-                Energy Required
-              </label>
-              <select
-                style={selectStyle}
-                value={newHabit.feedLevel}
-                onChange={(e) => setNewHabit(prev => ({ ...prev, feedLevel: e.target.value as FeedLevel }))}
-              >
-                {FEED_LEVELS.map(f => (
-                  <option key={f.value} value={f.value}>{f.label}</option>
-                ))}
-              </select>
-            </div>
-            {activeGoals.length > 0 && (
-              <div>
-                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'block', marginBottom: 'var(--space-xs)' }}>
-                  Goal (optional)
-                </label>
-                <select
-                  style={selectStyle}
-                  value={newHabit.goalId}
-                  onChange={(e) => setNewHabit(prev => ({ ...prev, goalId: e.target.value }))}
-                >
-                  <option value="">No goal</option>
-                  {activeGoals.map(g => (
-                    <option key={g.id} value={g.id}>{g.title}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <Button variant="primary" onClick={handleAddHabit}>Create Habit</Button>
-          </div>
-        )}
       </Modal>
 
       <Toast

@@ -1,24 +1,31 @@
 import { CSSProperties } from 'react'
 import { Card } from '../shared/Card'
-import type { Task } from '../../data/types'
+import { ProjectBadge } from '../shared/ProjectBadge'
+import type { Task, Project } from '../../data/types'
 
 interface TaskCardProps {
   task: Task
+  project?: Project
   onStart?: () => void
   onDefer?: () => void
   onEdit?: () => void
   onDelete?: () => void
+  onProjectClick?: () => void
   showActions?: boolean
+  showProjectBadge?: boolean
   isDragging?: boolean
 }
 
 export function TaskCard({
   task,
+  project,
   onStart,
   onDefer,
   onEdit,
   onDelete,
+  onProjectClick,
   showActions = true,
+  showProjectBadge = false,
   isDragging = false
 }: TaskCardProps) {
   const containerStyle: CSSProperties = {
@@ -74,23 +81,29 @@ export function TaskCard({
   }
 
   const feedLevelColors = {
-    low: '#10b981',
-    medium: '#fbbf24',
-    high: '#ef4444'
+    low: 'var(--success-500)',
+    medium: 'var(--warning-500)',
+    high: 'var(--error-500)'
   }
 
   const statusBadgeStyle: CSSProperties = {
     padding: '2px 8px',
     borderRadius: 'var(--radius-full)',
     fontSize: 'var(--text-xs)',
-    background: task.status === 'completed' ? '#10b981' :
-      task.status === 'deferred' ? '#fbbf24' : 'var(--border)',
+    background: task.status === 'completed' ? 'var(--success-500)' :
+      task.status === 'deferred' ? 'var(--warning-500)' : 'var(--border)',
     color: task.status === 'pending' ? 'var(--text-muted)' : 'white'
   }
 
   return (
     <div style={containerStyle}>
       <Card onClick={onEdit}>
+        {showProjectBadge && project && (
+          <div style={{ marginBottom: 'var(--space-sm)' }}>
+            <ProjectBadge project={project} onClick={onProjectClick} />
+          </div>
+        )}
+
         <div style={headerStyle}>
           <span style={verbStyle}>{task.verbLabel}</span>
           {task.status !== 'pending' && (
@@ -123,7 +136,7 @@ export function TaskCard({
               </button>
             )}
             {onDelete && (
-              <button style={{ ...actionBtnStyle, color: '#ef4444' }} onClick={onDelete}>
+              <button style={{ ...actionBtnStyle, color: 'var(--error-500)' }} onClick={onDelete}>
                 Delete
               </button>
             )}

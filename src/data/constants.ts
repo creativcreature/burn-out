@@ -1,5 +1,5 @@
 export const STORAGE_KEY = 'burnout_v4'
-export const CURRENT_VERSION = 1
+export const CURRENT_VERSION = 3
 
 export const VERB_LABEL_MAX_LENGTH = 12
 
@@ -31,11 +31,21 @@ export const TIME_ESTIMATES = [
 ] as const
 
 export const NAVIGATION_ITEMS = [
-  { path: '/now', label: 'Now', icon: 'circle' },
   { path: '/organize', label: 'Organize', icon: 'layers' },
   { path: '/chat', label: 'Chat', icon: 'message' },
+  { path: '/now', label: 'Now', icon: 'circle', isCenter: true },
   { path: '/reflections', label: 'Reflect', icon: 'sparkle' },
   { path: '/settings', label: 'Settings', icon: 'settings' }
+] as const
+
+export const GOAL_TIMEFRAMES = [
+  { value: '5y' as const, label: '5 Years', shortLabel: '5Y' },
+  { value: '3y' as const, label: '3 Years', shortLabel: '3Y' },
+  { value: '1y' as const, label: '1 Year', shortLabel: '1Y' },
+  { value: '6m' as const, label: '6 Months', shortLabel: '6M' },
+  { value: '3m' as const, label: '3 Months', shortLabel: '3M' },
+  { value: '1m' as const, label: '1 Month', shortLabel: '1M' },
+  { value: '1w' as const, label: '1 Week', shortLabel: '1W' }
 ] as const
 
 export const ENERGY_LEVELS = [

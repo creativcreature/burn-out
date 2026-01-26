@@ -1,18 +1,61 @@
-import { useState, useEffect, CSSProperties } from 'react'
+import { useState, useEffect, useRef, CSSProperties, ChangeEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AppLayout, Header } from '../components/layout'
 import { Card, Button } from '../components/shared'
 import { useThemeContext } from '../components/shared/ThemeProvider'
+import { useAppContext } from '../contexts/AppContext'
 import { getData, updateData, seedSampleData } from '../utils/storage'
+import { fileToDataUrl, compressImage, analyzeImageBrightness } from '../utils/imageAnalysis'
 import type { Settings as SettingsType } from '../data/types'
 
 export function SettingsPage() {
+  const navigate = useNavigate()
   const { toggleTheme, isDark } = useThemeContext()
+  const { setIsOnboardingComplete } = useAppContext()
   const [settings, setSettings] = useState<SettingsType | null>(null)
   const [saved, setSaved] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getData().then(data => setSettings(data.settings))
   }, [])
+
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingImage(true)
+    try {
+      // Convert to data URL
+      const dataUrl = await fileToDataUrl(file)
+      // Compress for storage
+      const compressed = await compressImage(dataUrl, 800, 0.85)
+      // Analyze brightness
+      const brightness = await analyzeImageBrightness(compressed)
+
+      setSettings(prev => prev ? {
+        ...prev,
+        cardBackgroundImage: compressed,
+        cardBackgroundBrightness: brightness
+      } : null)
+    } catch (error) {
+      console.error('Failed to process image:', error)
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setSettings(prev => prev ? {
+      ...prev,
+      cardBackgroundImage: undefined,
+      cardBackgroundBrightness: undefined
+    } : null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const contentStyle: CSSProperties = {
     padding: 'var(--space-md)',
@@ -110,6 +153,75 @@ export function SettingsPage() {
               </button>
             </div>
           </Card>
+
+          <Card>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              <div>
+                <div style={labelStyle}>Task Card Background</div>
+                <div style={descStyle}>Upload an image for your task card background</div>
+              </div>
+
+              {settings?.cardBackgroundImage ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                  <div style={{
+                    width: '100%',
+                    height: 120,
+                    borderRadius: 'var(--radius-md)',
+                    overflow: 'hidden',
+                    position: 'relative'
+                  }}>
+                    <img
+                      src={settings.cardBackgroundImage}
+                      alt="Card background preview"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 'var(--space-xs)',
+                      right: 'var(--space-xs)',
+                      padding: '4px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'rgba(0,0,0,0.6)',
+                      color: 'white',
+                      fontSize: 'var(--text-xs)'
+                    }}>
+                      {settings.cardBackgroundBrightness === 'light' ? 'Light image' : 'Dark image'}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveImage}
+                  >
+                    Remove Image
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: 'none' }}
+                    id="card-bg-upload"
+                  />
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                  >
+                    {isUploadingImage ? 'Processing...' : 'Upload Image'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
         </section>
 
         <section style={sectionStyle}>
@@ -186,7 +298,8 @@ export function SettingsPage() {
                 onClick={async () => {
                   if (confirm('Load sample data? This will replace your current data with demo content.')) {
                     await seedSampleData()
-                    window.location.reload()
+                    // Navigate to Now page to refresh all hooks with new data
+                    navigate('/now')
                   }
                 }}
               >
@@ -207,7 +320,8 @@ export function SettingsPage() {
                     ...data,
                     onboarding: { completed: false, skippedSteps: [] }
                   }))
-                  window.location.reload()
+                  // Update app state to show onboarding
+                  setIsOnboardingComplete(false)
                 }
               }}
             >

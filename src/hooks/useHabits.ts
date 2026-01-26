@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getData, updateData } from '../utils/storage'
+import { NewHabitSchema, validate } from '../data/validation'
 import type { Habit } from '../data/types'
 
 type NewHabit = Omit<Habit, 'id' | 'createdAt' | 'completionCount' | 'lastCompleted'>
@@ -21,9 +22,15 @@ export function useHabits() {
   }, [])
 
   const addHabit = useCallback(async (habitData: NewHabit): Promise<Habit> => {
+    // Validate input
+    const validation = validate(NewHabitSchema, habitData)
+    if (!validation.success) {
+      throw new Error(`Invalid habit: ${validation.error}`)
+    }
+
     const now = new Date().toISOString()
     const newHabit: Habit = {
-      ...habitData,
+      ...validation.data,
       id: crypto.randomUUID(),
       createdAt: now,
       completionCount: 0
@@ -90,6 +97,15 @@ export function useHabits() {
     setHabits(prev => prev.filter(h => h.id !== id))
   }, [])
 
+  const reorderHabits = useCallback(async (reorderedHabits: Habit[]): Promise<void> => {
+    setHabits(reorderedHabits)
+
+    await updateData(data => ({
+      ...data,
+      habits: reorderedHabits
+    }))
+  }, [])
+
   const isDueToday = useCallback((habit: Habit): boolean => {
     const today = new Date()
     const dayOfWeek = today.getDay()
@@ -121,6 +137,7 @@ export function useHabits() {
     updateHabit,
     completeHabit,
     deleteHabit,
+    reorderHabits,
     isDueToday
   }
 }

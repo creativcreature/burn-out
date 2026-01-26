@@ -1,7 +1,7 @@
 import { ReactNode, CSSProperties, ButtonHTMLAttributes } from 'react'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  variant?: 'primary' | 'cta' | 'secondary' | 'ghost' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   fullWidth?: boolean
   loading?: boolean
@@ -49,9 +49,20 @@ export function Button({
 
   const variantStyles: Record<string, CSSProperties> = {
     primary: {
-      background: 'transparent',
-      color: 'var(--orb-orange)',
-      border: '2px solid var(--orb-orange)'
+      background: 'rgba(255, 255, 255, 0.85)',
+      color: 'var(--coral-500)',
+      border: 'none',
+      borderRadius: 'var(--radius-full)',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+      fontFamily: 'var(--font-display)',
+      fontWeight: 400
+    },
+    cta: {
+      background: 'var(--coral-500)',
+      color: 'white',
+      border: 'none',
+      borderRadius: 'var(--radius-full)',
+      boxShadow: '0 4px 12px rgba(229, 57, 53, 0.3)'
     },
     secondary: {
       background: 'var(--bg-card)',
@@ -63,7 +74,7 @@ export function Button({
       color: 'var(--text-muted)'
     },
     danger: {
-      background: '#ef4444',
+      background: 'var(--error-500)',
       color: 'white'
     }
   }

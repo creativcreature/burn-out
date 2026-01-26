@@ -1,13 +1,40 @@
-import { useRef, useEffect, useState, CSSProperties } from 'react'
+import { useRef, useEffect, useState, useCallback, CSSProperties } from 'react'
 import { AppLayout, Header } from '../components/layout'
 import { Card, Button, Toast } from '../components/shared'
 import { useAI } from '../hooks/useAI'
+import { useTasks } from '../hooks/useTasks'
+import type { ExtractedTask } from '../utils/ai'
 
 export function ChatPage() {
-  const { messages, isLoading, send, loadHistory } = useAI()
+  const { addTask } = useTasks()
   const [input, setInput] = useState('')
   const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error' | 'info', visible: false })
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Handle tasks created by AI - uses this component's addTask instance
+  const handleTasksCreated = useCallback(async (tasks: ExtractedTask[]): Promise<string[]> => {
+    const createdIds: string[] = []
+    for (const taskData of tasks) {
+      const task = await addTask({
+        verbLabel: taskData.verbLabel.slice(0, 12),
+        taskBody: taskData.taskBody,
+        timeEstimate: taskData.timeEstimate,
+        feedLevel: taskData.feedLevel,
+        timeOfDay: 'anytime'
+      })
+      createdIds.push(task.id)
+    }
+    if (createdIds.length > 0) {
+      setToast({
+        message: `${createdIds.length} task${createdIds.length > 1 ? 's' : ''} added to your list`,
+        type: 'success',
+        visible: true
+      })
+    }
+    return createdIds
+  }, [addTask])
+
+  const { messages, isLoading, send, loadHistory } = useAI({ onTasksCreated: handleTasksCreated })
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -19,19 +46,6 @@ export function ChatPage() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
-
-  // Show toast when tasks are created
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1]
-    if (lastMessage?.role === 'assistant' && lastMessage.tasksCreated?.length) {
-      const count = lastMessage.tasksCreated.length
-      setToast({
-        message: `${count} task${count > 1 ? 's' : ''} added to your list`,
-        type: 'success',
-        visible: true
-      })
-    }
   }, [messages])
 
   const containerStyle: CSSProperties = {

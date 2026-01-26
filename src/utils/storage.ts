@@ -17,6 +17,7 @@ function createDefaultData(): BurnOutData {
     goals: [],
     projects: [],
     tasks: [],
+    taskCategories: [],
     habits: [],
     completedTasks: [],
     journalEntries: [],
@@ -155,6 +156,9 @@ export function createSampleData(): BurnOutData {
         id: goalId1,
         title: 'Launch freelance design business',
         description: 'Build a sustainable creative business on my own terms',
+        timeframe: '1y',
+        isActive: true,
+        rank: 1,
         createdAt: daysAgo(30),
         updatedAt: daysAgo(5),
         archived: false,
@@ -164,6 +168,9 @@ export function createSampleData(): BurnOutData {
         id: goalId2,
         title: 'Prioritize mental health',
         description: 'Build habits that support my wellbeing and prevent burnout',
+        timeframe: '6m',
+        isActive: false,
+        rank: 2,
         createdAt: daysAgo(30),
         updatedAt: daysAgo(2),
         archived: false,
@@ -173,6 +180,9 @@ export function createSampleData(): BurnOutData {
         id: goalId3,
         title: 'Learn new skills',
         description: 'Stay curious and keep growing professionally',
+        timeframe: '3m',
+        isActive: false,
+        rank: 3,
         createdAt: daysAgo(21),
         updatedAt: daysAgo(7),
         archived: false,
@@ -364,6 +374,11 @@ export function createSampleData(): BurnOutData {
         completionCount: 9
       }
     ],
+    taskCategories: [
+      { id: crypto.randomUUID(), name: 'Errands', isSystem: true, createdAt: daysAgo(30) },
+      { id: crypto.randomUUID(), name: 'Health', isSystem: true, createdAt: daysAgo(30) },
+      { id: crypto.randomUUID(), name: 'Admin', isSystem: true, createdAt: daysAgo(30) }
+    ],
     completedTasks,
     journalEntries,
     chatHistory: [],
@@ -391,11 +406,32 @@ function migrateIfNeeded(data: BurnOutData): BurnOutData {
     return data
   }
 
-  // Add migrations here as schema evolves
-  // Example:
-  // if (data.version < 2) {
-  //   data = migrateV1toV2(data)
-  // }
+  // Migration from v1 to v2: Add parentProjectId support
+  // Projects already support undefined parentProjectId, no data changes needed
+  if (data.version < 2) {
+    data = { ...data, version: 2 }
+  }
+
+  // Migration to v3: Add goal timeframe, isActive, rank and taskCategories
+  if (data.version < 3) {
+    // Add new fields to existing goals
+    const migratedGoals = data.goals.map((goal, index) => ({
+      ...goal,
+      timeframe: goal.timeframe || '1y' as const,
+      isActive: index === 0, // First goal becomes active
+      rank: goal.rank ?? index + 1
+    }))
+
+    // Add taskCategories if not present
+    const taskCategories = data.taskCategories || []
+
+    data = {
+      ...data,
+      goals: migratedGoals,
+      taskCategories,
+      version: 3
+    }
+  }
 
   return { ...data, version: CURRENT_VERSION }
 }

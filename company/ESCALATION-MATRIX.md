@@ -41,6 +41,29 @@ Bug (P1)       → QA Director → CTO → CEO
 Bug (Critical) → CEO (immediate)
 ```
 
+### Creative Issues
+
+```
+Asset Request        → Accounts Manager → Art Director
+Design Feedback      → Art Director → Creative Director
+Brand Inconsistency  → Art Director → Creative Director
+Visual Bug           → Art Director → Creative Director → CTO
+Copy Issue           → Copywriter → Creative Director
+Design System Change → Creative Director → CTO
+Major Brand Decision → Creative Director → CEO
+```
+
+### Production Issues
+
+```
+Video Edit Request   → Videographer → Creative Director
+Social Media Issue   → Social Media Manager → Creative Director
+Content Calendar     → Social Media Manager → Strategist
+Campaign Strategy    → Strategist → Creative Director → CEO
+Asset Delivery Delay → Logistics → Accounts → Creative Director
+Resource Conflict    → Logistics → COO
+```
+
 ## Issue Severity Definitions
 
 ### Critical (P0)
@@ -71,6 +94,37 @@ Bug (Critical) → CEO (immediate)
 - Nice to have fix
 - Minor enhancement
 - **Response**: When convenient
+
+## Design-Specific Severity Definitions
+
+### Critical (P0 Design)
+- Brand severely misrepresented
+- Offensive/inappropriate content published
+- Legal liability in creative assets
+- **Response**: Immediate takedown, all hands
+
+### High (P1 Design)
+- Major brand inconsistency in production
+- Wrong logo/colors in shipped feature
+- UX causing user confusion at scale
+- **Response**: Within 2 hours
+
+### Medium (P2 Design)
+- Minor brand inconsistency
+- Spacing/alignment issues
+- Animation glitches
+- **Response**: Within 1 day
+
+### Low (P3 Design)
+- Polish opportunities
+- Minor visual refinements
+- Edge case visual bugs
+- **Response**: Next sprint
+
+### Trivial (P4 Design)
+- Nice to have visual improvements
+- Future enhancement ideas
+- **Response**: Backlog
 
 ## Escalation Template
 
@@ -108,6 +162,14 @@ Bug (Critical) → CEO (immediate)
 | CTO | Architecture, strategy, major tech | Opus |
 | COO | Process, resources, timeline | Sonnet |
 | CEO | Final decisions, approvals | Human |
+| Creative Director | Brand, visual design, creative strategy | Opus |
+| Art Director | Visual execution, design review | Sonnet |
+| Copywriter | Copy, messaging, voice | Sonnet |
+| Videographer | Video, motion graphics | Sonnet |
+| Social Media Manager | Social content, community | Sonnet |
+| Strategist | Campaigns, research, positioning | Sonnet |
+| Accounts Manager | Project intake, client comms | Haiku |
+| Logistics Coordinator | Resources, assets, scheduling | Haiku |
 
 ## Response Time Expectations
 
@@ -139,3 +201,24 @@ If IndexedDB issue detected:
 1. Escalate to CTO immediately
 2. Prevent any data operations
 3. Implement recovery if possible
+
+### Brand Violation
+If brand guidelines violated in shipped feature:
+1. Escalate to Creative Director immediately
+2. Document violation with screenshots
+3. Determine if hotfix needed
+4. Update design documentation to prevent recurrence
+
+### Design/Engineering Conflict
+If Creative Director and CTO disagree on implementation:
+1. Both parties document their position
+2. Identify if primarily visual or technical issue
+3. If unresolved, escalate to CEO
+4. Document decision for future reference
+
+### Visual Regression
+If visual changes break existing design:
+1. Escalate to Art Director
+2. Compare against design specs
+3. If specs unclear, escalate to Creative Director
+4. Block release if brand-critical

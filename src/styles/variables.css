@@ -5,6 +5,48 @@
   --orb-magenta: #ff00ff;
   --orb-purple: #8000ff;
 
+  /* Orb Gradient Aliases (for loading states) */
+  --orb-gradient-1: var(--orb-orange);
+  --orb-gradient-2: var(--orb-red);
+  --orb-gradient-3: var(--orb-magenta);
+
+  /* Brand Colors */
+  --coral-500: #E53935;
+  --coral-400: #EF5350;
+  --coral-600: #C62828;
+
+  /* Purple (Timer Controls) */
+  --purple-500: #7C3AED;
+  --purple-400: #8B5CF6;
+  --purple-600: #6D28D9;
+
+  /* Semantic Colors */
+  --success-500: #69F0AE;
+  --success-600: #00E676;
+  --warning-500: #FFB300;
+  --warning-600: #FFA000;
+  --error-500: #EF5350;
+  --error-600: #E53935;
+
+  /* Tag Colors */
+  --tag-energy-bg: #FEF9E7;
+  --tag-energy-text: #92400E;
+  --tag-energy-border: #FDE68A;
+  --tag-focus-bg: #E53935;
+  --tag-focus-text: #FFFFFF;
+  --tag-call-bg: transparent;
+  --tag-call-text: #6B7280;
+  --tag-call-border: #D1D5DB;
+  --tag-meeting-bg: #FEF3C7;
+  --tag-meeting-text: #92400E;
+  --tag-meeting-border: #FDE68A;
+  --tag-writing-bg: #DBEAFE;
+  --tag-writing-text: #1E40AF;
+  --tag-writing-border: #BFDBFE;
+  --tag-love-bg: #FCE7F3;
+  --tag-love-text: #9D174D;
+  --tag-love-border: #FBCFE8;
+
   /* Typography */
   --font-display: 'Playfair Display', Georgia, serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -49,6 +91,7 @@
 /* Light Theme */
 [data-theme="light"] {
   --bg: #fdf8f3;
+  --bg-primary: #fdf8f3;
   --bg-alt: #fcf9f4;
   --bg-card: rgba(255, 255, 255, 0.75);
   --bg-card-transparent: rgba(255, 255, 255, 0.65);
@@ -64,6 +107,7 @@
 /* Dark Theme */
 [data-theme="dark"] {
   --bg: #0a0a0a;
+  --bg-primary: #0a0a0a;
   --bg-alt: #0a0a0a;
   --bg-card: rgba(20, 20, 20, 0.75);
   --bg-card-transparent: rgba(20, 20, 20, 0.65);
@@ -113,6 +157,17 @@
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Reduced motion */

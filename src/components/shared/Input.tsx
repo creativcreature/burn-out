@@ -32,7 +32,7 @@ export function Input({
     fontSize: 'var(--text-md)',
     fontFamily: 'var(--font-body)',
     background: 'var(--bg-card)',
-    border: `1px solid ${error ? '#ef4444' : 'var(--border)'}`,
+    border: `1px solid ${error ? 'var(--error-500)' : 'var(--border)'}`,
     borderRadius: 'var(--radius-md)',
     color: 'var(--text)',
     outline: 'none',
@@ -41,7 +41,7 @@ export function Input({
 
   const errorStyle: CSSProperties = {
     fontSize: 'var(--text-sm)',
-    color: '#ef4444'
+    color: 'var(--error-500)'
   }
 
   return (

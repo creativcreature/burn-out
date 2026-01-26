@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 interface HeaderProps {
@@ -7,28 +7,49 @@ interface HeaderProps {
   rightAction?: ReactNode
   showLogo?: boolean
   showDate?: boolean
+  subtitle?: string
+  subtitleBadge?: boolean
+  objective?: string
 }
 
-export function Header({ title, showBack = false, rightAction, showLogo = false, showDate = false }: HeaderProps) {
+export function Header({ title, showBack = false, rightAction, showLogo = false, showDate = false, subtitle, subtitleBadge = false, objective }: HeaderProps) {
   const navigate = useNavigate()
 
   const now = new Date()
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+  const subtitleStyle: CSSProperties = subtitleBadge ? {
+    padding: '4px 12px',
+    background: 'var(--orb-orange)',
+    color: 'white',
+    borderRadius: 'var(--radius-full)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 500
+  } : {
+    fontSize: 'var(--text-sm)',
+    color: 'var(--text-muted)'
+  }
 
   if (showLogo) {
     return (
       <header className="app-header">
         <div className="header-top">
-          <span className="logo">BurnOut</span>
+          <span className="logo" onClick={() => navigate('/now')} style={{ cursor: 'pointer' }}>BurnOut</span>
           <button className="header-orb" title="Toggle theme" />
         </div>
         {showDate && (
           <div className="header-bottom">
             <div className="date-section">
-              <span className="date-label">{days[now.getDay()]}</span>
-              <span className="date-display">{months[now.getMonth()]}. {now.getDate()}</span>
+              <span className="day-name">{days[now.getDay()]}</span>
+              <span className="date-num">{months[now.getMonth()]}. {now.getDate()}</span>
             </div>
+            {objective && (
+              <div className="objective-section">
+                <span className="objective-label">Objective:</span>
+                <span className="objective-value">{objective}</span>
+              </div>
+            )}
           </div>
         )}
       </header>
@@ -51,6 +72,7 @@ export function Header({ title, showBack = false, rightAction, showLogo = false,
           </button>
         )}
         {title && <h1 className="header-title">{title}</h1>}
+        {subtitle && <span style={subtitleStyle}>{subtitle}</span>}
         {rightAction && <div>{rightAction}</div>}
       </div>
     </header>

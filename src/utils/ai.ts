@@ -1,4 +1,5 @@
 import type { BurnoutMode, TonePreference } from '../data/types'
+import { parseAITasks } from '../data/validation'
 
 const SYSTEM_PROMPT = `You are a supportive productivity assistant for BurnOut, an app designed for neurodivergent users.
 
@@ -35,7 +36,7 @@ interface AIConfig {
   tonePreference: TonePreference
 }
 
-interface ExtractedTask {
+export interface ExtractedTask {
   verbLabel: string
   taskBody: string
   timeEstimate: number
@@ -133,15 +134,17 @@ ${getModeInstruction(config.burnoutMode)}`
     const data = await response.json()
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
-    // Extract tasks from the response
+    // Extract and validate tasks from the response
     const tasksMatch = content.match(/```tasks\n([\s\S]*?)\n```/)
     let tasks: ExtractedTask[] = []
 
     if (tasksMatch) {
       try {
-        tasks = JSON.parse(tasksMatch[1])
+        const rawTasks = JSON.parse(tasksMatch[1])
+        // Validate each task and filter out invalid ones
+        tasks = parseAITasks(rawTasks)
       } catch (e) {
-        console.error('Failed to parse tasks:', e)
+        console.error('Failed to parse tasks JSON:', e)
       }
     }
 
@@ -163,7 +166,8 @@ export function parseTasksFromMessage(content: string): ExtractedTask[] {
   if (!tasksMatch) return []
 
   try {
-    return JSON.parse(tasksMatch[1])
+    const rawTasks = JSON.parse(tasksMatch[1])
+    return parseAITasks(rawTasks)
   } catch {
     return []
   }

@@ -7,6 +7,7 @@ export type ProjectStatus = 'active' | 'paused' | 'completed'
 export type BurnoutMode = 'recovery' | 'prevention' | 'balanced'
 export type TonePreference = 'gentle' | 'direct' | 'playful'
 export type HabitFrequency = 'daily' | 'weekly' | 'custom'
+export type GoalTimeframe = '5y' | '3y' | '1y' | '6m' | '3m' | '1m' | '1w'
 
 export interface TimeBlock {
   start: string  // HH:MM format
@@ -34,7 +35,10 @@ export interface Goal {
   id: string
   title: string
   description?: string
+  timeframe: GoalTimeframe
   targetDate?: string
+  isActive: boolean          // Only ONE goal can be active at a time
+  rank: number               // User-defined priority (lower = higher priority)
   createdAt: string
   updatedAt: string
   archived: boolean
@@ -44,6 +48,7 @@ export interface Goal {
 export interface Project {
   id: string
   goalId: string
+  parentProjectId?: string  // Reference to parent project for nesting
   title: string
   description?: string
   status: ProjectStatus
@@ -52,10 +57,18 @@ export interface Project {
   order: number
 }
 
+export interface TaskCategory {
+  id: string
+  name: string            // e.g., "Errands", "Health", "Admin"
+  isSystem: boolean       // AI-generated vs user-created
+  createdAt: string
+}
+
 export interface Task {
   id: string
   projectId?: string
   goalId?: string
+  categoryId?: string     // For AI auto-tagging orphan tasks
   verbLabel: string       // Max 12 chars
   taskBody: string
   timeEstimate: number    // Minutes
@@ -117,6 +130,8 @@ export interface Settings {
   apiKey?: string
   haptics: boolean
   soundEnabled: boolean
+  cardBackgroundImage?: string  // Base64 encoded image data
+  cardBackgroundBrightness?: 'light' | 'dark' | 'auto'  // How to handle image dimming
 }
 
 export interface OnboardingData {
@@ -132,6 +147,7 @@ export interface BurnOutData {
   goals: Goal[]
   projects: Project[]
   tasks: Task[]
+  taskCategories: TaskCategory[]
   habits: Habit[]
   completedTasks: CompletedTask[]
   journalEntries: JournalEntry[]

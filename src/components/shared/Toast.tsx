@@ -19,8 +19,8 @@ export function Toast({ message, type = 'info', isVisible, onClose, duration = 3
   if (!isVisible) return null
 
   const colors = {
-    success: 'var(--orb-orange)',
-    error: '#ef4444',
+    success: 'var(--success-500)',
+    error: 'var(--error-500)',
     info: 'var(--text-muted)'
   }
 

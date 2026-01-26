@@ -134,6 +134,16 @@ export function useEnergy() {
     return `${momentum} tasks completed! You're on a roll.`
   }, [momentum])
 
+  // Refresh momentum from storage (call after completing a task)
+  const refreshMomentum = useCallback(async () => {
+    const data = await getData()
+    const today = new Date().toISOString().split('T')[0]
+    const todayCompletions = data.completedTasks.filter(t =>
+      t.completedAt.startsWith(today)
+    ).length
+    setMomentum(todayCompletions)
+  }, [])
+
   return {
     currentEnergy,
     momentum,
@@ -144,6 +154,7 @@ export function useEnergy() {
     getCurrentTimeOfDay,
     getGreeting,
     getMomentumMessage,
+    refreshMomentum,
     getTaskScore,
     sortTasksByEnergy,
     getSuggestedTask

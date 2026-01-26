@@ -5,7 +5,11 @@ import { Button } from '../shared/Button'
 import { useOnboarding } from '../../hooks/useOnboarding'
 import type { EnergyLevel } from '../../data/types'
 
-export function Onboarding() {
+interface OnboardingProps {
+  onComplete?: () => void
+}
+
+export function Onboarding({ onComplete }: OnboardingProps) {
   const {
     state,
     totalSteps,
@@ -16,7 +20,7 @@ export function Onboarding() {
     setEnergyDefaults,
     completeOnboarding,
     skipOnboarding
-  } = useOnboarding()
+  } = useOnboarding({ onComplete })
 
   const containerStyle: CSSProperties = {
     minHeight: '100vh',

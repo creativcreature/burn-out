@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(./scripts/validate.sh:*)",
+      "WebFetch(domain:apps.apple.com)",
+      "Bash(source .env)",
+      "Bash(curl:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run test)",
+      "Bash(lsof:*)",
+      "Bash(npx ts-node:*)",
+      "WebSearch",
+      "Bash(npx tsx:*)",
+      "Bash(npm install:*)",
+      "Bash(brew install:*)",
+      "Bash(brew services start:*)",
+      "Bash(ollama pull:*)",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:burn-out-one.vercel.app)",
+      "Bash(npx eslint:*)",
+      "Bash(xargs:*)",
+      "Bash(ls:*)",
+      "Bash([ -d node_modules ])",
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)",
+      "WebFetch(domain:www.appshot.gallery)",
+      "WebFetch(domain:www.threads.com)",
+      "WebFetch(domain:wndn.studio)",
+      "Bash(find:*)",
+      "Bash(npm run test:*)"
+    ]
+  }
+}
