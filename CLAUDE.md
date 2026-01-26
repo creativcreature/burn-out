@@ -11,7 +11,8 @@ Energy-aware productivity app for neurodivergent users.
 - Styling: CSS Variables
 - PWA: vite-plugin-pwa with Workbox
 - AI: Anthropic Claude API
-- Hosting: Cloudflare Pages
+- Hosting: Vercel
+- Production URL: https://burnoutapp.vercel.app
 
 ## Commands
 ```bash
