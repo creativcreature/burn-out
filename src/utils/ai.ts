@@ -1,7 +1,7 @@
-import type { BurnoutMode, TonePreference } from '../data/types'
+import type { BurnoutMode, TonePreference, AIProvider, Goal, Project } from '../data/types'
 import { parseAITasks } from '../data/validation'
 
-const SYSTEM_PROMPT = `You are a supportive productivity assistant for BurnOut, an app designed for neurodivergent users.
+const BASE_SYSTEM_PROMPT = `You are a supportive productivity assistant for BurnOut, an app designed for neurodivergent users.
 
 Your role is to help users:
 1. Process their thoughts and feelings about tasks
@@ -24,7 +24,9 @@ When extracting tasks, return them in this JSON format at the end of your respon
     "verbLabel": "Deep Work",
     "taskBody": "description of the task",
     "timeEstimate": 30,
-    "feedLevel": "medium"
+    "feedLevel": "medium",
+    "suggestedGoalId": "goal-uuid-if-applicable",
+    "suggestedProjectId": "project-uuid-if-applicable"
   }
 ]
 \`\`\`
@@ -34,6 +36,9 @@ Verb label examples: Deep Work, Quick Win, Research, Draft, Review, Organize, Co
 interface AIConfig {
   burnoutMode: BurnoutMode
   tonePreference: TonePreference
+  provider: AIProvider
+  goals?: Goal[]
+  projects?: Project[]
 }
 
 export interface ExtractedTask {
@@ -41,6 +46,8 @@ export interface ExtractedTask {
   taskBody: string
   timeEstimate: number
   feedLevel: 'low' | 'medium' | 'high'
+  suggestedGoalId?: string
+  suggestedProjectId?: string
 }
 
 interface AIResponse {
@@ -70,61 +77,77 @@ function getModeInstruction(mode: BurnoutMode): string {
   }
 }
 
+function getGoalsContext(goals?: Goal[], projects?: Project[]): string {
+  if (!goals || goals.length === 0) return ''
+
+  let context = '\n\nUSER\'S GOALS AND PROJECTS (use these IDs when suggesting task associations):\n'
+
+  for (const goal of goals.filter(g => !g.archived)) {
+    context += `\n- Goal: "${goal.title}" (ID: ${goal.id})${goal.isActive ? ' [ACTIVE]' : ''}`
+    const goalProjects = projects?.filter(p => p.goalId === goal.id) || []
+    for (const project of goalProjects) {
+      context += `\n  - Project: "${project.title}" (ID: ${project.id})`
+    }
+  }
+
+  context += '\n\nWhen extracting tasks, suggest matching goals/projects based on the task content.'
+
+  return context
+}
+
+function buildSystemPrompt(config: AIConfig): string {
+  return `${BASE_SYSTEM_PROMPT}
+
+${getToneInstruction(config.tonePreference)}
+${getModeInstruction(config.burnoutMode)}
+${getGoalsContext(config.goals, config.projects)}`
+}
+
+// Get the API base URL - use Vercel proxy in production, or local in dev
+function getApiUrl(): string {
+  // In production, use relative URL (same domain)
+  if (import.meta.env.PROD) {
+    return '/api/chat'
+  }
+  // In development, check for local dev server or use Vercel preview
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  // Default to local Vercel dev server
+  return '/api/chat'
+}
+
 export async function sendMessage(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   config: AIConfig
 ): Promise<AIResponse> {
-  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY
-
-  if (!apiKey) {
-    return {
-      message: "I'd love to help, but I need an API key to work. Please add VITE_GOOGLE_API_KEY to your .env file.",
-      tasks: []
-    }
-  }
-
-  const systemPrompt = `${SYSTEM_PROMPT}
-
-${getToneInstruction(config.tonePreference)}
-${getModeInstruction(config.burnoutMode)}`
-
-  // Convert messages to Gemini format
-  const geminiMessages = messages.map(m => ({
-    role: m.role === 'user' ? 'user' : 'model',
-    parts: [{ text: m.content }]
-  }))
-
-  // Add system instruction as first user message if not empty
-  if (geminiMessages.length > 0) {
-    geminiMessages[0] = {
-      role: 'user',
-      parts: [{ text: `${systemPrompt}\n\nUser message: ${messages[0].content}` }]
-    }
-  }
+  const systemPrompt = buildSystemPrompt(config)
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: geminiMessages,
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024
-          }
-        })
-      }
-    )
+    const response = await fetch(getApiUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages,
+        provider: config.provider,
+        systemPrompt
+      })
+    })
 
     if (!response.ok) {
-      const error = await response.json()
-      console.error('Gemini API Error:', error)
+      const error = await response.json().catch(() => ({ error: 'Unknown error' }))
+      console.error('Chat API Error:', error)
+
+      // Check for specific error types
+      if (response.status === 500 && error.error?.includes('not configured')) {
+        return {
+          message: `The ${config.provider === 'claude' ? 'Claude' : 'Gemini'} API key hasn't been configured yet. Please check the server configuration.`,
+          tasks: []
+        }
+      }
+
       return {
         message: "I'm having trouble connecting right now. Please try again in a moment.",
         tasks: []
@@ -132,7 +155,7 @@ ${getModeInstruction(config.burnoutMode)}`
     }
 
     const data = await response.json()
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    const content = data.content || ''
 
     // Extract and validate tasks from the response
     const tasksMatch = content.match(/```tasks\n([\s\S]*?)\n```/)
@@ -142,7 +165,13 @@ ${getModeInstruction(config.burnoutMode)}`
       try {
         const rawTasks = JSON.parse(tasksMatch[1])
         // Validate each task and filter out invalid ones
-        tasks = parseAITasks(rawTasks)
+        const validatedTasks = parseAITasks(rawTasks)
+        // Add optional goal/project IDs if present
+        tasks = validatedTasks.map((task, index) => ({
+          ...task,
+          suggestedGoalId: rawTasks[index]?.suggestedGoalId,
+          suggestedProjectId: rawTasks[index]?.suggestedProjectId
+        }))
       } catch (e) {
         console.error('Failed to parse tasks JSON:', e)
       }

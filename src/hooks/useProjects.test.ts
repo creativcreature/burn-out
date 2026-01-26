@@ -9,7 +9,7 @@ const TEST_PARENT_PROJECT_ID = '550e8400-e29b-41d4-a716-446655440000'
 
 // Mock data
 const createMockData = (projects: Project[] = [], tasks: BurnOutData['tasks'] = []): BurnOutData => ({
-  version: 2,
+  version: 4,
   theme: 'light',
   user: {
     id: 'test-user',
@@ -29,11 +29,13 @@ const createMockData = (projects: Project[] = [], tasks: BurnOutData['tasks'] = 
   completedTasks: [],
   journalEntries: [],
   chatHistory: [],
+  conversations: [],
   settings: {
     notifications: false,
     dailyReminder: null,
     haptics: true,
-    soundEnabled: true
+    soundEnabled: true,
+    aiProvider: 'gemini'
   },
   onboarding: { completed: false, skippedSteps: [] }
 })

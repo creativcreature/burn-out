@@ -1,8 +1,9 @@
-import { useState, CSSProperties } from 'react'
+import { useState, useEffect, CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppLayout, Header } from '../components/layout'
 import { Card, Button, Input, Modal, Toast } from '../components/shared'
 import { useTasks } from '../hooks/useTasks'
+import { getData, setPinnedTaskId } from '../utils/storage'
 import { useGoals } from '../hooks/useGoals'
 import { useProjects } from '../hooks/useProjects'
 import { useDragAndDrop } from '../hooks/useDragAndDrop'
@@ -40,6 +41,25 @@ export function OrganizePage() {
   const [activeTab, setActiveTab] = useState<TabType>('goals')
   const [showAddModal, setShowAddModal] = useState(false)
   const [toast, setToast] = useState({ message: '', type: 'success' as const, visible: false })
+  const [pinnedTaskId, setPinnedTaskIdState] = useState<string | undefined>(undefined)
+
+  // Load pinned task
+  useEffect(() => {
+    getData().then(data => {
+      setPinnedTaskIdState(data.settings.pinnedTaskId)
+    })
+  }, [])
+
+  const handlePinTask = async (taskId: string) => {
+    const newPinnedId = pinnedTaskId === taskId ? undefined : taskId
+    await setPinnedTaskId(newPinnedId)
+    setPinnedTaskIdState(newPinnedId)
+    setToast({
+      message: newPinnedId ? 'Task pinned! View it in Now.' : 'Task unpinned.',
+      type: 'success',
+      visible: true
+    })
+  }
 
   // Task form state
   const [newTask, setNewTask] = useState({
@@ -466,12 +486,34 @@ export function OrganizePage() {
                             </svg>
                           </div>
                           <div style={itemMainStyle}>
-                            <div style={itemVerbStyle}>{task.verbLabel}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+                              <span style={itemVerbStyle}>{task.verbLabel}</span>
+                              {pinnedTaskId === task.id && (
+                                <span style={{ color: 'var(--orb-orange)', fontSize: 'var(--text-xs)' }}>★ pinned</span>
+                              )}
+                            </div>
                             <div style={itemDescStyle}>{task.taskBody}</div>
                             <div style={itemMetaStyle}>
                               {task.timeEstimate} min · {task.feedLevel} energy
                             </div>
                           </div>
+                          <button
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: '4px 8px',
+                              color: pinnedTaskId === task.id ? 'var(--orb-orange)' : 'var(--text-subtle)',
+                              fontSize: 'var(--text-lg)'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handlePinTask(task.id)
+                            }}
+                            title={pinnedTaskId === task.id ? 'Unpin task' : 'Pin as current task'}
+                          >
+                            {pinnedTaskId === task.id ? '★' : '☆'}
+                          </button>
                           <Button
                             variant="ghost"
                             size="sm"

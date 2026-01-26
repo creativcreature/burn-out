@@ -5,7 +5,7 @@ import type { Task, BurnOutData } from '../data/types'
 
 // Mock data
 const createMockData = (tasks: Task[] = []): BurnOutData => ({
-  version: 1,
+  version: 4,
   theme: 'light',
   user: {
     id: 'test-user',
@@ -23,11 +23,13 @@ const createMockData = (tasks: Task[] = []): BurnOutData => ({
   completedTasks: [],
   journalEntries: [],
   chatHistory: [],
+  conversations: [],
   settings: {
     notifications: false,
     dailyReminder: null,
     haptics: true,
-    soundEnabled: true
+    soundEnabled: true,
+    aiProvider: 'gemini'
   },
   onboarding: { completed: false, skippedSteps: [] }
 })

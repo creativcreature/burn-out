@@ -115,6 +115,17 @@ export interface ChatMessage {
   tasksCreated?: string[]
 }
 
+export interface Conversation {
+  id: string
+  title: string
+  createdAt: string
+  lastMessageAt: string
+  isArchived: boolean
+  messages: ChatMessage[]
+}
+
+export type AIProvider = 'gemini' | 'claude'
+
 export interface JournalEntry {
   id: string
   date: string           // YYYY-MM-DD
@@ -132,6 +143,8 @@ export interface Settings {
   soundEnabled: boolean
   cardBackgroundImage?: string  // Base64 encoded image data
   cardBackgroundBrightness?: 'light' | 'dark' | 'auto'  // How to handle image dimming
+  pinnedTaskId?: string  // Task ID to show as current task in Now page
+  aiProvider: AIProvider  // Which AI provider to use for chat
 }
 
 export interface OnboardingData {
@@ -151,7 +164,8 @@ export interface BurnOutData {
   habits: Habit[]
   completedTasks: CompletedTask[]
   journalEntries: JournalEntry[]
-  chatHistory: ChatMessage[]
+  chatHistory: ChatMessage[]  // Deprecated - use conversations
+  conversations: Conversation[]
   settings: Settings
   onboarding: OnboardingData
 }

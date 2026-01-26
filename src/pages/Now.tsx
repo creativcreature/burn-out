@@ -6,7 +6,7 @@ import { useTasks } from '../hooks/useTasks'
 import { useEnergy } from '../hooks/useEnergy'
 import { useAI } from '../hooks/useAI'
 import { useGoals } from '../hooks/useGoals'
-import { getData } from '../utils/storage'
+import { getData, setPinnedTaskId } from '../utils/storage'
 import type { Task, EnergyLevel, Settings } from '../data/types'
 import type { ExtractedTask } from '../utils/ai'
 
@@ -25,12 +25,12 @@ export function NowPage() {
   const [showTimer, setShowTimer] = useState(false)
   const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error' | 'info', visible: false })
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
-  const [showTodayView, setShowTodayView] = useState(false)
   const [snoozeCount] = useState(1)
   const [pushCount] = useState(1)
   const [cardSettings, setCardSettings] = useState<Pick<Settings, 'cardBackgroundImage' | 'cardBackgroundBrightness'> | null>(null)
+  const [pinnedTaskId, setPinnedTaskIdState] = useState<string | undefined>(undefined)
 
-  // Load background image settings
+  // Load settings including pinned task
   useEffect(() => {
     getData().then(data => {
       if (data.settings) {
@@ -38,91 +38,218 @@ export function NowPage() {
           cardBackgroundImage: data.settings.cardBackgroundImage,
           cardBackgroundBrightness: data.settings.cardBackgroundBrightness
         })
+        setPinnedTaskIdState(data.settings.pinnedTaskId)
       }
     })
   }, [])
 
+  // Handle unpinning task
+  const handleUnpinTask = async () => {
+    await setPinnedTaskId(undefined)
+    setPinnedTaskIdState(undefined)
+  }
+
   // Scroll/swipe progress for upcoming sheet animation
   const [scrollProgress, setScrollProgress] = useState(0)
+  const progressRef = useRef<number>(0) // Track current progress for touch handlers
   const touchStartY = useRef<number>(0)
-  const touchCurrentY = useRef<number>(0)
+  const lastTouchY = useRef<number>(0)
+  const velocity = useRef<number>(0)
   const isDragging = useRef<boolean>(false)
+  const canDragSheet = useRef<boolean>(false) // Whether sheet drag should control progress
   const sheetRef = useRef<HTMLDivElement>(null)
+  const animationFrame = useRef<number | null>(null)
 
+  // Keep progressRef in sync with state
+  useEffect(() => {
+    progressRef.current = scrollProgress
+  }, [scrollProgress])
+
+  // Touch handlers for the main area (opening the sheet)
   const handleTouchStart = (e: TouchEvent) => {
+    if (animationFrame.current) {
+      cancelAnimationFrame(animationFrame.current)
+      animationFrame.current = null
+    }
     touchStartY.current = e.touches[0].clientY
-    touchCurrentY.current = e.touches[0].clientY
+    lastTouchY.current = e.touches[0].clientY
+    velocity.current = 0
     isDragging.current = true
+    canDragSheet.current = false
   }
 
   const handleTouchMove = (e: TouchEvent) => {
     if (!isDragging.current) return
-    touchCurrentY.current = e.touches[0].clientY
-    const diff = touchStartY.current - touchCurrentY.current
-    // Calculate progress (0 to 1) based on drag distance
-    const maxDrag = 200
-    const progress = Math.max(0, Math.min(1, diff / maxDrag))
 
-    if (!showTodayView) {
-      setScrollProgress(progress)
-    } else {
-      // When closing, reverse the logic
-      const closeProgress = Math.max(0, Math.min(1, -diff / maxDrag))
-      setScrollProgress(1 - closeProgress)
-    }
+    const currentY = e.touches[0].clientY
+    const deltaY = lastTouchY.current - currentY // positive = moving up, negative = moving down
+
+    velocity.current = deltaY
+    lastTouchY.current = currentY
+
+    const sensitivity = 300
+    const progressDelta = deltaY / sensitivity
+    const newProgress = Math.max(0, Math.min(1, progressRef.current + progressDelta))
+
+    progressRef.current = newProgress
+    setScrollProgress(newProgress)
   }
 
   const handleTouchEnd = () => {
     isDragging.current = false
-    // Snap to open or closed based on progress
-    if (scrollProgress > 0.3 && !showTodayView) {
-      setShowTodayView(true)
-      setScrollProgress(1)
-    } else if (scrollProgress < 0.7 && showTodayView) {
-      setShowTodayView(false)
-      setScrollProgress(0)
-    } else if (!showTodayView) {
-      setScrollProgress(0)
+    animateToSnap()
+  }
+
+  // Touch handlers specifically for the sheet (closing)
+  const handleSheetTouchStart = (e: TouchEvent) => {
+    if (animationFrame.current) {
+      cancelAnimationFrame(animationFrame.current)
+      animationFrame.current = null
+    }
+    touchStartY.current = e.touches[0].clientY
+    lastTouchY.current = e.touches[0].clientY
+    velocity.current = 0
+    isDragging.current = true
+
+    // Check if sheet is scrolled to top - if so, we can drag to close
+    const sheet = sheetRef.current
+    canDragSheet.current = sheet ? sheet.scrollTop <= 5 : true
+  }
+
+  const handleSheetTouchMove = (e: TouchEvent) => {
+    if (!isDragging.current) return
+
+    const currentY = e.touches[0].clientY
+    const deltaY = lastTouchY.current - currentY // positive = up, negative = down
+    const isSwipingDown = deltaY < 0
+    const sheet = sheetRef.current
+
+    // Re-check scroll position on each move
+    if (sheet && sheet.scrollTop <= 5) {
+      canDragSheet.current = true
+    }
+
+    // If swiping down and sheet is at top (or we started at top), drag sheet
+    if (isSwipingDown && canDragSheet.current) {
+      e.preventDefault()
+      e.stopPropagation()
+
+      velocity.current = deltaY
+      lastTouchY.current = currentY
+
+      const sensitivity = 250
+      const progressDelta = deltaY / sensitivity
+      const newProgress = Math.max(0, Math.min(1, progressRef.current + progressDelta))
+
+      progressRef.current = newProgress
+      setScrollProgress(newProgress)
     } else {
-      setScrollProgress(1)
+      // Swiping up or sheet has scrolled content - track velocity
+      lastTouchY.current = currentY
+      velocity.current = deltaY
+    }
+  }
+
+  const handleSheetTouchEnd = () => {
+    isDragging.current = false
+    // Always animate to snap if we've moved the sheet at all
+    if (progressRef.current < 0.95) {
+      animateToSnap()
+    }
+  }
+
+  const animateToSnap = () => {
+    const currentProgress = progressRef.current
+    const currentVelocity = velocity.current
+
+    const animateToTarget = (target: number) => {
+      const animate = () => {
+        const current = progressRef.current
+        const diff = target - current
+        const step = diff * 0.15
+
+        if (Math.abs(diff) < 0.005) {
+          progressRef.current = target
+          setScrollProgress(target)
+          return
+        }
+
+        const newVal = current + step
+        progressRef.current = newVal
+        setScrollProgress(newVal)
+        animationFrame.current = requestAnimationFrame(animate)
+      }
+      animationFrame.current = requestAnimationFrame(animate)
+    }
+
+    const velocityThreshold = 5
+
+    if (currentVelocity > velocityThreshold) {
+      animateToTarget(1)
+    } else if (currentVelocity < -velocityThreshold) {
+      animateToTarget(0)
+    } else {
+      if (currentProgress > 0.5) {
+        animateToTarget(1)
+      } else {
+        animateToTarget(0)
+      }
     }
   }
 
   // Handle mouse wheel for desktop
   const handleWheel = (e: WheelEvent) => {
-    if (e.deltaY > 0 && !showTodayView) {
-      // Scrolling down (wheel up motion) - open sheet
-      setShowTodayView(true)
-      setScrollProgress(1)
-    } else if (e.deltaY < 0 && showTodayView) {
-      // Scrolling up (wheel down motion) - close sheet
-      setShowTodayView(false)
-      setScrollProgress(0)
+    // Only handle wheel if sheet is not scrollable or at boundaries
+    const sheet = sheetRef.current
+    if (sheet && progressRef.current >= 1) {
+      const atTop = sheet.scrollTop <= 0
+      const atBottom = sheet.scrollTop >= sheet.scrollHeight - sheet.clientHeight
+
+      // If scrolling down and at top, close sheet
+      if (e.deltaY < 0 && atTop) {
+        e.preventDefault()
+        const delta = e.deltaY * 0.003
+        const newProgress = Math.max(0, Math.min(1, progressRef.current + delta))
+        progressRef.current = newProgress
+        setScrollProgress(newProgress)
+        return
+      }
+
+      // If at bottom and scrolling up, don't interfere
+      if (e.deltaY > 0 && !atBottom) {
+        return
+      }
+    }
+
+    // Normal wheel handling for opening
+    if (progressRef.current < 1) {
+      const delta = e.deltaY * 0.003
+      const newProgress = Math.max(0, Math.min(1, progressRef.current + delta))
+      progressRef.current = newProgress
+      setScrollProgress(newProgress)
     }
   }
 
-  // Animate scroll progress when showTodayView changes
+  // Cleanup animation frame on unmount
   useEffect(() => {
-    if (showTodayView && scrollProgress !== 1) {
-      setScrollProgress(1)
-    } else if (!showTodayView && scrollProgress !== 0) {
-      setScrollProgress(0)
+    return () => {
+      if (animationFrame.current) {
+        cancelAnimationFrame(animationFrame.current)
+      }
     }
-  }, [showTodayView])
+  }, [])
 
   // Calculate dynamic styles based on scroll progress
   const taskCardStyle: CSSProperties = {
     filter: `blur(${scrollProgress * 12}px)`,
     opacity: 1 - (scrollProgress * 0.6),
     transform: `scale(${1 - (scrollProgress * 0.08)}) translateY(${scrollProgress * -20}px)`,
-    transition: isDragging.current ? 'none' : 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+    transition: 'filter 0.1s ease-out, opacity 0.1s ease-out, transform 0.1s ease-out'
   }
 
   const upcomingSheetStyle: CSSProperties = {
-    transform: `translateY(${100 - (scrollProgress * 100)}%)`,
-    opacity: scrollProgress,
-    transition: isDragging.current ? 'none' : 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
-  }
+    '--sheet-progress': scrollProgress
+  } as CSSProperties
 
   // Get current objective from goals
   const currentObjective = goals.length > 0 ? goals[0].title : undefined
@@ -158,8 +285,10 @@ export function NowPage() {
 
   // Sort tasks by energy-aware scoring
   const sortedTasks = sortTasksByEnergy(pendingTasks)
-  const suggestedTask = getSuggestedTask(pendingTasks)
-  const upcomingTasks = sortedTasks.filter(t => t.id !== suggestedTask?.id).slice(0, 3)
+  // Use pinned task if set, otherwise use AI suggestion
+  const pinnedTask = pinnedTaskId ? pendingTasks.find(t => t.id === pinnedTaskId) : undefined
+  const currentTask = pinnedTask || getSuggestedTask(pendingTasks)
+  const upcomingTasks = sortedTasks.filter(t => t.id !== currentTask?.id)
 
   const handleStartTask = (task: Task) => {
     setActiveTask(task)
@@ -256,7 +385,7 @@ export function NowPage() {
         )}
 
         <div className="task-display">
-          {suggestedTask ? (
+          {currentTask ? (
             <div
               className={`glass-card-transparent task-card ${cardSettings?.cardBackgroundImage ? (cardSettings.cardBackgroundBrightness === 'light' ? 'bg-light' : 'bg-dark') : ''}`}
               style={{
@@ -269,8 +398,8 @@ export function NowPage() {
               }}
             >
               <div className="task-header">
-                <h1 className="task-title">{suggestedTask.verbLabel}.</h1>
-                <p className="task-subtitle">{suggestedTask.taskBody}</p>
+                <h1 className="task-title">{currentTask.verbLabel}.</h1>
+                <p className="task-subtitle">{currentTask.taskBody}</p>
               </div>
 
               {/* Due row */}
@@ -281,11 +410,11 @@ export function NowPage() {
                 </div>
                 <div className="due-item" style={{ flexDirection: 'row', gap: 'var(--space-md)' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {getEnergyBolts(suggestedTask.feedLevel)}
+                    {getEnergyBolts(currentTask.feedLevel)}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span style={{ fontSize: 'var(--text-sm)' }}>◷</span>
-                    <span>{suggestedTask.timeEstimate} mins</span>
+                    <span>{currentTask.timeEstimate} mins</span>
                   </span>
                 </div>
               </div>
@@ -300,22 +429,35 @@ export function NowPage() {
               </div>
 
               {/* Notes section */}
-              {suggestedTask.taskBody && (
+              {currentTask.taskBody && (
                 <div className="notes-section">
                   <div className="notes-label">Notes:</div>
-                  <div className="notes-text">{suggestedTask.taskBody}</div>
+                  <div className="notes-text">{currentTask.taskBody}</div>
+                </div>
+              )}
+
+              {/* Unpin indicator if task is pinned */}
+              {pinnedTask && (
+                <div style={{ textAlign: 'center', marginBottom: 'var(--space-sm)' }}>
+                  <button
+                    className="action-link"
+                    onClick={handleUnpinTask}
+                    style={{ color: 'var(--orb-orange)' }}
+                  >
+                    ★ Pinned — tap to unpin
+                  </button>
                 </div>
               )}
 
               {/* Action row with snooze/push */}
               <div className="task-actions-row">
-                <button className="action-link" onClick={() => handleDeferTask(suggestedTask)}>
+                <button className="action-link" onClick={() => handleDeferTask(currentTask)}>
                   ← snooze ({snoozeCount})
                 </button>
-                <Button variant="primary" onClick={() => handleStartTask(suggestedTask)}>
+                <Button variant="primary" onClick={() => handleStartTask(currentTask)}>
                   Start Task.
                 </Button>
-                <button className="action-link" onClick={() => handleDeferTask(suggestedTask)}>
+                <button className="action-link" onClick={() => handleDeferTask(currentTask)}>
                   push ({pushCount}) →
                 </button>
               </div>
@@ -364,29 +506,40 @@ export function NowPage() {
         ref={sheetRef}
         className="upcoming-sheet"
         style={upcomingSheetStyle}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={handleSheetTouchStart}
+        onTouchMove={handleSheetTouchMove}
+        onTouchEnd={handleSheetTouchEnd}
       >
         {/* Sheet handle */}
-        <div className="sheet-handle">
+        <div
+          className="sheet-handle"
+          onTouchStart={(e) => {
+            handleSheetTouchStart(e)
+            canDragSheet.current = true // Handle always allows drag
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault()
+            handleSheetTouchMove(e)
+          }}
+          onTouchEnd={handleSheetTouchEnd}
+        >
           <div className="sheet-handle-bar" />
         </div>
 
         <h2 className="sheet-title">Upcoming</h2>
 
-        {suggestedTask && (
+        {currentTask && (
           <div className="sheet-section">
             <div className="sheet-section-label">current</div>
-            <div className="upcoming-card sheet-card" onClick={() => { setShowTodayView(false); setScrollProgress(0); handleStartTask(suggestedTask) }}>
+            <div className="upcoming-card sheet-card" onClick={() => { setScrollProgress(0); handleStartTask(currentTask) }}>
               <div className="upcoming-card-header">
                 <span className="upcoming-time">Now</span>
                 <div className="upcoming-energy">
-                  <span>{getEnergyBolts(suggestedTask.feedLevel)}</span>
-                  <span>◷ {suggestedTask.timeEstimate} min</span>
+                  <span>{getEnergyBolts(currentTask.feedLevel)}</span>
+                  <span>◷ {currentTask.timeEstimate} min</span>
                 </div>
               </div>
-              <div className="upcoming-title">{suggestedTask.verbLabel}.</div>
+              <div className="upcoming-title">{currentTask.verbLabel}.</div>
               <div className="tags-row" style={{ justifyContent: 'flex-start' }}>
                 <Tag variant="energy">Energy</Tag>
                 <Tag variant="focus">Focus</Tag>
@@ -404,7 +557,7 @@ export function NowPage() {
                   key={task.id}
                   className="upcoming-card sheet-card"
                   style={{ animationDelay: `${index * 0.1}s` }}
-                  onClick={() => { setShowTodayView(false); setScrollProgress(0); handleStartTask(task) }}
+                  onClick={() => { setScrollProgress(0); handleStartTask(task) }}
                 >
                   <div className="upcoming-card-header">
                     <span className="upcoming-time">Later</span>
@@ -423,7 +576,7 @@ export function NowPage() {
         {/* Close indicator */}
         <button
           className="sheet-close-hint"
-          onClick={() => { setShowTodayView(false); setScrollProgress(0) }}
+          onClick={() => setScrollProgress(0)}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 19V5M5 12l7-7 7 7" />

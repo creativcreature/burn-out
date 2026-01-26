@@ -14,7 +14,7 @@ vi.mock('../data/validation', () => ({
 
 // Mock data
 const createMockData = (habits: Habit[] = []): BurnOutData => ({
-  version: 1,
+  version: 4,
   theme: 'light',
   user: {
     id: 'test-user',
@@ -32,11 +32,13 @@ const createMockData = (habits: Habit[] = []): BurnOutData => ({
   completedTasks: [],
   journalEntries: [],
   chatHistory: [],
+  conversations: [],
   settings: {
     notifications: false,
     dailyReminder: null,
     haptics: true,
-    soundEnabled: true
+    soundEnabled: true,
+    aiProvider: 'gemini'
   },
   onboarding: { completed: false, skippedSteps: [] }
 })

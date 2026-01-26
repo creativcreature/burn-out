@@ -1,5 +1,5 @@
 export const STORAGE_KEY = 'burnout_v4'
-export const CURRENT_VERSION = 3
+export const CURRENT_VERSION = 4
 
 export const VERB_LABEL_MAX_LENGTH = 12
 

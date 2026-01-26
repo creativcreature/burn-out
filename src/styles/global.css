@@ -1061,6 +1061,7 @@ html, body {
 /* Floating Action Button */
 /* Upcoming Sheet Overlay */
 .upcoming-sheet {
+  --sheet-progress: 0;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -1075,6 +1076,10 @@ html, body {
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  transform: translateY(calc(100% * (1 - var(--sheet-progress))));
+  opacity: calc(0.3 + (var(--sheet-progress) * 0.7));
+  pointer-events: auto;
+  transition: transform 0.1s ease-out, opacity 0.1s ease-out;
 }
 
 [data-theme="dark"] .upcoming-sheet {
@@ -1085,15 +1090,28 @@ html, body {
 .sheet-handle {
   display: flex;
   justify-content: center;
-  padding: var(--space-sm) 0 var(--space-md);
+  padding: var(--space-md) 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.sheet-handle:active {
+  cursor: grabbing;
 }
 
 .sheet-handle-bar {
-  width: 40px;
-  height: 4px;
+  width: 48px;
+  height: 5px;
   background: var(--text-subtle);
   border-radius: var(--radius-full);
-  opacity: 0.5;
+  opacity: 0.6;
+  transition: opacity 0.2s, width 0.2s;
+}
+
+.sheet-handle:hover .sheet-handle-bar {
+  opacity: 0.8;
+  width: 56px;
 }
 
 .sheet-title {
@@ -1154,8 +1172,10 @@ html, body {
 @media (min-width: 768px) {
   .upcoming-sheet {
     left: 50%;
-    transform: translateX(-50%) translateY(var(--sheet-translate, 100%));
+    right: auto;
+    width: 100%;
     max-width: 480px;
+    transform: translateX(-50%) translateY(calc(100% * (1 - var(--sheet-progress))));
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
   }
