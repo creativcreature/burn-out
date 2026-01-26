@@ -1,40 +1,63 @@
 import { useRef, useEffect, useState, useCallback, CSSProperties } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AppLayout, Header } from '../components/layout'
 import { Card, Button, Toast } from '../components/shared'
+import { ChatSidebar, TaskPreviewCard, TypingIndicator } from '../components/chat'
 import { useAI } from '../hooks/useAI'
+import { useConversations } from '../hooks/useConversations'
 import { useTasks } from '../hooks/useTasks'
+import { useGoals } from '../hooks/useGoals'
+import { useProjects } from '../hooks/useProjects'
 import type { ExtractedTask } from '../utils/ai'
 
 export function ChatPage() {
+  const navigate = useNavigate()
   const { addTask } = useTasks()
+  const { goals } = useGoals()
+  const { projects } = useProjects()
   const [input, setInput] = useState('')
   const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error' | 'info', visible: false })
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Handle tasks created by AI - uses this component's addTask instance
-  const handleTasksCreated = useCallback(async (tasks: ExtractedTask[]): Promise<string[]> => {
-    const createdIds: string[] = []
-    for (const taskData of tasks) {
-      const task = await addTask({
-        verbLabel: taskData.verbLabel.slice(0, 12),
-        taskBody: taskData.taskBody,
-        timeEstimate: taskData.timeEstimate,
-        feedLevel: taskData.feedLevel,
-        timeOfDay: 'anytime'
-      })
-      createdIds.push(task.id)
-    }
-    if (createdIds.length > 0) {
-      setToast({
-        message: `${createdIds.length} task${createdIds.length > 1 ? 's' : ''} added to your list`,
-        type: 'success',
-        visible: true
-      })
-    }
-    return createdIds
+  const {
+    conversations,
+    activeConversationId,
+    archiveConversation,
+    loadConversation,
+    deleteConversation,
+    autoArchiveStale,
+    startNewChat
+  } = useConversations()
+
+  // Handle task save from preview card
+  const handleSaveTask = useCallback(async (taskData: ExtractedTask & { goalId?: string; projectId?: string }) => {
+    await addTask({
+      verbLabel: taskData.verbLabel.slice(0, 12),
+      taskBody: taskData.taskBody,
+      timeEstimate: taskData.timeEstimate,
+      feedLevel: taskData.feedLevel,
+      timeOfDay: 'anytime',
+      goalId: taskData.suggestedGoalId,
+      projectId: taskData.suggestedProjectId
+    })
+    setToast({
+      message: 'Task added! View in Organize',
+      type: 'success',
+      visible: true
+    })
   }, [addTask])
 
-  const { messages, isLoading, send, loadHistory } = useAI({ onTasksCreated: handleTasksCreated })
+  const {
+    messages,
+    isLoading,
+    send,
+    loadHistory,
+    pendingTasks,
+    clearPendingTasks
+  } = useAI({
+    autoSaveTasks: false
+  })
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -42,11 +65,12 @@ export function ChatPage() {
 
   useEffect(() => {
     loadHistory()
-  }, [loadHistory])
+    autoArchiveStale()
+  }, [loadHistory, autoArchiveStale])
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, pendingTasks])
 
   const containerStyle: CSSProperties = {
     display: 'flex',
@@ -120,6 +144,11 @@ export function ChatPage() {
     maxWidth: 300
   }
 
+  const headerActionsStyle: CSSProperties = {
+    display: 'flex',
+    gap: 'var(--space-sm)'
+  }
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return
     const message = input
@@ -134,15 +163,54 @@ export function ChatPage() {
     }
   }
 
+  const handleDiscardTask = (index: number) => {
+    // Remove task from pending by filtering it out
+    // Since clearPendingTasks clears all, we'll handle one at a time
+    if (pendingTasks.length === 1) {
+      clearPendingTasks()
+    }
+    // For now, just clear all pending tasks when discarding
+    clearPendingTasks()
+  }
+
+  const handleSaveTaskFromPending = async (index: number, taskData: ExtractedTask & { goalId?: string; projectId?: string }) => {
+    await handleSaveTask(taskData)
+    // Clear pending tasks after saving
+    clearPendingTasks()
+  }
+
   const suggestions = [
     'I have too much to do today...',
     'I need to plan my week',
     'Help me break down this project'
   ]
 
+  const headerActions = (
+    <div style={headerActionsStyle}>
+      <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
+        History
+      </Button>
+      <Button variant="ghost" size="sm" onClick={startNewChat}>
+        New
+      </Button>
+    </div>
+  )
+
   return (
     <AppLayout>
-      <Header title="Chat" />
+      <Header title="Chat" rightContent={headerActions} />
+
+      <ChatSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        conversations={conversations}
+        activeConversationId={activeConversationId}
+        onSelectConversation={loadConversation}
+        onNewChat={startNewChat}
+        onArchive={archiveConversation}
+        onDelete={deleteConversation}
+      />
+
       <div style={containerStyle}>
         {messages.length === 0 ? (
           <div style={emptyStateStyle}>
@@ -180,18 +248,30 @@ export function ChatPage() {
                     fontSize: 'var(--text-xs)',
                     color: 'var(--orb-orange)',
                     marginTop: 'var(--space-xs)',
-                    paddingLeft: 'var(--space-sm)'
-                  }}>
-                    {msg.tasksCreated.length} task{msg.tasksCreated.length > 1 ? 's' : ''} created
+                    paddingLeft: 'var(--space-sm)',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => navigate('/organize')}
+                  >
+                    {msg.tasksCreated.length} task{msg.tasksCreated.length > 1 ? 's' : ''} created - View in Organize
                   </div>
                 )}
               </div>
             ))}
-            {isLoading && (
-              <div style={bubbleStyle(false)}>
-                <span style={{ color: 'var(--text-muted)' }}>Thinking...</span>
-              </div>
-            )}
+
+            {isLoading && <TypingIndicator />}
+
+            {pendingTasks.length > 0 && pendingTasks.map((task, index) => (
+              <TaskPreviewCard
+                key={index}
+                task={task}
+                goals={goals}
+                projects={projects}
+                onSave={(taskData) => handleSaveTaskFromPending(index, taskData)}
+                onDiscard={() => handleDiscardTask(index)}
+              />
+            ))}
+
             <div ref={messagesEndRef} />
           </div>
         )}

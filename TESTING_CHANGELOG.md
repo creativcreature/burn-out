@@ -76,7 +76,13 @@
 - **Issue:** Tasks with only `projectId` (no `goalId`) were orphaned when goal deleted
 - **Fix:** Now collects all projectIds under goal and deletes their tasks too
 - **Test Added:** `useGoals.test.ts` - "cascades deletion to tasks with only projectId"
-- **Status:** FIXED, awaiting manual verification
+- **Status:** FIXED AND VERIFIED
+
+### BUG-002: Trailing Comma Lint Error
+- **File:** `src/pages/Now.tsx:251`
+- **Issue:** Trailing comma in CSS property object
+- **Fix:** Removed trailing comma
+- **Status:** FIXED
 
 ---
 
