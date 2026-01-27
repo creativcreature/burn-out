@@ -140,10 +140,10 @@ export async function sendMessage(
       const error = await response.json().catch(() => ({ error: 'Unknown error' }))
       console.error('Chat API Error:', error)
 
-      // Check for specific error types
+      // Check for specific error types - show user-friendly messages
       if (response.status === 500 && error.error?.includes('not configured')) {
         return {
-          message: `The ${config.provider === 'claude' ? 'Claude' : 'Gemini'} API key hasn't been configured yet. Please check the server configuration.`,
+          message: "The AI assistant is temporarily unavailable. We're working on it — please try again later.",
           tasks: []
         }
       }

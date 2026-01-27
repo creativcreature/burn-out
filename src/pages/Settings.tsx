@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, CSSProperties, ChangeEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppLayout, Header } from '../components/layout'
-import { Card, Button } from '../components/shared'
+import { Card, Button, Toast } from '../components/shared'
 import { useThemeContext } from '../components/shared/ThemeProvider'
 import { useAppContext } from '../contexts/AppContext'
 import { getData, updateData, seedSampleData } from '../utils/storage'
@@ -15,6 +15,7 @@ export function SettingsPage() {
   const [settings, setSettings] = useState<SettingsType | null>(null)
   const [saved, setSaved] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error' | 'info', visible: false })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -120,6 +121,7 @@ export function SettingsPage() {
     if (!settings) return
     await updateData(data => ({ ...data, settings }))
     setSaved(true)
+    setToast({ message: 'Settings saved successfully!', type: 'success', visible: true })
     setTimeout(() => setSaved(false), 2000)
   }
 
@@ -399,6 +401,13 @@ export function SettingsPage() {
           </div>
         </Card>
       </main>
+
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.visible}
+        onClose={() => setToast(t => ({ ...t, visible: false }))}
+      />
     </AppLayout>
   )
 }

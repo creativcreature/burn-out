@@ -27,6 +27,7 @@ function AppContent() {
         <Route path="/project/:projectId" element={<ProjectPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/reflections" element={<ReflectionsPage />} />
+        <Route path="/reflect" element={<Navigate to="/reflections" replace />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </BrowserRouter>
