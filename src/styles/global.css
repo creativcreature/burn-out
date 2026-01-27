@@ -57,6 +57,8 @@ html, body {
   padding: calc(var(--safe-top) + var(--space-md)) var(--space-md) calc(var(--nav-height) + var(--safe-bottom) + 80px);
   max-width: 430px;
   margin: 0 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Desktop: keep mobile-like experience but centered better */
