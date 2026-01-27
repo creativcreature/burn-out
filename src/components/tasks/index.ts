@@ -1,1 +1,1 @@
-export { TaskCard } from './TaskCard'
+// Task components (TaskCard was removed - use ProjectTaskCard instead)
