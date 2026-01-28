@@ -61,7 +61,10 @@ export function SettingsPage() {
     padding: 'var(--space-md)',
     display: 'flex',
     flexDirection: 'column',
-    gap: 'var(--space-md)'
+    gap: 'var(--space-md)',
+    flex: 1,
+    overflowY: 'auto',
+    paddingBottom: 'calc(var(--nav-height) + var(--space-xl))'
   }
 
   const sectionStyle: CSSProperties = {

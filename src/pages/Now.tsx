@@ -353,24 +353,23 @@ export function NowPage() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 'var(--space-sm)',
-    padding: 'var(--space-sm) var(--space-md)',
-    background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-full)',
-    marginBottom: 'var(--space-md)'
+    gap: '6px',
+    marginBottom: 'var(--space-sm)',
+    opacity: 0.7
   }
 
   const energyButtonStyle = (level: EnergyLevel): CSSProperties => ({
-    width: 32,
-    height: 32,
+    width: currentEnergy === level ? 10 : 6,
+    height: currentEnergy === level ? 10 : 6,
     borderRadius: '50%',
-    border: currentEnergy === level ? '2px solid var(--orb-orange)' : '1px solid var(--border)',
-    background: currentEnergy === level ? 'var(--orb-orange)' : 'transparent',
-    color: currentEnergy === level ? 'white' : 'var(--text-muted)',
+    border: 'none',
+    background: currentEnergy === level
+      ? 'var(--orb-orange)'
+      : 'var(--text-subtle)',
     cursor: 'pointer',
-    fontSize: 'var(--text-sm)',
-    fontWeight: 500,
-    transition: 'all var(--transition-fast)'
+    padding: 0,
+    transition: 'all var(--transition-fast)',
+    boxShadow: currentEnergy === level ? '0 0 8px rgba(255, 69, 0, 0.4)' : 'none'
   })
 
   const momentumMessage = getMomentumMessage()
@@ -386,20 +385,16 @@ export function NowPage() {
         onTouchEnd={handleTouchEnd}
         onWheel={handleWheel}
       >
-        {/* Energy Selector */}
+        {/* Energy Selector - subtle dot indicator */}
         <div style={energySelectorStyle}>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginRight: 'var(--space-xs)' }}>
-            Energy:
-          </span>
           {([1, 2, 3, 4, 5] as EnergyLevel[]).map(level => (
             <button
               key={level}
               style={energyButtonStyle(level)}
               onClick={() => setEnergy(level)}
               title={`Energy level ${level}`}
-            >
-              {level}
-            </button>
+              aria-label={`Set energy to ${level}`}
+            />
           ))}
         </div>
 
@@ -520,11 +515,13 @@ export function NowPage() {
             flexDirection: 'column',
             alignItems: 'center',
             gap: '4px',
-            color: 'var(--text-subtle)',
+            color: 'var(--text)',
             fontSize: 'var(--text-xs)',
-            animation: 'float 2s ease-in-out infinite'
+            animation: 'float 2s ease-in-out infinite',
+            textShadow: '0 1px 8px rgba(0, 0, 0, 0.3), 0 0 20px var(--bg)',
+            fontWeight: 500
           }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ filter: 'drop-shadow(0 1px 4px rgba(0, 0, 0, 0.3))' }}>
               <path d="M12 19V5M5 12l7-7 7 7" />
             </svg>
             <span>scroll for upcoming</span>
