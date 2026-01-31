@@ -251,16 +251,16 @@ export async function generateWeeklySummary(
 
   // Tone adaptation based on user preference
   const toneModifiers = {
-    gentle: "warmly and supportively",
-    direct: "clearly and straightforward", 
-    playful: "with encouraging energy"
+    gentle: 'warmly and supportively',
+    direct: 'clearly and straightforward', 
+    playful: 'with encouraging energy'
   }
 
   // Burnout mode adaptation
   const modeContext = {
-    recovery: "celebrating small wins and gentle progress",
-    prevention: "maintaining sustainable balance", 
-    balanced: "steady progress and energy management"
+    recovery: 'celebrating small wins and gentle progress',
+    prevention: 'maintaining sustainable balance', 
+    balanced: 'steady progress and energy management'
   }
 
   const prompt = `You are providing weekly insights for a neurodivergent user. Speak ${toneModifiers[tonePreference]}, focusing on ${modeContext[burnoutMode]}.
@@ -293,7 +293,7 @@ Focus on: patterns, energy awareness, celebrating what works.`
     if (energyDistribution.low > energyDistribution.high) {
       return "You've been honoring your energy levels this week by choosing more gentle tasks. That's wise self-awareness."
     } else if (energyDistribution.high > energyDistribution.low) {
-      return "You tackled some high-energy work this week. That takes courage and focus - well done."
+      return 'You tackled some high-energy work this week. That takes courage and focus - well done.'
     } else {
       return "Your task choices this week show thoughtful energy balance. You're learning what works for you."
     }

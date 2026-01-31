@@ -1,9 +1,12 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { resolve } from 'path'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  
+  return {
   plugins: [
     react(),
     VitePWA({
@@ -80,11 +83,18 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: true
+    open: true,
+    // Proxy API requests to Vercel dev server when running standalone
+    proxy: env.VITE_API_PROXY ? {
+      '/api': {
+        target: env.VITE_API_PROXY,
+        changeOrigin: true
+      }
+    } : undefined
   },
   build: {
     target: 'ES2020',
     outDir: 'dist',
     sourcemap: true
   }
-})
+}})

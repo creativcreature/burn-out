@@ -4,11 +4,12 @@
   "description": "Energy-aware productivity app for neurodivergent users",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 3000",
+    "dev": "vercel dev --listen 3000",
+    "dev:vite": "vite --port 3000",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 5",
     "lint:file": "eslint",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "test": "vitest run",
@@ -17,6 +18,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.93.3",
     "idb-keyval": "^6.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

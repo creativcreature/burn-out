@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getData, updateData } from '../utils/storage'
 import { NewTaskSchema, validate } from '../data/validation'
+import { queueTaskSync } from '../lib/sync'
 import type { Task, TaskStatus, TimeOfDay } from '../data/types'
 
 // Filter options for task filtering
@@ -56,39 +57,50 @@ export function useTasks() {
     }))
 
     setTasks(prev => [...prev, newTask])
+    
+    // Queue for cloud sync
+    queueTaskSync(newTask, 'upsert')
+    
     return newTask
   }, [tasks.length])
 
   // Update a task
   const updateTask = useCallback(async (id: string, updates: Partial<Task>): Promise<void> => {
     const now = new Date().toISOString()
+    
+    const updatedTask = tasks.find(t => t.id === id)
+    if (!updatedTask) return
+
+    const newTask = { ...updatedTask, ...updates, updatedAt: now }
 
     await updateData(data => ({
       ...data,
       tasks: data.tasks.map(task =>
-        task.id === id
-          ? { ...task, ...updates, updatedAt: now }
-          : task
+        task.id === id ? newTask : task
       )
     }))
 
     setTasks(prev => prev.map(task =>
-      task.id === id
-        ? { ...task, ...updates, updatedAt: now }
-        : task
+      task.id === id ? newTask : task
     ))
-  }, [])
+    
+    // Queue for cloud sync
+    queueTaskSync(newTask, 'upsert')
+  }, [tasks])
 
   // Complete a task
   const completeTask = useCallback(async (id: string, duration?: number): Promise<void> => {
     const now = new Date().toISOString()
+    
+    const task = tasks.find(t => t.id === id)
+    if (!task) return
+    
+    const completedTask = { ...task, status: 'completed' as TaskStatus, updatedAt: now }
 
     await updateData(data => ({
       ...data,
-      tasks: data.tasks.map(task =>
-        task.id === id
-          ? { ...task, status: 'completed' as TaskStatus, updatedAt: now }
-          : task
+      tasks: data.tasks.map(t =>
+        t.id === id ? completedTask : t
       ),
       completedTasks: [
         ...data.completedTasks,
@@ -101,12 +113,13 @@ export function useTasks() {
       ]
     }))
 
-    setTasks(prev => prev.map(task =>
-      task.id === id
-        ? { ...task, status: 'completed', updatedAt: now }
-        : task
+    setTasks(prev => prev.map(t =>
+      t.id === id ? completedTask : t
     ))
-  }, [])
+    
+    // Queue for cloud sync
+    queueTaskSync(completedTask, 'upsert')
+  }, [tasks])
 
   // Defer a task (Not Today - push to tomorrow)
   const deferTask = useCallback(async (id: string, until?: string): Promise<void> => {
@@ -114,22 +127,26 @@ export function useTasks() {
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
     const deferredUntil = until || tomorrow.toISOString().split('T')[0]
+    
+    const task = tasks.find(t => t.id === id)
+    if (!task) return
+    
+    const deferredTask = { ...task, status: 'deferred' as TaskStatus, deferredUntil, updatedAt: now }
 
     await updateData(data => ({
       ...data,
-      tasks: data.tasks.map(task =>
-        task.id === id
-          ? { ...task, status: 'deferred' as TaskStatus, deferredUntil, updatedAt: now }
-          : task
+      tasks: data.tasks.map(t =>
+        t.id === id ? deferredTask : t
       )
     }))
 
-    setTasks(prev => prev.map(task =>
-      task.id === id
-        ? { ...task, status: 'deferred', deferredUntil, updatedAt: now }
-        : task
+    setTasks(prev => prev.map(t =>
+      t.id === id ? deferredTask : t
     ))
-  }, [])
+    
+    // Queue for cloud sync
+    queueTaskSync(deferredTask, 'upsert')
+  }, [tasks])
 
   // Snooze a task (move to end of queue - will show up later today)
   const snoozeTask = useCallback(async (id: string): Promise<void> => {
@@ -154,13 +171,20 @@ export function useTasks() {
 
   // Delete a task
   const deleteTask = useCallback(async (id: string): Promise<void> => {
+    const task = tasks.find(t => t.id === id)
+    
     await updateData(data => ({
       ...data,
-      tasks: data.tasks.filter(task => task.id !== id)
+      tasks: data.tasks.filter(t => t.id !== id)
     }))
 
-    setTasks(prev => prev.filter(task => task.id !== id))
-  }, [])
+    setTasks(prev => prev.filter(t => t.id !== id))
+    
+    // Queue for cloud sync (soft delete)
+    if (task) {
+      queueTaskSync(task, 'delete')
+    }
+  }, [tasks])
 
   // Reorder tasks
   const reorderTasks = useCallback(async (reorderedTasks: Task[]): Promise<void> => {

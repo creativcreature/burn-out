@@ -47,7 +47,7 @@ describe('storage', () => {
         journalEntries: [],
         chatHistory: [],
         conversations: [],
-        settings: { notifications: true, dailyReminder: '09:00', haptics: true, soundEnabled: true,  },
+        settings: { notifications: true, dailyReminder: '09:00', haptics: true, soundEnabled: true  },
         onboarding: { completed: true, skippedSteps: [] },
         weeklySummaries: []
       }
@@ -115,7 +115,7 @@ describe('storage', () => {
         journalEntries: [],
         chatHistory: [],
         conversations: [],
-        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true,  },
+        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true  },
         onboarding: { completed: false, skippedSteps: [] }, weeklySummaries: []
       }
 
@@ -147,7 +147,7 @@ describe('storage', () => {
         journalEntries: [],
         chatHistory: [],
         conversations: [],
-        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true,  },
+        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true  },
         onboarding: { completed: false, skippedSteps: [] }, weeklySummaries: []
       }
 
@@ -177,7 +177,7 @@ describe('storage', () => {
         journalEntries: [],
         chatHistory: [],
         conversations: [],
-        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true,  },
+        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true  },
         onboarding: { completed: false, skippedSteps: [] }, weeklySummaries: []
       }
       mockGet.mockResolvedValue(existingData)
@@ -205,7 +205,7 @@ describe('storage', () => {
         journalEntries: [],
         chatHistory: [],
         conversations: [],
-        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true,  },
+        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true  },
         onboarding: { completed: false, skippedSteps: [] }, weeklySummaries: []
       })
 
@@ -234,7 +234,7 @@ describe('storage', () => {
         journalEntries: [],
         chatHistory: [],
         conversations: [],
-        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true,  },
+        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true  },
         onboarding: { completed: false, skippedSteps: [] }, weeklySummaries: []
       })
 
@@ -267,7 +267,7 @@ describe('storage', () => {
         journalEntries: [],
         chatHistory: [],
         conversations: [],
-        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true,  },
+        settings: { notifications: false, dailyReminder: null, haptics: true, soundEnabled: true  },
         onboarding: { completed: false, skippedSteps: [] }, weeklySummaries: []
       })
 

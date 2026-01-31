@@ -94,7 +94,7 @@ export function useWeeklySummary(): UseWeeklySummaryReturn {
       }
 
       // Try to get existing summary for this week
-      let existingSummary = await getWeeklySummary(weekStartDate)
+      const existingSummary = await getWeeklySummary(weekStartDate)
       
       if (existingSummary) {
         setSummary(existingSummary)
