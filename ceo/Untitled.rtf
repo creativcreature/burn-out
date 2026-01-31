@@ -1,0 +1,166 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2867
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-BoldItalic;\f1\fnil\fcharset0 Menlo-Regular;\f2\fnil\fcharset0 Menlo-Bold;
+}
+{\colortbl;\red255\green255\blue255;\red237\green237\blue237;\red25\green29\blue39;\red224\green224\blue224;
+\red162\green168\blue247;}
+{\*\expandedcolortbl;;\csgenericrgb\c92857\c92857\c92857;\csgenericrgb\c9839\c11388\c15260\c95000;\csgenericrgb\c87761\c87761\c87761;
+\cssrgb\c69412\c72549\c97647;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\i\b\fs24 \cf2 \cb3 \ul \ulc2 \CocoaLigature0 CONTEXT TO COPY FOR NEW SESSION
+\f1\i0\b0 \cf4 \ulnone                                                                                                                                                                           \
+                                                                                                                                                                                                           \
+  
+\f2\b \cf2 Original Problem (from Clawdbot notes in \cf5 /Users/x/Documents/Projects/burnout/ceo/Visuals/01272026/\cf2 )
+\f1\b0 \cf4                                                                                                       \
+                                                                                                                                                                                                           \
+  
+\f2\b \cf2 Broken Issue:
+\f1\b0 \cf4                                                                                                                                                                                             \
+                                                                                                                                                                                                           \
+  - Frontend chat interface still calls Gemini                                                                                                                                                             \
+  - User sees "The Gemini API key hasn't been configured yet"                                                                                                                                              \
+  - Browser storage contains stale \cf5 aiProvider: 'gemini'\cf4  setting                                                                                                                                            \
+                                                                                                                                                                                                           \
+  
+\f2\b \cf2 What Was Suggested:
+\f1\b0 \cf4                                                                                                                                                                                       \
+                                                                                                                                                                                                           \
+  1. Storage Migration: Add version check to auto-update \cf5 aiProvider\cf4  from gemini to claude                                                                                                                  \
+  2. Settings Override: Force claude provider regardless of stored setting                                                                                                                                 \
+  3. Storage Reset: Clear IndexedDB and reinitialize with correct defaults                                                                                                                                 \
+                                                                                                                                                                                                           \
+  ---                                                                                                                                                                                                      \
+  
+\f2\b \cf2 User's Actual Requirements (clarified in this session)
+\f1\b0 \cf4                                                                                                                                                    \
+                                                                                                                                                                                                           \
+  
+\f2\b \cf2 TWO SCENARIOS:
+\f1\b0 \cf4                                                                                                                                                                                            \
+                                                                                                                                                                                                           \
+  1. 
+\f2\b \cf2 User enters their own API key
+\f1\b0 \cf4  \uc0\u8594  They can choose any provider (Claude, Gemini, OpenAI)                                                                                                                 \
+  2. 
+\f2\b \cf2 User uses our defaults (no own key)
+\f1\b0 \cf4  \uc0\u8594  We use our backend API keys and aim to keep costs low through provider routing                                                                                  \
+                                                                                                                                                                                                           \
+  ---                                                                                                                                                                                                      \
+  
+\f2\b \cf2 Current Code State (from exploration)
+\f1\b0 \cf4                                                                                                                                                                     \
+                                                                                                                                                                                                           \
+  
+\f2\b \cf2 Files Already Read:
+\f1\b0 \cf4                                                                                                                                                                                       \
+                                                                                                                                                                                                           \
+  1. \cf5 src/utils/storage.ts\cf4  - IndexedDB storage with migrations, \cf5 aiProvider: 'claude'\cf4  default                                                                                                                \
+  2. \cf5 src/hooks/useAI.ts\cf4  - Hook that reads \cf5 data.settings.aiProvider\cf4  and passes to API                                                                                                                       \
+  3. \cf5 api/chat.ts\cf4  - Backend supports all 3 providers (gemini, claude, openai) with routing                                                                                                                  \
+  4. \cf5 src/utils/ai.ts\cf4  - Frontend utility that calls \cf5 /api/chat\cf4  with provider                                                                                                                                 \
+  5. \cf5 src/pages/Settings.tsx\cf4  - Has UI with radio buttons to select gemini/claude                                                                                                                            \
+  6. \cf5 src/data/types.ts\cf4  - Defines \cf5 AIProvider = 'gemini' | 'claude' | 'openai'\cf4  type                                                                                                                          \
+  7. \cf5 src/data/constants.ts\cf4  - \cf5 CURRENT_VERSION = 4\cf4 , \cf5 STORAGE_KEY = 'burnout_v4'\cf4                                                                                                                                \
+                                                                                                                                                                                                           \
+  
+\f2\b \cf2 Key Findings:
+\f1\b0 \cf4                                                                                                                                                                                             \
+                                                                                                                                                                                                           \
+  - 
+\f2\b \cf2 NO UI for users to enter their own API keys
+\f1\b0 \cf4  was found in Settings.tsx                                                                                                                                  \
+  - 
+\f2\b \cf2 Backend has all 3 providers
+\f1\b0 \cf4  working (callGemini, callClaude, callOpenAI)                                                                                                                               \
+  - 
+\f2\b \cf2 Frontend sends provider to backend
+\f1\b0 \cf4  which routes accordingly                                                                                                                                            \
+  - 
+\f2\b \cf2 Settings page shows provider selection
+\f1\b0 \cf4  (gemini/claude radio buttons)                                                                                                                                   \
+  - 
+\f2\b \cf2 No user-provided key mechanism exists yet
+\f1\b0 \cf4                                                                                                                                                               \
+                                                                                                                                                                                                           \
+  ---                                                                                                                                                                                                      \
+  
+\f2\b \cf2 UNANSWERED QUESTIONS (asked but user needs to answer)
+\f1\b0 \cf4                                                                                                                                                     \
+                                                                                                                                                                                                           \
+  1. 
+\f2\b \cf2 Does the app currently have a UI where users can enter their own API keys?
+\f1\b0 \cf4  (I didn't find one - may need to be built)                                                                                 \
+  2. 
+\f2\b \cf2 When a user (using our defaults) has 'gemini' selected but we don't have GOOGLE_API_KEY on server, what should happen?
+\f1\b0 \cf4                                                                                 \
+    - Auto-migrate on load?                                                                                                                                                                                \
+    - Graceful fallback to another provider?                                                                                                                                                               \
+    - Show error message?                                                                                                                                                                                  \
+  3. 
+\f2\b \cf2 What should be the default AI provider for NEW users who don't provide their own keys?
+\f1\b0 \cf4                                                                                                                 \
+    - Claude?                                                                                                                                                                                              \
+    - Gemini?                                                                                                                                                                                              \
+    - Auto-selected by backend based on cost?                                                                                                                                                              \
+  4. 
+\f2\b \cf2 For users using our default backend (no own key), how should provider selection work?
+\f1\b0 \cf4                                                                                                                  \
+    - Claude first, others as backup if rate-limited?                                                                                                                                                      \
+    - Dynamic cost optimization (route to cheapest available)?                                                                                                                                             \
+    - Fixed to Claude (no UI selection)?                                                                                                                                                                   \
+  5. 
+\f2\b \cf2 Do we need to BUILD the "user-provided API key" feature, or does it exist somewhere I missed?
+\f1\b0 \cf4                                                                                                          \
+                                                                                                                                                                                                           \
+  ---                                                                                                                                                                                                      \
+  
+\f2\b \cf2 Current Plan File Status
+\f1\b0 \cf4                                                                                                                                                                                  \
+                                                                                                                                                                                                           \
+  
+\f2\b \cf2 File:
+\f1\b0 \cf4  \cf5 /Users/x/.claude/plans/concurrent-jumping-penguin.md\cf4                                                                                                                                                \
+                                                                                                                                                                                                           \
+  
+\f2\b \cf2 Current content:
+\f1\b0 \cf4  Outdated plan that suggested removing multi-provider support entirely (WRONG approach after user clarified they want all 3 providers)                                                   \
+                                                                                                                                                                                                           \
+  
+\f2\b \cf2 Needs to be:
+\f1\b0 \cf4  Updated based on user's actual two-scenario requirement                                                                                                                                     \
+                                                                                                                                                                                                           \
+  ---                                                                                                                                                                                                      \
+  
+\f2\b \cf2 FILES INVOLVED IN FIX
+\f1\b0 \cf4                                                                                                                                                                                     \
+                                                                                                                                                                                                           \
+  /Users/x/Documents/Projects/burnout/src/data/constants.ts                                                                                                                                                \
+  /Users/x/Documents/Projects/burnout/src/data/types.ts                                                                                                                                                    \
+  /Users/x/Documents/Projects/burnout/src/utils/storage.ts                                                                                                                                                 \
+  /Users/x/Documents/Projects/burnout/src/utils/ai.ts                                                                                                                                                      \
+  /Users/x/Documents/Projects/burnout/src/hooks/useAI.ts                                                                                                                                                   \
+  /Users/x/Documents/Projects/burnout/api/chat.ts                                                                                                                                                          \
+  /Users/x/Documents/Projects/burnout/src/pages/Settings.tsx                                                                                                                                               \
+                                                                                                                                                                                                           \
+  ---                                                                                                                                                                                                      \
+  
+\f2\b \cf2 WORKING DIRECTORY
+\f1\b0 \cf4                                                                                                                                                                                         \
+                                                                                                                                                                                                           \
+  /Users/x/Documents/Projects/burnout                                                                                                                                                                      \
+                                                                                                                                                                                                           \
+  ---                                                                                                                                                                                                      \
+  
+\f2\b \cf2 NEXT STEPS FOR NEW SESSION
+\f1\b0 \cf4                                                                                                                                                                                \
+                                                                                                                                                                                                           \
+  1. Enter plan mode (shift+tab twice)                                                                                                                                                                     \
+  2. Read \cf5 /Users/x/.claude/plans/concurrent-jumping-penguin.md\cf4                                                                                                                                              \
+  3. Ask user the unanswered questions above to clarify requirements                                                                                                                                       \
+  4. Update plan file with correct approach based on their answers                                                                                                                                         \
+  5. Exit plan mode for user approval                                                                                                                                                                      \
+                                                                                                                                                                                                           \
+  ---                                                                                                                                                                                                      \
+  END OF CONTEXT  }

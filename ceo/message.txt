@@ -1,0 +1,377 @@
+ Implement the following plan:                                                                                         
+                                                                                                                        
+  # Fix Routing Crisis & Implement Full Feature Set - BurnOut App                                                       
+                                                                                                                        
+  ## Executive Summary                                                                                                  
+  Fix critical 404 errors on all routes (except `/`) by adding Vercel routing configuration and React Router, then      
+  implement 4 missing pages with full UX optimization.                                                                  
+                                                                                                                        
+  **Project Location:** `/Users/x/burnout-app`                                                                          
+  **Target URL:** https://burnoutapp.vercel.app                                                                         
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Phase 1: Emergency Routing Fix (CRITICAL)                                                                          
+                                                                                                                        
+  ### 1.1 Create vercel.json                                                                                            
+  **File:** `/Users/x/burnout-app/vercel.json`                                                                          
+  ```json                                                                                                               
+  {                                                                                                                     
+  "rewrites": [                                                                                                         
+  { "source": "/(.*)", "destination": "/index.html" }                                                                   
+  ]                                                                                                                     
+  }                                                                                                                     
+  ```                                                                                                                   
+  **Why:** Vercel needs to route all requests to index.html for client-side routing. Without this, all routes           
+  except `/` return 404.                                                                                                
+                                                                                                                        
+  ### 1.2 Install React Router                                                                                          
+  ```bash                                                                                                               
+  cd /Users/x/burnout-app && npm install react-router-dom                                                               
+  ```                                                                                                                   
+                                                                                                                        
+  ### 1.3 Update App.tsx for Routing                                                                                    
+  **File:** `/Users/x/burnout-app/src/App.tsx`                                                                          
+                                                                                                                        
+  Changes:                                                                                                              
+  - Import `BrowserRouter as Router, Routes, Route, NavLink` from 'react-router-dom'                                    
+  - Wrap app with `Router` component                                                                                    
+  - Define routes: `/`, `/now`, `/dashboard`, `/login`, `/about`                                                        
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Phase 2: Create Pages                                                                                              
+                                                                                                                        
+  ### 2.1 Landing Page (/)                                                                                              
+  **File:** `/Users/x/burnout-app/src/pages/LandingPage.tsx`                                                            
+  - Extract current App.tsx chat content                                                                                
+  - Add "Get Started" CTA linking to `/now`                                                                             
+  - Add feature highlights section                                                                                      
+  **CSS:** `/Users/x/burnout-app/src/pages/LandingPage.module.css`                                                      
+                                                                                                                        
+  ### 2.2 Now Page (/now)                                                                                               
+  **File:** `/Users/x/burnout-app/src/pages/NowPage.tsx`                                                                
+  - Energy slider (1-10) with color gradient feedback                                                                   
+  - Mood selector buttons (using existing `MoodType` enum)                                                              
+  - Current date/time display                                                                                           
+  - Quick action cards: "Take a Break", "Brain Dump", "Quick Reflection"                                                
+  - Save check-in to localStorage                                                                                       
+  - Recent check-ins history                                                                                            
+  **CSS:** `/Users/x/burnout-app/src/pages/NowPage.module.css`                                                          
+                                                                                                                        
+  ### 2.3 Dashboard Page (/dashboard)                                                                                   
+  **File:** `/Users/x/burnout-app/src/pages/DashboardPage.tsx`                                                          
+  - Tab navigation: Overview, Tasks, Analytics                                                                          
+  - **Overview Tab:** Energy trends, mood distribution, weekly stats, AI insights                                       
+  - **Tasks Tab:** Task list with checkboxes, add task form, energy filter, progress tracking                           
+  - **Analytics Tab:** Charts, patterns, time-of-day trends, export option                                              
+  **CSS:** `/Users/x/burnout-app/src/pages/DashboardPage.module.css`                                                    
+                                                                                                                        
+  **Supporting Components:**                                                                                            
+  - `/Users/x/burnout-app/src/components/EnergyChart.tsx` + CSS                                                         
+  - `/Users/x/burnout-app/src/components/TaskList.tsx` + CSS                                                            
+                                                                                                                        
+  ### 2.4 Login Page (/login)                                                                                           
+  **File:** `/Users/x/burnout-app/src/pages/LoginPage.tsx`                                                              
+  - Email/password form                                                                                                 
+  - Show/hide password toggle                                                                                           
+  - Remember me checkbox                                                                                                
+  - Form validation                                                                                                     
+  - Loading state                                                                                                       
+  - Error message display                                                                                               
+  - Google OAuth button (placeholder)                                                                                   
+  - Redirect to `/dashboard` on success                                                                                 
+  **CSS:** `/Users/x/burnout-app/src/pages/LoginPage.module.css`                                                        
+                                                                                                                        
+  ### 2.5 About Page (/about)                                                                                           
+  **File:** `/Users/x/burnout-app/src/pages/AboutPage.tsx`                                                              
+  - Hero section with mission statement                                                                                 
+  - Feature highlights with icons                                                                                       
+  - "How it Works" step-by-step guide                                                                                   
+  - FAQ section                                                                                                         
+  - Contact/support info                                                                                                
+  - CTA to get started                                                                                                  
+  **CSS:** `/Users/x/burnout-app/src/pages/AboutPage.module.css`                                                        
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Phase 3: Shared Navigation Components                                                                              
+                                                                                                                        
+  ### 3.1 Navigation Component                                                                                          
+  **File:** `/Users/x/burnout-app/src/components/Navigation.tsx`                                                        
+  - Logo/branding link to home                                                                                          
+  - Desktop nav with `NavLink` for active states                                                                        
+  - Mobile hamburger menu (screens < 768px)                                                                             
+  - Auth state display (login button or user profile)                                                                   
+  - Smooth transitions                                                                                                  
+  **CSS:** `/Users/x/burnout-app/src/components/Navigation.module.css`                                                  
+                                                                                                                        
+  ### 3.2 Footer Component                                                                                              
+  **File:** `/Users/x/burnout-app/src/components/Footer.tsx`                                                            
+  - Copyright info                                                                                                      
+  - Navigation links                                                                                                    
+  - Social icons (placeholders)                                                                                         
+  **CSS:** `/Users/x/burnout-app/src/components/Footer.module.css`                                                      
+                                                                                                                        
+  ### 3.3 Layout Component                                                                                              
+  **File:** `/Users/x/burnout-app/src/components/Layout.tsx`                                                            
+  - Wrapper with Navigation and Footer                                                                                  
+  - Main content area                                                                                                   
+  **CSS:** `/Users/x/burnout-app/src/components/Layout.module.css`                                                      
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Phase 4: UX Optimization Components                                                                                
+                                                                                                                        
+  ### 4.1 Button Component                                                                                              
+  **File:** `/Users/x/burnout-app/src/components/Button.tsx`                                                            
+  - Variants: primary, secondary, outline, ghost                                                                        
+  - Sizes: small, medium, large                                                                                         
+  - Loading state with spinner                                                                                          
+  - Disabled state styling                                                                                              
+  **CSS:** `/Users/x/burnout-app/src/components/Button.module.css`                                                      
+                                                                                                                        
+  ### 4.2 Card Component                                                                                                
+  **File:** `/Users/x/burnout-app/src/components/Card.tsx`                                                              
+  - Reusable card for content sections                                                                                  
+  - Optional title                                                                                                      
+  - Hover effect if clickable                                                                                           
+  **CSS:** `/Users/x/burnout-app/src/components/Card.module.css`                                                        
+                                                                                                                        
+  ### 4.3 Page Transitions                                                                                              
+  **File:** `/Users/x/burnout-app/src/components/PageTransition.tsx`                                                    
+  - Fade-in animation on page load                                                                                      
+  - Slide-up animation for content                                                                                      
+  **CSS:** `/Users/x/burnout-app/src/components/PageTransition.module.css`                                              
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Phase 5: Utility Functions                                                                                         
+                                                                                                                        
+  ### 5.1 Date Utilities                                                                                                
+  **File:** `/Users/x/burnout-app/src/utils/dateUtils.ts`                                                               
+  ```typescript                                                                                                         
+  export const formatDate = (date: Date): string => { ... }                                                             
+  export const formatTime = (date: Date): string => { ... }                                                             
+  export const getRelativeTime = (date: Date): string => { ... }                                                        
+  ```                                                                                                                   
+                                                                                                                        
+  ### 5.2 Storage Utilities                                                                                             
+  **File:** `/Users/x/burnout-app/src/utils/storageUtils.ts`                                                            
+  ```typescript                                                                                                         
+  export const saveToLocalStorage = <T>(key: string, value: T): void => { ... }                                         
+  export const loadFromLocalStorage = <T>(key: string, defaultValue: T): T => { ... }                                   
+  ```                                                                                                                   
+                                                                                                                        
+  ### 5.3 Validation Utilities                                                                                          
+  **File:** `/Users/x/burnout-app/src/utils/validationUtils.ts`                                                         
+  ```typescript                                                                                                         
+  export const isValidEmail = (email: string): boolean => { ... }                                                       
+  export const isValidPassword = (password: string): boolean => { ... }                                                 
+  ```                                                                                                                   
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Phase 6: Custom Hooks                                                                                              
+                                                                                                                        
+  ### 6.1 useLocalStorage Hook                                                                                          
+  **File:** `/Users/x/burnout-app/src/hooks/useLocalStorage.ts`                                                         
+  - Generic localStorage hook with automatic JSON serialization                                                         
+                                                                                                                        
+  ### 6.2 useAuth Hook                                                                                                  
+  **File:** `/Users/x/burnout-app/src/hooks/useAuth.ts`                                                                 
+  - User authentication state                                                                                           
+  - Login/logout functions                                                                                              
+  - Mock implementation (localStorage-based)                                                                            
+                                                                                                                        
+  ### 6.3 useCheckIns Hook                                                                                              
+  **File:** `/Users/x/burnout-app/src/hooks/useCheckIns.ts`                                                             
+  - Check-in data management                                                                                            
+  - Add check-in, get recent check-ins                                                                                  
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Phase 7: Type Extensions                                                                                           
+                                                                                                                        
+  **File:** `/Users/x/burnout-app/src/types/index.ts`                                                                   
+                                                                                                                        
+  Add new types:                                                                                                        
+  ```typescript                                                                                                         
+  // User authentication                                                                                                
+  export interface User {                                                                                               
+  id: string;                                                                                                           
+  email: string;                                                                                                        
+  name: string;                                                                                                         
+  createdAt: Date;                                                                                                      
+  preferences?: UserPreferences;                                                                                        
+  }                                                                                                                     
+                                                                                                                        
+  export interface AuthState {                                                                                          
+  user: User | null;                                                                                                    
+  isAuthenticated: boolean;                                                                                             
+  isLoading: boolean;                                                                                                   
+  }                                                                                                                     
+                                                                                                                        
+  // Check-in types                                                                                                     
+  export interface CheckIn {                                                                                            
+  id: string;                                                                                                           
+  timestamp: Date;                                                                                                      
+  energy: number;                                                                                                       
+  mood: MoodType;                                                                                                       
+  notes?: string;                                                                                                       
+  userId?: string;                                                                                                      
+  }                                                                                                                     
+                                                                                                                        
+  // Dashboard types                                                                                                    
+  export interface DashboardStats {                                                                                     
+  averageEnergy: number;                                                                                                
+  totalCheckIns: number;                                                                                                
+  completedTasks: number;                                                                                               
+  weeklyTrend: 'up' | 'down' | 'stable';                                                                                
+  }                                                                                                                     
+                                                                                                                        
+  export interface EnergyTrendData {                                                                                    
+  date: string;                                                                                                         
+  energy: number;                                                                                                       
+  }                                                                                                                     
+                                                                                                                        
+  // Navigation                                                                                                         
+  export interface NavLink {                                                                                            
+  path: string;                                                                                                         
+  label: string;                                                                                                        
+  icon: string;                                                                                                         
+  requiresAuth?: boolean;                                                                                               
+  }                                                                                                                     
+  ```                                                                                                                   
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Design System                                                                                                      
+                                                                                                                        
+  **Color Palette:**                                                                                                    
+  - Primary gradient: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`                                               
+  - Secondary: `#007bff`                                                                                                
+  - Background: White/light gray                                                                                        
+  - Text: Dark gray `#333`                                                                                              
+                                                                                                                        
+  **Typography:**                                                                                                       
+  - System fonts (Apple System, Segoe UI, Roboto)                                                                       
+  - H1: 28px, H2: 24px, H3: 20px, H4: 18px                                                                              
+  - Body: 14-16px                                                                                                       
+  - Line height: 1.5                                                                                                    
+                                                                                                                        
+  **Spacing:**                                                                                                          
+  - Small: 8px, Medium: 16px, Large: 32px, XL: 48px                                                                     
+                                                                                                                        
+  **Border Radius:**                                                                                                    
+  - Small: 8px, Medium: 12px, Large: 16px                                                                               
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Verification & Testing                                                                                             
+                                                                                                                        
+  ### Post-Deployment Route Testing                                                                                     
+  ```bash                                                                                                               
+  # Test all routes return 200 OK                                                                                       
+  curl -I https://burnoutapp.vercel.app/                                                                                
+  curl -I https://burnoutapp.vercel.app/now                                                                             
+  curl -I https://burnoutapp.vercel.app/dashboard                                                                       
+  curl -I https://burnoutapp.vercel.app/login                                                                           
+  curl -I https://burnoutapp.vercel.app/about                                                                           
+  ```                                                                                                                   
+                                                                                                                        
+  ### Manual Testing Checklist                                                                                          
+  - [ ] All routes accessible (200 status)                                                                              
+  - [ ] Navigation links work correctly                                                                                 
+  - [ ] Browser back/forward buttons work                                                                               
+  - [ ] Direct URL navigation works                                                                                     
+  - [ ] Mobile menu toggles correctly                                                                                   
+  - [ ] AI chat messages persist                                                                                        
+  - [ ] Energy slider works (1-10)                                                                                      
+  - [ ] Mood selection works                                                                                            
+  - [ ] Check-ins save to localStorage                                                                                  
+  - [ ] Dashboard tabs switch correctly                                                                                 
+  - [ ] Add task / complete task works                                                                                  
+  - [ ] Login form validates correctly                                                                                  
+  - [ ] Login redirects to dashboard                                                                                    
+  - [ ] Responsive design on mobile (<768px)                                                                            
+  - [ ] Responsive design on tablet (768-1200px)                                                                        
+  - [ ] Responsive design on desktop (>1200px)                                                                          
+  - [ ] Cross-browser: Chrome, Firefox, Safari, Edge                                                                    
+                                                                                                                        
+  ### Build Verification                                                                                                
+  ```bash                                                                                                               
+  cd /Users/x/burnout-app                                                                                               
+  npm run build  # Should complete without errors                                                                       
+  npm run preview # Test local build at http://localhost:4173                                                           
+  ```                                                                                                                   
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Implementation Sequence                                                                                            
+                                                                                                                        
+  **Step 1 (Emergency Fix - 30 min):**                                                                                  
+  1. Create `vercel.json`                                                                                               
+  2. Install `react-router-dom`                                                                                         
+  3. Test deployment                                                                                                    
+                                                                                                                        
+  **Step 2 (Routing Setup - 1 hr):**                                                                                    
+  1. Modify `App.tsx` with Router                                                                                       
+  2. Create Navigation, Footer, Layout components                                                                       
+  3. Test basic navigation                                                                                              
+                                                                                                                        
+  **Step 3 (Page Templates - 2 hrs):**                                                                                  
+  1. Create LandingPage (extract from App.tsx)                                                                          
+  2. Create NowPage, DashboardPage, LoginPage, AboutPage                                                                
+  3. Create CSS modules for all pages                                                                                   
+                                                                                                                        
+  **Step 4 (Page Functionality - 4 hrs):**                                                                              
+  1. Implement NowPage features                                                                                         
+  2. Implement DashboardPage features (tabs, charts, tasks)                                                             
+  3. Implement LoginPage features                                                                                       
+  4. Implement AboutPage content                                                                                        
+                                                                                                                        
+  **Step 5 (Shared Components - 2 hrs):**                                                                               
+  1. Create Button, Card, EnergyChart, TaskList, PageTransition components                                              
+                                                                                                                        
+  **Step 6 (Utilities & Hooks - 2 hrs):**                                                                               
+  1. Create utils (date, storage, validation)                                                                           
+  2. Create hooks (useLocalStorage, useAuth, useCheckIns)                                                               
+                                                                                                                        
+  **Step 7 (Type Extensions - 30 min):**                                                                                
+  1. Extend `/src/types/index.ts`                                                                                       
+                                                                                                                        
+  **Step 8 (Responsive Design - 1 hr):**                                                                                
+  1. Add responsive breakpoints                                                                                         
+  2. Test on all screen sizes                                                                                           
+                                                                                                                        
+  **Step 9 (Testing - 2 hrs):**                                                                                         
+  1. Manual testing of all functionality                                                                                
+  2. Cross-browser testing                                                                                              
+  3. Vercel deployment testing                                                                                          
+                                                                                                                        
+  **Step 10 (Documentation - 30 min):**                                                                                 
+  1. Update README.md                                                                                                   
+  2. Create DEPLOYMENT.md                                                                                               
+                                                                                                                        
+  **Total Estimated Time:** 15.5 hours                                                                                  
+                                                                                                                        
+  ---                                                                                                                   
+                                                                                                                        
+  ## Critical Files Summary                                                                                             
+                                                                                                                        
+  | File | Purpose |                                                                                                    
+  |------|---------|                                                                                                    
+  | `/Users/x/burnout-app/vercel.json` | **CRITICAL** - Fixes 404s on all routes |                                      
+  | `/Users/x/burnout-app/src/App.tsx` | Router setup and route definitions |                                           
+  | `/Users/x/burnout-app/src/types/index.ts` | Type definitions for all features |                                     
+  | `/Users/x/burnout-app/src/components/Navigation.tsx` | Global navigation bar |                                      
+  | `/Users/x/burnout-app/src/pages/NowPage.tsx` | Energy/mood check-in page |                                          
+  | `/Users/x/burnout-app/src/pages/DashboardPage.tsx` | Main dashboard with analytics |                                
+  | `/Users/x/burnout-app/src/pages/LoginPage.tsx` | Authentication page |                                              
+  | `/Users/x/burnout-app/src/pages/AboutPage.tsx` | App information page |                                             
+                                                                                                                        
+                                                                                                                        
+  If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content      
+  you generated), read the full transcript at:                                                                          
+  /Users/x/.claude/projects/-Users-x/b1a74bf1-a195-4683-9f9f-acdf9890451a.jsonl         

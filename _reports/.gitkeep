@@ -1,0 +1,3 @@
+# This directory contains Claude session reports
+# Each terminal writes its completion report here
+# Format: YYYY-MM-DD-HH-MM-terminal-N.md

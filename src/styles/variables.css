@@ -1,0 +1,297 @@
+:root {
+  /* Orb Colors */
+  --orb-orange: #ff4500;
+  --orb-red: #ff2200;
+  --orb-magenta: #ff00ff;
+  --orb-purple: #8000ff;
+
+  /* Orb Gradient Aliases (for loading states) */
+  --orb-gradient-1: var(--orb-orange);
+  --orb-gradient-2: var(--orb-red);
+  --orb-gradient-3: var(--orb-magenta);
+
+  /* Brand Colors */
+  --coral-500: #E53935;
+  --coral-400: #EF5350;
+  --coral-600: #C62828;
+
+  /* Purple (Timer Controls) */
+  --purple-500: #7C3AED;
+  --purple-400: #8B5CF6;
+  --purple-600: #6D28D9;
+
+  /* Semantic Colors */
+  --success-500: #69F0AE;
+  --success-600: #00E676;
+  --warning-500: #FFB300;
+  --warning-600: #FFA000;
+  --error-500: #EF5350;
+  --error-600: #E53935;
+
+  /* Tag Colors */
+  --tag-energy-bg: #FEF9E7;
+  --tag-energy-text: #92400E;
+  --tag-energy-border: #FDE68A;
+  --tag-focus-bg: #E53935;
+  --tag-focus-text: #FFFFFF;
+  --tag-call-bg: transparent;
+  --tag-call-text: #6B7280;
+  --tag-call-border: #D1D5DB;
+  --tag-meeting-bg: #FEF3C7;
+  --tag-meeting-text: #92400E;
+  --tag-meeting-border: #FDE68A;
+  --tag-writing-bg: #DBEAFE;
+  --tag-writing-text: #1E40AF;
+  --tag-writing-border: #BFDBFE;
+  --tag-love-bg: #FCE7F3;
+  --tag-love-text: #9D174D;
+  --tag-love-border: #FBCFE8;
+
+  /* Typography */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Safe Areas */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --nav-height: 64px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Typography Scale */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+  --text-3xl: 40px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 400ms ease;
+}
+
+/* Light Theme */
+[data-theme="light"] {
+  --bg: #fdf8f3;
+  --bg-primary: #fdf8f3;
+  --bg-alt: #fcf9f4;
+  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-card-transparent: rgba(255, 255, 255, 0.65);
+  --bg-card-solid: #ffffff;
+  --text: #3a2c25;
+  --text-muted: #7a6b63;
+  --text-subtle: #a89b93;
+  --border: rgba(232, 226, 220, 0.6);
+  --glass-blur: 20px;
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --bg: #0a0a0a;
+  --bg-primary: #0a0a0a;
+  --bg-alt: #0a0a0a;
+  --bg-card: rgba(20, 20, 20, 0.75);
+  --bg-card-transparent: rgba(20, 20, 20, 0.65);
+  --bg-card-solid: #141414;
+  --text: #f5efe6;
+  --text-muted: #a89b93;
+  --text-subtle: #6b5f58;
+  --border: rgba(42, 36, 32, 0.6);
+  --glass-blur: 20px;
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Animations */
+@keyframes orb-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes mini-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+@keyframes preloader-breathe {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(10px); }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Web 3.0 Animations */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 69, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 69, 0, 0.4);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes morph {
+  0%, 100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+  50% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes rotate-subtle {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes flame-flicker {
+  0%, 100% {
+    transform: scaleY(1) scaleX(1);
+  }
+  25% {
+    transform: scaleY(1.05) scaleX(0.95);
+  }
+  50% {
+    transform: scaleY(0.95) scaleX(1.02);
+  }
+  75% {
+    transform: scaleY(1.03) scaleX(0.98);
+  }
+}
+
+@keyframes flame-dance {
+  0%, 100% {
+    transform: rotate(-2deg) scaleY(1);
+  }
+  33% {
+    transform: rotate(2deg) scaleY(1.05);
+  }
+  66% {
+    transform: rotate(-1deg) scaleY(0.98);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Storage</title>
+</head>
+<body>
+    <h1>Burnout App Debug</h1>
+    <button onclick="checkStorage()">Check Storage</button>
+    <button onclick="resetProvider()">Reset Provider to Claude</button>
+    <button onclick="testAPI()">Test API</button>
+    <div id="output"></div>
+
+    <script type="module">
+        import { openDB } from 'https://cdn.jsdelivr.net/npm/idb@8.0.0/+esm';
+
+        window.checkStorage = async function() {
+            try {
+                const db = await openDB('burnout-app-v7');
+                const tx = db.transaction('main', 'readonly');
+                const data = await tx.objectStore('main').get('main');
+                document.getElementById('output').innerHTML = '<h3>Current Settings:</h3><pre>' + 
+                    JSON.stringify(data?.settings, null, 2) + '</pre>';
+            } catch (err) {
+                document.getElementById('output').innerHTML = 'Error: ' + err.message;
+            }
+        };
+
+        window.resetProvider = async function() {
+            try {
+                const db = await openDB('burnout-app-v7');
+                const tx = db.transaction('main', 'readwrite');
+                const data = await tx.objectStore('main').get('main');
+                if (data && data.settings) {
+                    data.settings.aiProvider = 'claude';
+                    await tx.objectStore('main').put(data, 'main');
+                    document.getElementById('output').innerHTML = '<h3>Provider set to Claude!</h3>';
+                } else {
+                    document.getElementById('output').innerHTML = 'No data found to update';
+                }
+            } catch (err) {
+                document.getElementById('output').innerHTML = 'Error: ' + err.message;
+            }
+        };
+
+        window.testAPI = async function() {
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [{ role: 'user', content: 'Test message' }],
+                        provider: 'claude',
+                        systemPrompt: 'You are helpful.'
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('output').innerHTML = '<h3>API Test Result:</h3><pre>' + 
+                    JSON.stringify(data, null, 2) + '</pre>';
+            } catch (err) {
+                document.getElementById('output').innerHTML = 'API Error: ' + err.message;
+            }
+        };
+    </script>
+</body>
+</html>

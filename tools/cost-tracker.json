@@ -1,0 +1,23 @@
+{
+  "project": "BurnOut",
+  "billing": {
+    "rate": 0.0000225,
+    "unit": "per token",
+    "account": "Melt"
+  },
+  "sessions": [
+    {
+      "date": "2026-01-25",
+      "description": "Project initialization and structure setup",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalCost": 0,
+      "notes": "Initial setup session"
+    }
+  ],
+  "totals": {
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "totalCost": 0
+  }
+}
