@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { getData, updateData } from '../utils/storage'
-import type { EnergyLevel, TimeOfDay, Task } from '../data/types'
+import type { EnergyLevel, TimeOfDay, Task, BurnoutMode } from '../data/types'
 
 export function useEnergy() {
   const [currentEnergy, setCurrentEnergy] = useState<EnergyLevel>(3)
   const [momentum, setMomentum] = useState(0) // Consecutive completions today
+  const [burnoutMode, setBurnoutMode] = useState<BurnoutMode>('balanced')
   const [energyDefaults, setEnergyDefaults] = useState({
     morning: 3 as EnergyLevel,
     afternoon: 3 as EnergyLevel,
@@ -15,6 +16,7 @@ export function useEnergy() {
     async function loadEnergy() {
       const data = await getData()
       setEnergyDefaults(data.user.energyDefaults)
+      setBurnoutMode(data.user.burnoutMode)
 
       // Set current energy based on time of day
       const hour = new Date().getHours()
@@ -96,17 +98,62 @@ export function useEnergy() {
       score += 25 // Help user get started with easy wins
     }
 
+    // BURNOUT MODE ADJUSTMENTS
+    if (burnoutMode === 'recovery') {
+      // Recovery mode: strongly prefer low energy, short tasks
+      if (task.feedLevel === 'low') {
+        score += 40 // Strong preference for gentle tasks
+      } else if (task.feedLevel === 'high') {
+        score -= 50 // Heavily penalize high-energy tasks
+      }
+      if (task.timeEstimate <= 15) {
+        score += 20 // Prefer quick wins
+      } else if (task.timeEstimate >= 60) {
+        score -= 30 // Penalize long tasks
+      }
+    } else if (burnoutMode === 'prevention') {
+      // Prevention mode: prefer balance, avoid extremes
+      if (task.feedLevel === 'medium') {
+        score += 15 // Prefer medium energy tasks
+      }
+      if (task.feedLevel === 'high' && momentum >= 3) {
+        score -= 20 // Discourage pushing too hard after completing several tasks
+      }
+      if (task.timeEstimate >= 90) {
+        score -= 15 // Avoid very long focused sessions
+      }
+    }
+    // 'balanced' mode = no additional adjustments (default behavior)
+
     return score
-  }, [currentEnergy, momentum, getCurrentTimeOfDay])
+  }, [currentEnergy, momentum, burnoutMode, getCurrentTimeOfDay])
 
   const sortTasksByEnergy = useCallback((tasks: Task[]): Task[] => {
-    return [...tasks].sort((a, b) => getTaskScore(b) - getTaskScore(a))
-  }, [getTaskScore])
+    let filtered = [...tasks]
+    
+    // In recovery mode, filter out high energy tasks entirely
+    if (burnoutMode === 'recovery') {
+      filtered = filtered.filter(t => t.feedLevel !== 'high')
+    }
+    
+    return filtered.sort((a, b) => getTaskScore(b) - getTaskScore(a))
+  }, [getTaskScore, burnoutMode])
 
   const getSuggestedTask = useCallback((tasks: Task[]): Task | null => {
     const sorted = sortTasksByEnergy(tasks.filter(t => t.status === 'pending'))
     return sorted[0] || null
   }, [sortTasksByEnergy])
+
+  // Get a message about current burnout mode
+  const getBurnoutModeMessage = useCallback((): string | null => {
+    if (burnoutMode === 'recovery') {
+      return '🌱 Recovery mode: Only gentle tasks. Take it easy.'
+    }
+    if (burnoutMode === 'prevention') {
+      return '⚖️ Prevention mode: Maintaining balance.'
+    }
+    return null
+  }, [burnoutMode])
 
   const getEnergyLabel = useMemo(() => {
     const labels: Record<EnergyLevel, string> = {
@@ -147,6 +194,7 @@ export function useEnergy() {
   return {
     currentEnergy,
     momentum,
+    burnoutMode,
     energyDefaults,
     getEnergyLabel,
     setEnergy,
@@ -154,6 +202,7 @@ export function useEnergy() {
     getCurrentTimeOfDay,
     getGreeting,
     getMomentumMessage,
+    getBurnoutModeMessage,
     refreshMomentum,
     getTaskScore,
     sortTasksByEnergy,

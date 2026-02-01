@@ -1,13 +1,13 @@
 import { useState, useCallback, useEffect, CSSProperties, useRef, TouchEvent as ReactTouchEvent, WheelEvent } from 'react'
 import { AppLayout, Header } from '../components/layout'
-import { Button, Toast, FloatingActionButton, QuickAddPanel, Tag, Tooltip, EmptyState, Celebration, Modal } from '../components/shared'
+import { Button, Toast, FloatingActionButton, QuickAddPanel, Tag, Tooltip, EmptyState, Celebration, Modal, EnergySelector } from '../components/shared'
 import { TimerOverlay } from '../components/timer'
 import { useTasks } from '../hooks/useTasks'
 import { useEnergy } from '../hooks/useEnergy'
 import { useAI } from '../hooks/useAI'
 import { useGoals } from '../hooks/useGoals'
 import { getData, setPinnedTaskId } from '../utils/storage'
-import type { Task, EnergyLevel, Settings, FeedLevel } from '../data/types'
+import type { Task, Settings, FeedLevel } from '../data/types'
 import type { ExtractedTask } from '../utils/ai'
 
 export function NowPage() {
@@ -19,6 +19,7 @@ export function NowPage() {
     getSuggestedTask,
     sortTasksByEnergy,
     getMomentumMessage,
+    getBurnoutModeMessage,
     refreshMomentum
   } = useEnergy()
   const [activeTask, setActiveTask] = useState<Task | null>(null)
@@ -533,31 +534,8 @@ export function NowPage() {
     ))
   }
 
-  const energySelectorStyle: CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 'var(--space-sm)',
-    padding: 'var(--space-sm) var(--space-md)',
-    background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-full)',
-    marginBottom: 'var(--space-md)'
-  }
-
-  const energyButtonStyle = (level: EnergyLevel): CSSProperties => ({
-    width: 32,
-    height: 32,
-    borderRadius: '50%',
-    border: currentEnergy === level ? '2px solid var(--orb-orange)' : '1px solid var(--border)',
-    background: currentEnergy === level ? 'var(--orb-orange)' : 'transparent',
-    color: currentEnergy === level ? 'white' : 'var(--text-muted)',
-    cursor: 'pointer',
-    fontSize: 'var(--text-sm)',
-    fontWeight: 500,
-    transition: 'all var(--transition-fast)'
-  })
-
   const momentumMessage = getMomentumMessage()
+  const burnoutModeMessage = getBurnoutModeMessage()
 
   return (
     <AppLayout>
@@ -575,22 +553,25 @@ export function NowPage() {
         onTouchEnd={handleTouchEnd}
         onWheel={handleWheel}
       >
-        {/* Energy Selector */}
-        <div style={energySelectorStyle}>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginRight: 'var(--space-xs)' }}>
-            Energy:
-          </span>
-          {([1, 2, 3, 4, 5] as EnergyLevel[]).map(level => (
-            <button
-              key={level}
-              style={energyButtonStyle(level)}
-              onClick={() => setEnergy(level)}
-              title={`Energy level ${level}`}
-            >
-              {level}
-            </button>
-          ))}
-        </div>
+        {/* Energy Selector - Battery Style */}
+        <EnergySelector value={currentEnergy} onChange={setEnergy} />
+
+        {/* Burnout Mode Indicator */}
+        {burnoutModeMessage && (
+          <div style={{
+            textAlign: 'center',
+            fontSize: 'var(--text-xs)',
+            color: 'var(--text-muted)',
+            marginBottom: 'var(--space-sm)',
+            padding: 'var(--space-xs) var(--space-md)',
+            background: 'var(--bg-card)',
+            borderRadius: 'var(--radius-full)',
+            display: 'inline-block',
+            margin: '0 auto var(--space-sm)'
+          }}>
+            {burnoutModeMessage}
+          </div>
+        )}
 
         {/* Momentum Message */}
         {momentumMessage && (

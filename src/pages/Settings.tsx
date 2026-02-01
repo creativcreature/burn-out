@@ -6,19 +6,23 @@ import { useThemeContext } from '../components/shared/ThemeProvider'
 import { useAppContext } from '../contexts/AppContext'
 import { getData, updateData, seedSampleData } from '../utils/storage'
 import { fileToDataUrl, compressImage, analyzeImageBrightness } from '../utils/imageAnalysis'
-import type { Settings as SettingsType } from '../data/types'
+import type { Settings as SettingsType, BurnoutMode, UserProfile } from '../data/types'
 
 export function SettingsPage() {
   const navigate = useNavigate()
   const { toggleTheme, isDark } = useThemeContext()
   const { setIsOnboardingComplete } = useAppContext()
   const [settings, setSettings] = useState<SettingsType | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [saved, setSaved] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    getData().then(data => setSettings(data.settings))
+    getData().then(data => {
+      setSettings(data.settings)
+      setUserProfile(data.user)
+    })
   }, [])
 
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -118,10 +122,41 @@ export function SettingsPage() {
 
   const handleSave = async () => {
     if (!settings) return
-    await updateData(data => ({ ...data, settings }))
+    await updateData(data => ({ 
+      ...data, 
+      settings,
+      user: userProfile ? { ...data.user, ...userProfile } : data.user
+    }))
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
+
+  const burnoutModeLabels: Record<BurnoutMode, { title: string; desc: string }> = {
+    recovery: { 
+      title: 'Recovery', 
+      desc: 'Prioritize rest. Only gentle tasks.' 
+    },
+    prevention: { 
+      title: 'Prevention', 
+      desc: 'Maintain balance. Avoid overload.' 
+    },
+    balanced: { 
+      title: 'Balanced', 
+      desc: 'Normal productivity mode.' 
+    }
+  }
+
+  const modeButtonStyle = (isActive: boolean): CSSProperties => ({
+    flex: 1,
+    padding: 'var(--space-sm)',
+    borderRadius: 'var(--radius-md)',
+    border: isActive ? '2px solid var(--orb-orange)' : '1px solid var(--border)',
+    background: isActive ? 'var(--orb-orange)' : 'var(--bg-card)',
+    color: isActive ? 'white' : 'var(--text)',
+    cursor: 'pointer',
+    textAlign: 'center' as const,
+    transition: 'all var(--transition-fast)'
+  })
 
   if (!settings) {
     return (
@@ -218,6 +253,41 @@ export function SettingsPage() {
                   >
                     {isUploadingImage ? 'Processing...' : 'Upload Image'}
                   </Button>
+                </div>
+              )}
+            </div>
+          </Card>
+        </section>
+
+        <section style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>Burnout Mode</h2>
+          <Card>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              <div style={descStyle}>
+                Affects task suggestions and app behavior
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                {(['recovery', 'prevention', 'balanced'] as BurnoutMode[]).map(mode => (
+                  <button
+                    key={mode}
+                    style={modeButtonStyle(userProfile?.burnoutMode === mode)}
+                    onClick={() => setUserProfile(prev => prev ? { ...prev, burnoutMode: mode } : null)}
+                  >
+                    <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>
+                      {burnoutModeLabels[mode].title}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {userProfile?.burnoutMode && (
+                <div style={{ 
+                  padding: 'var(--space-sm)', 
+                  background: 'var(--bg-elevated)', 
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: 'var(--text-sm)',
+                  color: 'var(--text-muted)'
+                }}>
+                  {burnoutModeLabels[userProfile.burnoutMode].desc}
                 </div>
               )}
             </div>
