@@ -1,11 +1,17 @@
 # BurnOut Version
 
-Current Version: **0.3.2**
+Current Version: **0.4.3**
 
 ## Version History
 
 | Version | Date       | Summary                                      |
 |---------|------------|----------------------------------------------|
+| 0.4.3   | 2026-02-01 | Load expanded sample data (73 tasks)         |
+| 0.4.2   | 2026-02-01 | Goal selector in quick-add bar               |
+| 0.4.1   | 2026-02-01 | Swipe gestures + expanded sample data schema |
+| 0.4.0   | 2026-02-01 | Organize V2: goal-grouped task list          |
+| 0.3.4   | 2026-01-31 | Fix: contain swipe action overflow           |
+| 0.3.3   | 2026-01-31 | Fix: overflow-x clip for viewport            |
 | 0.3.2   | 2026-01-31 | Aggressive width containment fix             |
 | 0.3.1   | 2026-01-31 | Bug fixes: clipping, AI prompt, responsive   |
 | 0.3.0   | 2026-01-25 | AI chat integration + Habits UI              |
