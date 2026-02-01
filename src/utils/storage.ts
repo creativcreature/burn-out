@@ -1523,18 +1523,37 @@ export async function saveWeeklySummary(summary: WeeklySummary): Promise<void> {
 }
 
 /**
- * Add a new journal entry (thought/reflection)
+ * Add or update a journal entry (thought/reflection)
+ * If date is provided, will update existing entry for that date or create new
  */
 export async function addJournalEntry(
   content: string, 
+  date?: string,
   mood?: 'struggling' | 'okay' | 'good' | 'great'
-): Promise<void> {
+): Promise<JournalEntry> {
   const data = await getData()
   const now = new Date()
+  const entryDate = date || now.toISOString().split('T')[0]
   
+  // Check if entry exists for this date
+  const existingIndex = data.journalEntries.findIndex(e => e.date === entryDate)
+  
+  if (existingIndex >= 0) {
+    // Update existing entry
+    data.journalEntries[existingIndex] = {
+      ...data.journalEntries[existingIndex],
+      content,
+      mood: mood || data.journalEntries[existingIndex].mood,
+      updatedAt: now.toISOString()
+    }
+    await saveData(data)
+    return data.journalEntries[existingIndex]
+  }
+  
+  // Create new entry
   const entry: JournalEntry = {
     id: crypto.randomUUID(),
-    date: now.toISOString().split('T')[0],
+    date: entryDate,
     content,
     mood,
     createdAt: now.toISOString(),
@@ -1543,6 +1562,7 @@ export async function addJournalEntry(
   
   data.journalEntries.push(entry)
   await saveData(data)
+  return entry
 }
 
 /**
@@ -1553,6 +1573,14 @@ export async function getRecentJournalEntries(limit = 10): Promise<JournalEntry[
   return data.journalEntries
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, limit)
+}
+
+/**
+ * Get journal entry by specific date (YYYY-MM-DD format)
+ */
+export async function getJournalEntryByDate(date: string): Promise<JournalEntry | null> {
+  const data = await getData()
+  return data.journalEntries.find(e => e.date === date) || null
 }
 
 /**
