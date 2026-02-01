@@ -107,8 +107,15 @@ export function NowPage() {
     const deltaX = currentX - lastTouchX.current
 
     // Determine gesture direction on first significant movement
-    if (!isHorizontalDrag.current && (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10)) {
+    // Higher threshold to avoid conflicting with natural scroll
+    if (!isHorizontalDrag.current && (Math.abs(deltaX) > 15 || Math.abs(deltaY) > 15)) {
       isHorizontalDrag.current = Math.abs(deltaX) > Math.abs(deltaY)
+      // Only capture gesture if it's clearly intentional
+      if (!isHorizontalDrag.current && scrollProgress > 0.1) {
+        // Let vertical scroll happen naturally when sheet is closed
+        isDragging.current = false
+        return
+      }
     }
 
     if (isHorizontalDrag.current) {

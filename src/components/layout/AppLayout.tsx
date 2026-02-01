@@ -1,13 +1,15 @@
 import { ReactNode } from 'react'
 import { Navigation } from './Navigation'
+import { GlobalFAB } from '../shared/GlobalFAB'
 
 interface AppLayoutProps {
   children: ReactNode
   showNav?: boolean
   showOrb?: boolean
+  showFAB?: boolean
 }
 
-export function AppLayout({ children, showNav = true, showOrb = true }: AppLayoutProps) {
+export function AppLayout({ children, showNav = true, showOrb = true, showFAB = true }: AppLayoutProps) {
   return (
     <>
       {/* Full-screen Orb Background */}
@@ -23,6 +25,7 @@ export function AppLayout({ children, showNav = true, showOrb = true }: AppLayou
       </div>
 
       {showNav && <Navigation />}
+      {showFAB && <GlobalFAB />}
     </>
   )
 }
