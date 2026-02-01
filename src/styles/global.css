@@ -88,6 +88,23 @@ html, body {
   }
 }
 
+/* Large Desktop: wider container, bigger orb */
+@media (min-width: 1024px) {
+  .app-shell {
+    max-width: 520px;
+  }
+
+  .orb-main {
+    width: 400px;
+    height: 400px;
+    box-shadow: 0 0 180px 100px rgba(255, 69, 0, 0.2);
+  }
+
+  .bottom-nav {
+    max-width: 520px;
+  }
+}
+
 /* Header - Glassmorphism */
 .app-header {
   padding: var(--space-md) 20px;
@@ -1235,6 +1252,12 @@ html, body {
 @media (min-width: 768px) {
   .fab-button {
     right: calc(50% - 240px + var(--space-md));
+  }
+}
+
+@media (min-width: 1024px) {
+  .fab-button {
+    right: calc(50% - 260px + var(--space-md));
   }
 }
 
