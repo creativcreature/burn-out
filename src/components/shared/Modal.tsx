@@ -58,13 +58,16 @@ export function Modal({ isOpen, onClose, title, children, showClose = true }: Mo
 
   const modalStyle: CSSProperties = {
     background: 'var(--bg-alt)',
-    borderRadius: 'var(--radius-lg)',
-    padding: 'var(--space-lg)',
+    borderRadius: 'var(--radius-xl)',
+    padding: 'var(--space-xl)',
     maxWidth: 480,
     width: '100%',
     maxHeight: '90vh',
     overflow: 'auto',
-    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+    boxShadow: '0 25px 80px rgba(0, 0, 0, 0.4)',
+    animation: isExiting 
+      ? 'modal-slide-out 200ms var(--spring-smooth) forwards' 
+      : 'modal-slide-in 300ms var(--spring-bounce)'
   }
 
   const headerStyle: CSSProperties = {

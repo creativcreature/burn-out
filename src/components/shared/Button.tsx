@@ -28,7 +28,8 @@ export function Button({
     border: 'none',
     cursor: disabled || loading ? 'not-allowed' : 'pointer',
     opacity: disabled || loading ? 0.6 : 1,
-    transition: 'all var(--transition-fast)',
+    transition: 'all 200ms var(--spring-smooth)',
+    transform: 'scale(1)',
     width: fullWidth ? '100%' : 'auto'
   }
 
