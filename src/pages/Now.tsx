@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, CSSProperties, useRef, TouchEvent as ReactTouchEvent, WheelEvent } from 'react'
 import { AppLayout, Header } from '../components/layout'
-import { Button, Toast, FloatingActionButton, QuickAddPanel, Tag, Tooltip, EmptyState } from '../components/shared'
+import { Button, Toast, FloatingActionButton, QuickAddPanel, Tag, Tooltip, EmptyState, Celebration } from '../components/shared'
 import { TimerOverlay } from '../components/timer'
 import { useTasks } from '../hooks/useTasks'
 import { useEnergy } from '../hooks/useEnergy'
@@ -27,6 +27,7 @@ export function NowPage() {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [cardSettings, setCardSettings] = useState<Pick<Settings, 'cardBackgroundImage' | 'cardBackgroundBrightness'> | null>(null)
   const [pinnedTaskId, setPinnedTaskIdState] = useState<string | undefined>(undefined)
+  const [showCelebration, setShowCelebration] = useState(false)
 
   // Load settings including pinned task
   useEffect(() => {
@@ -483,7 +484,7 @@ export function NowPage() {
       await completeTask(activeTask.id, duration)
       setShowTimer(false)
       setActiveTask(null)
-      setToast({ message: 'Nice work! Task completed.', type: 'success', visible: true })
+      setShowCelebration(true)
       // Refresh momentum count from storage
       await refreshMomentum()
     }
@@ -798,6 +799,12 @@ export function NowPage() {
         onSubmit={handleQuickAdd}
         placeholder="What's on your mind?"
         isLoading={isAILoading}
+      />
+
+      {/* Celebration on task complete */}
+      <Celebration 
+        show={showCelebration} 
+        onComplete={() => setShowCelebration(false)} 
       />
     </AppLayout>
   )
