@@ -1,6 +1,7 @@
 import { useState, useCallback, CSSProperties } from 'react'
 import { AppLayout, Header } from '../components/layout'
 import { Card, Modal, Button, Input, Toast } from '../components/shared'
+import { SwipeableTaskCard } from '../components/shared/SwipeableTaskCard'
 import { useTasks } from '../hooks/useTasks'
 import { useGoals } from '../hooks/useGoals'
 import type { Task, Goal } from '../data/types'
@@ -111,39 +112,6 @@ export function OrganizeV2Page() {
     userSelect: 'none'
   }
 
-  const taskCardStyle: CSSProperties = {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 'var(--space-sm)',
-    padding: 'var(--space-md)',
-    background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-md)',
-    marginLeft: 'var(--space-md)'
-  }
-
-  const checkboxStyle: CSSProperties = {
-    width: 24,
-    height: 24,
-    borderRadius: 'var(--radius-sm)',
-    border: '2px solid var(--text-subtle)',
-    cursor: 'pointer',
-    flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  }
-
-  const taskTitleStyle: CSSProperties = {
-    flex: 1,
-    fontSize: 'var(--text-md)',
-    color: 'var(--text)'
-  }
-
-  const dueDateStyle: CSSProperties = {
-    fontSize: 'var(--text-xs)',
-    color: 'var(--text-muted)'
-  }
-
   const quickAddStyle: CSSProperties = {
     display: 'flex',
     gap: 'var(--space-sm)',
@@ -184,42 +152,12 @@ export function OrganizeV2Page() {
         {!isCollapsed && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
             {tasks.map(task => (
-              <div key={task.id} style={taskCardStyle}>
-                {/* Checkbox */}
-                <div 
-                  style={checkboxStyle} 
-                  onClick={() => handleComplete(task.id)}
-                  role="checkbox"
-                  aria-checked={false}
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && handleComplete(task.id)}
-                />
-                
-                {/* Task content */}
-                <div style={{ flex: 1 }}>
-                  <div style={taskTitleStyle}>{task.taskBody}</div>
-                  {task.scheduledFor && (
-                    <div style={dueDateStyle}>
-                      📅 {new Date(task.scheduledFor).toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Delete button */}
-                <button
-                  onClick={() => handleDelete(task.id)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-subtle)',
-                    cursor: 'pointer',
-                    padding: 'var(--space-xs)'
-                  }}
-                  aria-label="Delete task"
-                >
-                  🗑️
-                </button>
-              </div>
+              <SwipeableTaskCard
+                key={task.id}
+                task={task}
+                onComplete={handleComplete}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}

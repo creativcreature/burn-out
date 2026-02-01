@@ -1,0 +1,142 @@
+import { CSSProperties, memo } from 'react'
+import { useSwipe } from '../../hooks/useSwipe'
+import type { Task } from '../../data/types'
+
+interface SwipeableTaskCardProps {
+  task: Task
+  onComplete: (taskId: string) => void
+  onDelete: (taskId: string) => void
+}
+
+/**
+ * Task card with swipe gestures
+ * Swipe right = complete, Swipe left = delete
+ */
+export const SwipeableTaskCard = memo(function SwipeableTaskCard({
+  task,
+  onComplete,
+  onDelete
+}: SwipeableTaskCardProps) {
+  const { swipeX, handlers } = useSwipe({
+    threshold: 0.3,
+    onSwipeRight: () => onComplete(task.id),
+    onSwipeLeft: () => onDelete(task.id)
+  })
+
+  // Card transforms based on swipe
+  const cardStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 'var(--space-sm)',
+    padding: 'var(--space-md)',
+    background: 'var(--bg-card)',
+    borderRadius: 'var(--radius-md)',
+    marginLeft: 'var(--space-md)',
+    transform: `translateX(${swipeX * 80}px)`,
+    transition: swipeX === 0 ? 'transform 0.2s ease-out' : 'none',
+    touchAction: 'pan-y',
+    position: 'relative',
+    overflow: 'hidden'
+  }
+
+  // Action indicators
+  const leftActionStyle: CSSProperties = {
+    position: 'absolute',
+    right: '100%',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: 60,
+    height: 60,
+    borderRadius: '50%',
+    background: 'var(--orb-red)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: Math.max(0, -swipeX * 2),
+    marginRight: 'var(--space-sm)',
+    fontSize: '1.5rem',
+    boxShadow: '0 4px 20px rgba(255, 69, 0, 0.4)'
+  }
+
+  const rightActionStyle: CSSProperties = {
+    position: 'absolute',
+    left: '100%',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: 60,
+    height: 60,
+    borderRadius: '50%',
+    background: 'var(--success)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: Math.max(0, swipeX * 2),
+    marginLeft: 'var(--space-sm)',
+    fontSize: '1.5rem',
+    boxShadow: '0 4px 20px rgba(34, 197, 94, 0.4)'
+  }
+
+  const checkboxStyle: CSSProperties = {
+    width: 24,
+    height: 24,
+    borderRadius: 'var(--radius-sm)',
+    border: '2px solid var(--text-subtle)',
+    cursor: 'pointer',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }
+
+  const taskTitleStyle: CSSProperties = {
+    flex: 1,
+    fontSize: 'var(--text-md)',
+    color: 'var(--text)'
+  }
+
+  const dueDateStyle: CSSProperties = {
+    fontSize: 'var(--text-xs)',
+    color: 'var(--text-muted)'
+  }
+
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Left action (delete) - shows when swiping left */}
+      <div style={leftActionStyle}>
+        <span>🗑️</span>
+      </div>
+
+      {/* Right action (complete) - shows when swiping right */}
+      <div style={rightActionStyle}>
+        <span>✓</span>
+      </div>
+
+      {/* Card */}
+      <div 
+        style={cardStyle} 
+        {...handlers}
+      >
+        {/* Checkbox */}
+        <div 
+          style={checkboxStyle} 
+          onClick={() => onComplete(task.id)}
+          role="checkbox"
+          aria-checked={false}
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && onComplete(task.id)}
+          aria-label={`Mark "${task.taskBody}" as complete`}
+        />
+        
+        {/* Task content */}
+        <div style={{ flex: 1 }}>
+          <div style={taskTitleStyle}>{task.taskBody}</div>
+          {task.scheduledFor && (
+            <div style={dueDateStyle}>
+              📅 {new Date(task.scheduledFor).toLocaleDateString()}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+})
