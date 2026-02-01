@@ -53,14 +53,15 @@ html, body {
 .app-shell {
   position: relative;
   z-index: 1;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: calc(var(--safe-top) + var(--space-md)) var(--space-md) calc(var(--nav-height) + var(--safe-bottom) + 80px);
   max-width: 430px;
   margin: 0 auto;
   overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 /* Desktop: keep mobile-like experience but centered better */
