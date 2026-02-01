@@ -1,130 +1,196 @@
-import { CSSProperties } from 'react'
-import { AppLayout, Header } from '../components/layout'
-import { Card } from '../components/shared'
-import { Garden } from '../components/garden'
-import { WeeklySummaryCard } from '../components/reflections/WeeklySummaryCard'
+import { useState, CSSProperties } from 'react'
+import { AppLayout } from '../components/layout'
+import { Modal, Button } from '../components/shared'
 import { useTasks } from '../hooks/useTasks'
-import { useWeeklySummary } from '../hooks/useWeeklySummary'
 
+/**
+ * Reflections Page - One Day Journal inspired
+ * Minimal, whimsical, lots of whitespace
+ * "plant a thought" instead of stats-heavy dashboard
+ */
 export function ReflectionsPage() {
-  const { tasks, completedTasks } = useTasks()
-  const { summary, loading, error, refreshSummary, hasRecentData } = useWeeklySummary()
+  const { completedTasks } = useTasks()
+  const [showPlantModal, setShowPlantModal] = useState(false)
+  const [thought, setThought] = useState('')
 
-  const contentStyle: CSSProperties = {
-    padding: 'var(--space-md)',
+  // Get recent reflections (last 7 days of completed tasks with notes)
+  const weekAgo = new Date()
+  weekAgo.setDate(weekAgo.getDate() - 7)
+  
+  const recentReflections = completedTasks
+    .filter(t => {
+      const date = new Date(t.updatedAt)
+      return date >= weekAgo
+    })
+    .slice(0, 4)
+
+  // Whimsical icons for reflections (like One Day's plant icons)
+  const icons = ['🌸', '🍒', '🌲', '🍄', '🌻', '🌿', '🌱', '✨']
+  
+  const getIconForTask = (index: number) => icons[index % icons.length]
+
+  const containerStyle: CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: 'var(--space-lg)'
+    alignItems: 'center',
+    minHeight: '70vh',
+    padding: 'var(--space-xl) var(--space-md)',
+    gap: 'var(--space-xl)'
   }
 
-  const statsGridStyle: CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: 'var(--space-md)'
-  }
-
-  const statCardStyle: CSSProperties = {
-    textAlign: 'center'
-  }
-
-  const statNumberStyle: CSSProperties = {
-    fontFamily: 'var(--font-display)',
-    fontSize: 'var(--text-3xl)',
-    fontWeight: 600,
-    color: 'var(--orb-orange)'
-  }
-
-  const statLabelStyle: CSSProperties = {
+  const todayPillStyle: CSSProperties = {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-full)',
+    padding: 'var(--space-xs) var(--space-md)',
     fontSize: 'var(--text-sm)',
     color: 'var(--text-muted)'
   }
 
-  const sectionTitleStyle: CSSProperties = {
+  const iconsRowStyle: CSSProperties = {
+    display: 'flex',
+    gap: 'var(--space-lg)',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    maxWidth: 280
+  }
+
+  const iconStyle: CSSProperties = {
+    fontSize: '2rem',
+    opacity: 0.6,
+    cursor: 'pointer',
+    transition: 'all 200ms var(--spring-smooth)'
+  }
+
+  const plantButtonStyle: CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 'var(--space-sm)',
+    cursor: 'pointer',
+    marginTop: 'auto',
+    marginBottom: 'auto'
+  }
+
+  const plantCircleStyle: CSSProperties = {
+    width: 80,
+    height: 80,
+    borderRadius: '50%',
+    border: '2px solid var(--orb-orange)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '2rem',
+    color: 'var(--orb-orange)',
+    background: 'transparent',
+    transition: 'all 200ms var(--spring-smooth)'
+  }
+
+  const plantTextStyle: CSSProperties = {
     fontFamily: 'var(--font-display)',
-    fontSize: 'var(--text-lg)',
-    fontWeight: 600,
+    fontSize: 'var(--text-md)',
     color: 'var(--text)',
-    marginBottom: 'var(--space-sm)'
+    fontWeight: 500
   }
 
-  const noteStyle: CSSProperties = {
-    fontSize: 'var(--text-sm)',
-    color: 'var(--text-muted)',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    padding: 'var(--space-lg)'
+  const handlePlantThought = () => {
+    if (thought.trim()) {
+      // TODO: Save thought as journal entry
+      console.log('Planting thought:', thought)
+      setThought('')
+      setShowPlantModal(false)
+    }
   }
-
-  // Calculate stats (informational, NOT gamified)
-  const totalCompleted = completedTasks.length
-  const totalPending = tasks.filter(t => t.status === 'pending').length
-  const thisWeekCompleted = completedTasks.filter(t => {
-    const completedDate = new Date(t.updatedAt)
-    const weekAgo = new Date()
-    weekAgo.setDate(weekAgo.getDate() - 7)
-    return completedDate >= weekAgo
-  }).length
-
-  const avgTime = completedTasks.length > 0
-    ? Math.round(completedTasks.reduce((sum, t) => sum + (t.timeEstimate || 0), 0) / completedTasks.length)
-    : 0
 
   return (
-    <AppLayout>
-      <Header title="Reflections" />
-      <main style={contentStyle}>
-        {/* Weekly AI Insights */}
-        <WeeklySummaryCard
-          summary={summary}
-          loading={loading}
-          error={error}
-          hasRecentData={hasRecentData}
-          onRefresh={refreshSummary}
-        />
+    <AppLayout showOrb={false}>
+      <main style={containerStyle}>
+        {/* Today pill */}
+        <div style={todayPillStyle}>today</div>
 
-        <section>
-          <h2 style={sectionTitleStyle}>Your Progress</h2>
-          <div style={statsGridStyle}>
-            <Card>
-              <div style={statCardStyle}>
-                <div style={statNumberStyle}>{totalCompleted}</div>
-                <div style={statLabelStyle}>Tasks Completed</div>
-              </div>
-            </Card>
-            <Card>
-              <div style={statCardStyle}>
-                <div style={statNumberStyle}>{totalPending}</div>
-                <div style={statLabelStyle}>In Progress</div>
-              </div>
-            </Card>
-            <Card>
-              <div style={statCardStyle}>
-                <div style={statNumberStyle}>{thisWeekCompleted}</div>
-                <div style={statLabelStyle}>This Week</div>
-              </div>
-            </Card>
-            <Card>
-              <div style={statCardStyle}>
-                <div style={statNumberStyle}>{avgTime}</div>
-                <div style={statLabelStyle}>Avg. Minutes</div>
-              </div>
-            </Card>
+        {/* Recent reflection icons */}
+        {recentReflections.length > 0 ? (
+          <div style={iconsRowStyle}>
+            {recentReflections.map((task, i) => (
+              <span 
+                key={task.id} 
+                style={iconStyle}
+                title={task.taskBody}
+              >
+                {getIconForTask(i)}
+              </span>
+            ))}
           </div>
-        </section>
+        ) : (
+          <div style={{ ...iconsRowStyle, opacity: 0.3 }}>
+            <span style={iconStyle}>🌸</span>
+            <span style={iconStyle}>🍒</span>
+            <span style={iconStyle}>🌲</span>
+            <span style={iconStyle}>🍄</span>
+          </div>
+        )}
 
-        <section>
-          <h2 style={sectionTitleStyle}>Journal</h2>
-          <Card>
-            <Garden />
-          </Card>
-        </section>
+        {/* Plant thought button */}
+        <div 
+          style={plantButtonStyle}
+          onClick={() => setShowPlantModal(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && setShowPlantModal(true)}
+        >
+          <div style={plantCircleStyle}>+</div>
+          <span style={plantTextStyle}>plant thought</span>
+        </div>
 
-        <p style={noteStyle}>
-          This is a place to reflect on your journey, not to compete.
-          <br />
-          Take time to check in with yourself.
-        </p>
+        {/* Gentle message */}
+        {recentReflections.length === 0 && (
+          <p style={{ 
+            color: 'var(--text-muted)', 
+            fontSize: 'var(--text-sm)',
+            textAlign: 'center',
+            maxWidth: 250,
+            lineHeight: 'var(--line-height-relaxed)'
+          }}>
+            your thoughts grow here.
+            <br />
+            plant one when you're ready.
+          </p>
+        )}
       </main>
+
+      {/* Plant thought modal */}
+      <Modal 
+        isOpen={showPlantModal} 
+        onClose={() => setShowPlantModal(false)}
+        title="plant a thought"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+          <textarea
+            value={thought}
+            onChange={(e) => setThought(e.target.value)}
+            placeholder="what's on your mind?"
+            style={{
+              width: '100%',
+              minHeight: 120,
+              padding: 'var(--space-md)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-card)',
+              color: 'var(--text)',
+              fontSize: 'var(--text-md)',
+              fontFamily: 'var(--font-body)',
+              resize: 'vertical'
+            }}
+          />
+          <Button 
+            variant="primary" 
+            onClick={handlePlantThought}
+            disabled={!thought.trim()}
+          >
+            plant 🌱
+          </Button>
+        </div>
+      </Modal>
     </AppLayout>
   )
 }
