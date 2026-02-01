@@ -10,9 +10,10 @@ interface HeaderProps {
   subtitle?: string
   subtitleBadge?: boolean
   objective?: string
+  onObjectiveClick?: () => void
 }
 
-export function Header({ title, showBack = false, rightAction, showLogo = false, showDate = false, subtitle, subtitleBadge = false, objective }: HeaderProps) {
+export function Header({ title, showBack = false, rightAction, showLogo = false, showDate = false, subtitle, subtitleBadge = false, objective, onObjectiveClick }: HeaderProps) {
   const navigate = useNavigate()
 
   const now = new Date()
@@ -64,9 +65,19 @@ export function Header({ title, showBack = false, rightAction, showLogo = false,
               <span className="date-num">{months[now.getMonth()]}. {now.getDate()}</span>
             </div>
             {objective && (
-              <div className="objective-section">
+              <div 
+                className="objective-section"
+                onClick={onObjectiveClick}
+                style={{ cursor: onObjectiveClick ? 'pointer' : 'default' }}
+                role={onObjectiveClick ? 'button' : undefined}
+                tabIndex={onObjectiveClick ? 0 : undefined}
+                onKeyDown={onObjectiveClick ? (e) => e.key === 'Enter' && onObjectiveClick() : undefined}
+              >
                 <span className="objective-label">Objective:</span>
                 <span className="objective-value">{objective}</span>
+                {onObjectiveClick && (
+                  <span style={{ marginLeft: '4px', opacity: 0.5, fontSize: 'var(--text-xs)' }}>✎</span>
+                )}
               </div>
             )}
           </div>

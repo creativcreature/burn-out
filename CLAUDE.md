@@ -138,6 +138,36 @@ Examples:
 - Cards: glass effect, 12px rounded corners, shadows
 - Animations: breathing, transitions, gestures
 
+## Lessons Learned (DON'T REPEAT THESE MISTAKES)
+
+### 2026-02-01: Major Feedback Session
+Issues that fell through the cracks:
+
+1. **REFERENCE APPS MUST BE EXACT**
+   - When James says "like One Year App" — that means EXACTLY like it
+   - Don't interpret, don't "inspired by" — match the visual language exactly
+   - One Year App = garden view with hand-drawn plants, one per day, grows over year
+   - Current Reflections = random icons, journal cards — COMPLETELY different
+
+2. **INTERACTIVE ELEMENTS MUST BE TAPPABLE**
+   - Goal in header should be tappable to change goal
+   - Task type labels should be tappable to edit type
+   - Don't just display data — make it interactive
+
+3. **FEATURES MUST ACTUALLY WORK**
+   - Burnout mode is set in onboarding but doesn't affect app behavior
+   - Just passing data to AI prompts is NOT implementing the feature
+   - If a feature exists, it should have visible behavioral effects
+
+4. **ENERGY UI NEEDS THOUGHT**
+   - 5 numbered buttons is utilitarian, not thoughtful
+   - Design decisions need to match the app's aesthetic (warm, human, not clinical)
+
+5. **VERIFY BEFORE CLOSING**
+   - Before saying "done" — actually use the feature
+   - Test the entire flow, not just if it compiles
+   - If something was asked for, visually verify it matches
+
 ## Token Logging (MANDATORY)
 At session end, update:
 ```

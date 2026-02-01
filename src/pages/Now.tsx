@@ -1,18 +1,18 @@
 import { useState, useCallback, useEffect, CSSProperties, useRef, TouchEvent as ReactTouchEvent, WheelEvent } from 'react'
 import { AppLayout, Header } from '../components/layout'
-import { Button, Toast, FloatingActionButton, QuickAddPanel, Tag, Tooltip, EmptyState, Celebration } from '../components/shared'
+import { Button, Toast, FloatingActionButton, QuickAddPanel, Tag, Tooltip, EmptyState, Celebration, Modal } from '../components/shared'
 import { TimerOverlay } from '../components/timer'
 import { useTasks } from '../hooks/useTasks'
 import { useEnergy } from '../hooks/useEnergy'
 import { useAI } from '../hooks/useAI'
 import { useGoals } from '../hooks/useGoals'
 import { getData, setPinnedTaskId } from '../utils/storage'
-import type { Task, EnergyLevel, Settings } from '../data/types'
+import type { Task, EnergyLevel, Settings, FeedLevel } from '../data/types'
 import type { ExtractedTask } from '../utils/ai'
 
 export function NowPage() {
-  const { pendingTasks, completeTask, deferTask, snoozeTask, addTask } = useTasks()
-  const { currentActiveGoal } = useGoals()
+  const { pendingTasks, completeTask, deferTask, snoozeTask, addTask, updateTask } = useTasks()
+  const { activeGoals, currentActiveGoal, setActiveGoal } = useGoals()
   const {
     currentEnergy,
     setEnergy,
@@ -28,6 +28,10 @@ export function NowPage() {
   const [cardSettings, setCardSettings] = useState<Pick<Settings, 'cardBackgroundImage' | 'cardBackgroundBrightness'> | null>(null)
   const [pinnedTaskId, setPinnedTaskIdState] = useState<string | undefined>(undefined)
   const [showCelebration, setShowCelebration] = useState(false)
+  const [showGoalPicker, setShowGoalPicker] = useState(false)
+  const [showTaskTypeEditor, setShowTaskTypeEditor] = useState(false)
+  const [editingVerbLabel, setEditingVerbLabel] = useState('')
+  const [editingFeedLevel, setEditingFeedLevel] = useState<FeedLevel>('medium')
 
   // Load settings including pinned task
   useEffect(() => {
@@ -497,6 +501,31 @@ export function NowPage() {
     setToast({ message: 'Task snoozed. Will appear later.', type: 'info', visible: true })
   }
 
+  // Handle goal selection from picker
+  const handleSelectGoal = async (goalId: string) => {
+    await setActiveGoal(goalId)
+    setShowGoalPicker(false)
+    setToast({ message: 'Active goal updated', type: 'success', visible: true })
+  }
+
+  // Handle task type editing
+  const handleEditTaskType = (task: Task) => {
+    setEditingVerbLabel(task.verbLabel)
+    setEditingFeedLevel(task.feedLevel)
+    setShowTaskTypeEditor(true)
+  }
+
+  const handleSaveTaskType = async () => {
+    if (currentTask && editingVerbLabel.trim()) {
+      await updateTask(currentTask.id, {
+        verbLabel: editingVerbLabel.trim().slice(0, 12),
+        feedLevel: editingFeedLevel
+      })
+      setShowTaskTypeEditor(false)
+      setToast({ message: 'Task updated', type: 'success', visible: true })
+    }
+  }
+
   const getEnergyBolts = (level: string) => {
     const num = level === 'low' ? 1 : level === 'medium' ? 2 : 3
     return Array(3).fill(0).map((_, i) => (
@@ -532,7 +561,12 @@ export function NowPage() {
 
   return (
     <AppLayout>
-      <Header showLogo showDate objective={currentObjective} />
+      <Header 
+        showLogo 
+        showDate 
+        objective={currentObjective} 
+        onObjectiveClick={() => setShowGoalPicker(true)}
+      />
 
       <main
         className="main-area"
@@ -596,7 +630,14 @@ export function NowPage() {
                 }}
               >
               <div className="task-header">
-                <h1 className="task-title">{currentTask.verbLabel}.</h1>
+                <h1 
+                  className="task-title" 
+                  onClick={() => handleEditTaskType(currentTask)}
+                  style={{ cursor: 'pointer' }}
+                  title="Tap to edit"
+                >
+                  {currentTask.verbLabel}. ✎
+                </h1>
                 <p className="task-subtitle">{currentTask.taskBody}</p>
               </div>
 
@@ -617,9 +658,11 @@ export function NowPage() {
                 </div>
               </div>
 
-              {/* Tags row - show task metadata */}
+              {/* Tags row - show task metadata (tappable to edit) */}
               <div className="tags-row">
-                <Tag variant="energy">{currentTask.feedLevel} energy</Tag>
+                <div onClick={() => handleEditTaskType(currentTask)} style={{ cursor: 'pointer' }}>
+                  <Tag variant="energy">{currentTask.feedLevel} energy ✎</Tag>
+                </div>
                 {currentTask.timeOfDay !== 'anytime' && (
                   <Tag variant="focus">{currentTask.timeOfDay}</Tag>
                 )}
@@ -803,6 +846,111 @@ export function NowPage() {
         show={showCelebration} 
         onComplete={() => setShowCelebration(false)} 
       />
+
+      {/* Goal Picker Modal */}
+      <Modal
+        isOpen={showGoalPicker}
+        onClose={() => setShowGoalPicker(false)}
+        title="Change Active Goal"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+          {activeGoals.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
+              No goals yet. Create one in Organize → Goals.
+            </p>
+          ) : (
+            activeGoals.map(goal => (
+              <button
+                key={goal.id}
+                onClick={() => handleSelectGoal(goal.id)}
+                style={{
+                  padding: 'var(--space-md)',
+                  background: goal.isActive ? 'var(--orb-orange)' : 'var(--bg-card)',
+                  color: goal.isActive ? 'white' : 'var(--text)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all var(--transition-fast)'
+                }}
+              >
+                <div style={{ fontWeight: 600 }}>{goal.title}</div>
+                {goal.description && (
+                  <div style={{ fontSize: 'var(--text-sm)', opacity: 0.8, marginTop: '4px' }}>
+                    {goal.description}
+                  </div>
+                )}
+                {goal.isActive && (
+                  <div style={{ fontSize: 'var(--text-xs)', marginTop: '8px' }}>
+                    ✓ Currently Active
+                  </div>
+                )}
+              </button>
+            ))
+          )}
+        </div>
+      </Modal>
+
+      {/* Task Type Editor Modal */}
+      <Modal
+        isOpen={showTaskTypeEditor}
+        onClose={() => setShowTaskTypeEditor(false)}
+        title="Edit Task"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: 'var(--space-xs)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+              Verb Label (max 12 chars)
+            </label>
+            <input
+              type="text"
+              value={editingVerbLabel}
+              onChange={(e) => setEditingVerbLabel(e.target.value.slice(0, 12))}
+              maxLength={12}
+              style={{
+                width: '100%',
+                padding: 'var(--space-sm)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
+                color: 'var(--text)',
+                fontSize: 'var(--text-md)'
+              }}
+              placeholder="e.g., Call, Email, Review"
+            />
+          </div>
+          
+          <div>
+            <label style={{ display: 'block', marginBottom: 'var(--space-xs)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+              Energy Level
+            </label>
+            <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+              {(['low', 'medium', 'high'] as FeedLevel[]).map(level => (
+                <button
+                  key={level}
+                  onClick={() => setEditingFeedLevel(level)}
+                  style={{
+                    flex: 1,
+                    padding: 'var(--space-sm)',
+                    borderRadius: 'var(--radius-md)',
+                    border: editingFeedLevel === level ? '2px solid var(--orb-orange)' : '1px solid var(--border)',
+                    background: editingFeedLevel === level ? 'var(--orb-orange)' : 'var(--bg-card)',
+                    color: editingFeedLevel === level ? 'white' : 'var(--text)',
+                    cursor: 'pointer',
+                    textTransform: 'capitalize'
+                  }}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Button variant="primary" onClick={handleSaveTaskType}>
+            Save Changes
+          </Button>
+        </div>
+      </Modal>
     </AppLayout>
   )
 }
