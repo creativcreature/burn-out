@@ -971,6 +971,19 @@ html, body {
   flex-direction: column;
   justify-content: center;
   overflow: visible;
+  width: 100%;
+  max-width: calc(100vw - 2 * var(--space-md));
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Force containment on all task elements */
+.task-card,
+.glass-card-transparent {
+  width: 100%;
+  max-width: calc(100vw - 2 * var(--space-md));
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Today View */
