@@ -19,8 +19,16 @@ export const SwipeableTaskCard = memo(function SwipeableTaskCard({
 }: SwipeableTaskCardProps) {
   const { swipeX, handlers } = useSwipe({
     threshold: 0.3,
-    onSwipeRight: () => onComplete(task.id),
-    onSwipeLeft: () => onDelete(task.id)
+    onSwipeRight: () => {
+      // Haptic feedback on complete
+      if (navigator.vibrate) navigator.vibrate(10)
+      onComplete(task.id)
+    },
+    onSwipeLeft: () => {
+      // Haptic feedback on delete
+      if (navigator.vibrate) navigator.vibrate([10, 50, 10])
+      onDelete(task.id)
+    }
   })
 
   // Card transforms based on swipe
@@ -32,8 +40,9 @@ export const SwipeableTaskCard = memo(function SwipeableTaskCard({
     background: 'var(--bg-card)',
     borderRadius: 'var(--radius-md)',
     marginLeft: 'var(--space-md)',
-    transform: `translateX(${swipeX * 80}px)`,
-    transition: swipeX === 0 ? 'transform 0.2s ease-out' : 'none',
+    transform: `translateX(${swipeX * 80}px) scale(${1 - Math.abs(swipeX) * 0.02})`,
+    opacity: 1 - Math.abs(swipeX) * 0.1,
+    transition: swipeX === 0 ? 'transform 0.2s ease-out, opacity 0.2s ease-out' : 'none',
     touchAction: 'pan-y',
     position: 'relative',
     overflow: 'hidden'
