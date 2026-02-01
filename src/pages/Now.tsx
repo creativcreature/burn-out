@@ -463,7 +463,8 @@ export function NowPage() {
         }
       }
     }
-  }, [taskSwipeX, currentTask, scrollProgress, isDragging.current])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskSwipeX, currentTask, scrollProgress])
 
   const handleStartTask = (task: Task) => {
     setActiveTask(task)
