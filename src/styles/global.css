@@ -64,6 +64,12 @@ html, body {
   overflow-x: hidden;
   overflow-y: auto;
   box-sizing: border-box;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.app-shell::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 /* Desktop: keep mobile-like experience but centered better */
@@ -959,6 +965,7 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow: visible;
 }
 
 /* Today View */
