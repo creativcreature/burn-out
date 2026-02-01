@@ -76,11 +76,14 @@ export function ChatPage() {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    flex: 1
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden'
   }
 
   const messagesStyle: CSSProperties = {
     flex: 1,
+    minHeight: 0,
     overflowY: 'auto',
     padding: 'var(--space-md)',
     paddingBottom: 'calc(100px + var(--safe-bottom))',
