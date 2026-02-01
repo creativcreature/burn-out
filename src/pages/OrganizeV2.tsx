@@ -23,7 +23,7 @@ export function OrganizeV2Page() {
   
   const [showGoalModal, setShowGoalModal] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [selectedGoalId] = useState<string | null>(null)
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const [collapsedGoals, setCollapsedGoals] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState({ message: '', type: 'success' as const, visible: false })
   
@@ -207,6 +207,25 @@ export function OrganizeV2Page() {
 
       {/* Quick Add Bar */}
       <div style={quickAddStyle}>
+        <select
+          value={selectedGoalId || ''}
+          onChange={(e) => setSelectedGoalId(e.target.value || null)}
+          style={{
+            padding: 'var(--space-sm)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border)',
+            background: 'var(--bg-card)',
+            color: 'var(--text)',
+            fontSize: 'var(--text-sm)',
+            minWidth: 80
+          }}
+          aria-label="Select goal for new task"
+        >
+          <option value="">📥 Inbox</option>
+          {activeGoals.map(goal => (
+            <option key={goal.id} value={goal.id}>🎯 {goal.title}</option>
+          ))}
+        </select>
         <Input
           value={newTaskTitle}
           onChange={(value) => setNewTaskTitle(value)}
