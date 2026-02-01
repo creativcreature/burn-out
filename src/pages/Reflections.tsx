@@ -2,6 +2,13 @@ import { useState, CSSProperties } from 'react'
 import { AppLayout } from '../components/layout'
 import { Modal, Button } from '../components/shared'
 import { useTasks } from '../hooks/useTasks'
+import { 
+  WobblyFlower, 
+  WobblyCherries, 
+  WobblyTrees, 
+  WobblyMushroom,
+  WobblyPlus 
+} from '../components/icons/HandDrawnIcons'
 
 /**
  * Reflections Page - One Day Journal inspired
@@ -24,10 +31,13 @@ export function ReflectionsPage() {
     })
     .slice(0, 4)
 
-  // Whimsical icons for reflections (like One Day's plant icons)
-  const icons = ['🌸', '🍒', '🌲', '🍄', '🌻', '🌿', '🌱', '✨']
+  // Wobbly hand-drawn icons for reflections
+  const IconComponents = [WobblyFlower, WobblyCherries, WobblyTrees, WobblyMushroom]
   
-  const getIconForTask = (index: number) => icons[index % icons.length]
+  const getIconForTask = (index: number) => {
+    const Icon = IconComponents[index % IconComponents.length]
+    return <Icon size={40} />
+  }
 
   const containerStyle: CSSProperties = {
     display: 'flex',
@@ -72,20 +82,6 @@ export function ReflectionsPage() {
     marginBottom: 'auto'
   }
 
-  const plantCircleStyle: CSSProperties = {
-    width: 80,
-    height: 80,
-    borderRadius: '50%',
-    border: '2px solid var(--orb-orange)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '2rem',
-    color: 'var(--orb-orange)',
-    background: 'transparent',
-    transition: 'all 200ms var(--spring-smooth)'
-  }
-
   const plantTextStyle: CSSProperties = {
     fontFamily: 'var(--font-display)',
     fontSize: 'var(--text-md)',
@@ -108,29 +104,29 @@ export function ReflectionsPage() {
         {/* Today pill */}
         <div style={todayPillStyle}>today</div>
 
-        {/* Recent reflection icons */}
+        {/* Recent reflection icons - hand-drawn SVGs */}
         {recentReflections.length > 0 ? (
           <div style={iconsRowStyle}>
             {recentReflections.map((task, i) => (
-              <span 
+              <div 
                 key={task.id} 
-                style={iconStyle}
+                style={{ ...iconStyle, opacity: 0.6 }}
                 title={task.taskBody}
               >
                 {getIconForTask(i)}
-              </span>
+              </div>
             ))}
           </div>
         ) : (
-          <div style={{ ...iconsRowStyle, opacity: 0.3 }}>
-            <span style={iconStyle}>🌸</span>
-            <span style={iconStyle}>🍒</span>
-            <span style={iconStyle}>🌲</span>
-            <span style={iconStyle}>🍄</span>
+          <div style={{ ...iconsRowStyle, opacity: 0.25 }}>
+            <WobblyFlower size={40} />
+            <WobblyCherries size={40} />
+            <WobblyTrees size={40} />
+            <WobblyMushroom size={40} />
           </div>
         )}
 
-        {/* Plant thought button */}
+        {/* Plant thought button - wobbly hand-drawn circle */}
         <div 
           style={plantButtonStyle}
           onClick={() => setShowPlantModal(true)}
@@ -138,7 +134,7 @@ export function ReflectionsPage() {
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && setShowPlantModal(true)}
         >
-          <div style={plantCircleStyle}>+</div>
+          <WobblyPlus size={90} />
           <span style={plantTextStyle}>plant thought</span>
         </div>
 
