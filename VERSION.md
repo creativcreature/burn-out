@@ -1,11 +1,12 @@
 # BurnOut Version
 
-Current Version: **0.3.1**
+Current Version: **0.3.2**
 
 ## Version History
 
 | Version | Date       | Summary                                      |
 |---------|------------|----------------------------------------------|
+| 0.3.2   | 2026-01-31 | Aggressive width containment fix             |
 | 0.3.1   | 2026-01-31 | Bug fixes: clipping, AI prompt, responsive   |
 | 0.3.0   | 2026-01-25 | AI chat integration + Habits UI              |
 | 0.2.0   | 2026-01-25 | Full app implementation (Sprints 2-6)        |
