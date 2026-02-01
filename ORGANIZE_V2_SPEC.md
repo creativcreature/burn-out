@@ -217,4 +217,17 @@ src/components/shared/      → Add SwipeableCard component
 
 ---
 
+## Coding Standards (per X)
+
+**No bubblegum & duct tape.** Clean, maintainable code.
+
+- Proper TypeScript types (no `any`)
+- Components < 200 lines — split if larger
+- Custom hooks for reusable logic
+- CSS variables for theming (no magic numbers)
+- Accessibility: aria-labels on interactive elements
+- Comments for non-obvious logic
+
+---
+
 *Spec by @miloshh_bot | 2026-02-01*
