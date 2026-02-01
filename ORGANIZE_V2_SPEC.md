@@ -1,30 +1,50 @@
-# Organize V2 Spec — TickTick Style Simplification
+# Organize V2 Spec — Simplified Goal-Grouped Tasks
 
-> **Goal:** Strip complexity. Make task management dead simple.
+> **Goal:** Strip complexity. Keep goals as organizer. Make task management simple.
 > **Approved by:** X (2026-02-01)
 
 ---
 
 ## Core Philosophy
 
-No forced hierarchy. Tasks are just tasks. Lists are optional organization.
+Tasks grouped by goals. Goals managed via modal, not tabs. Minimal task cards.
 
 ---
 
 ## UI Structure
 
-### Main View
+### Main View (Goal-Grouped Task List)
 ```
 ┌─────────────────────────────────┐
-│  [Inbox ▼]        [+ Add Task]  │  ← List selector + quick add
+│  Organize              [⚙️ Goals] │  ← Gear icon opens goal modal
 ├─────────────────────────────────┤
-│  ☐ Buy groceries          today │
-│  ☐ Call mom                     │
-│  ☐ Review PR              Work  │
-│  ☐ Plan weekend                 │
-│  ☑ ~~Finished task~~      done  │
+│  🎯 Launch MVP                   │  ← Goal header (collapsible?)
+│    ☐ Fix width bug        today │
+│    ☐ Deploy v1                  │
+│    ☐ Write docs                 │
+│                                 │
+│  🎯 Get Healthy                  │
+│    ☐ Morning walk               │
+│    ☐ Meal prep           Sunday │
+│                                 │
+│  📥 Inbox (no goal)             │
+│    ☐ Random task                │
+│    ☐ Call mom                   │
 └─────────────────────────────────┘
-     [Lists]  [Organize]  [Now]     ← Nav stays same
+     [Chat]  [Organize]  [Now]      ← Nav stays same
+```
+
+### Goal Modal (accessed via ⚙️)
+```
+┌─────────────────────────────────┐
+│  Your Goals              [Done] │
+├─────────────────────────────────┤
+│  🎯 Launch MVP            [Edit]│
+│  🎯 Get Healthy           [Edit]│
+│  🎯 Learn Spanish         [Edit]│
+│                                 │
+│  [+ Add New Goal]               │
+└─────────────────────────────────┘
 ```
 
 ### Task Card (Minimal)
@@ -40,7 +60,7 @@ No forced hierarchy. Tasks are just tasks. Lists are optional organization.
 - Tap card → expand for notes/details
 - Swipe left → delete
 - Swipe right → complete
-- Long press + drag → reorder
+- **Long press + drag → reorder** (regular tap scrolls — standard mobile UX)
 
 ### Expanded Task Card
 ```
@@ -97,22 +117,20 @@ interface List {
 ## Pages/Tabs
 
 ### What to REMOVE
-- **Goals tab** → Delete entirely (or move goal-setting to Settings as optional)
-- **Projects tab** → Delete (lists replace this)
-- **Current Tasks tab** → Becomes the main view
-- **Inbox tab** → Inbox becomes default list, not separate tab
+- **Goals tab** → Move to modal (⚙️ icon in header)
+- **Projects tab** → Delete entirely
+- **Current tabs UI** → Replace with single scrollable view
 
-### New Tab Structure
-Just ONE view with a list filter:
+### New Structure
+- **One scrollable view** — tasks grouped by goal
+- **Goal modal** — accessed via ⚙️ gear icon
+- **Inbox section** — ungrouped tasks at bottom
 
-```
-[Inbox ▼]  ← Dropdown to switch lists
-  - Inbox (default)
-  - All Tasks
-  - Work
-  - Personal
-  - + New List
-```
+### Goal Section Behavior
+- Each goal = collapsible section header
+- Tap goal header → collapse/expand
+- Tasks sorted by rank within each goal
+- Drag tasks between goals (long-press + drag to different section)
 
 ---
 
