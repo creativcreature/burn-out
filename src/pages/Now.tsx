@@ -566,7 +566,7 @@ export function NowPage() {
 
         <div className="task-display">
           {currentTask ? (
-            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
               {/* Left action reveal (delete) */}
               <div style={leftActionStyle}>
                 <span>🗑️</span>
