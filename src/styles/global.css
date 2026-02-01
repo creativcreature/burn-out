@@ -286,6 +286,9 @@ html, body {
   padding: 48px var(--space-lg) var(--space-lg);
   min-height: 50vh;
   box-shadow: var(--shadow-card);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 
