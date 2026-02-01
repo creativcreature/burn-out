@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { WeeklySummary } from '../data/types'
+import type { WeeklySummary, JournalEntry } from '../data/types'
+
+// Extended type for completed tasks joined with task details
+interface CompletedTaskWithDetails {
+  id: string
+  taskId?: string
+  completedAt: string
+  duration: number
+  feedLevel?: 'low' | 'medium' | 'high'
+  verbLabel?: string
+}
 import { 
   getLastWeekData, 
   getWeeklySummary, 
@@ -28,8 +38,8 @@ export function useWeeklySummary(): UseWeeklySummaryReturn {
 
   // Calculate metrics from completed tasks and journal entries
   const calculateWeeklyMetrics = async (
-    completedTasks: any[],
-    journalEntries: any[]
+    completedTasks: CompletedTaskWithDetails[],
+    journalEntries: JournalEntry[]
   ) => {
     let lowEnergyTaskCount = 0
     let mediumEnergyTaskCount = 0
