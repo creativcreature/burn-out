@@ -4,7 +4,7 @@ import { ThemeProvider } from './components/shared/ThemeProvider'
 import { AppProvider, useAppContext } from './contexts/AppContext'
 import { Onboarding } from './components/onboarding'
 import { NowPage } from './pages/Now'
-import { OrganizePage } from './pages/Organize'
+import { OrganizeV2Page } from './pages/OrganizeV2'
 import { ProjectPage } from './pages/Project'
 import { ChatPage } from './pages/Chat'
 import { ReflectionsPage } from './pages/Reflections'
@@ -23,7 +23,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Navigate to="/now" replace />} />
         <Route path="/now" element={<NowPage />} />
-        <Route path="/organize" element={<OrganizePage />} />
+        <Route path="/organize" element={<OrganizeV2Page />} />
         <Route path="/project/:projectId" element={<ProjectPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/reflections" element={<ReflectionsPage />} />
