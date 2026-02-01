@@ -1,11 +1,12 @@
 # BurnOut Version
 
-Current Version: **0.4.4**
+Current Version: **0.4.5**
 
 ## Version History
 
 | Version | Date       | Summary                                      |
 |---------|------------|----------------------------------------------|
+| 0.4.5   | 2026-02-01 | Code quality: ESLint + TypeScript fixes      |
 | 0.4.4   | 2026-02-01 | Haptic feedback + visual polish for swipe    |
 | 0.4.3   | 2026-02-01 | Load expanded sample data (73 tasks)         |
 | 0.4.2   | 2026-02-01 | Goal selector in quick-add bar               |
