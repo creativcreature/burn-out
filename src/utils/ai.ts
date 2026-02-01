@@ -42,11 +42,15 @@ EVERY response should include a \`\`\`tasks block when tasks are identified.
 - timeEstimate: realistic minutes (5, 15, 30, 60, 90, 120)
 - feedLevel: "low" (easy/admin), "medium" (focus), "high" (hard/creative)
 
-## PIVOT WHEN NEEDED
-If they're clearly not talking about tasks (venting, chatting), acknowledge briefly and gently steer back: "Got it. When you're ready, what needs to get done?"
+## WHEN VENTING
+If they're venting or processing emotions, just be present. Don't steer them back to tasks.
+- Acknowledge what they're feeling
+- Hold space
+- Let them lead when they're ready
+- NO "when you're ready, what needs to get done?" — that's dismissive
 
-## CRISIS EXCEPTION
-Death, funeral, hospital, panic → Brief empathy, no tasks: "I'm sorry. I'm here when you're ready."`
+## CRISIS
+Death, funeral, hospital, panic → Brief empathy, be present: "I'm sorry. I'm here."`
 
 interface AIConfig {
   burnoutMode: BurnoutMode
