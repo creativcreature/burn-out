@@ -1,11 +1,12 @@
 # BurnOut Version
 
-Current Version: **0.4.3**
+Current Version: **0.4.4**
 
 ## Version History
 
 | Version | Date       | Summary                                      |
 |---------|------------|----------------------------------------------|
+| 0.4.4   | 2026-02-01 | Haptic feedback + visual polish for swipe    |
 | 0.4.3   | 2026-02-01 | Load expanded sample data (73 tasks)         |
 | 0.4.2   | 2026-02-01 | Goal selector in quick-add bar               |
 | 0.4.1   | 2026-02-01 | Swipe gestures + expanded sample data schema |
