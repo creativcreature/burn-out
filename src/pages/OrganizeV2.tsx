@@ -6,6 +6,8 @@ import { useTasks } from '../hooks/useTasks'
 import { useGoals } from '../hooks/useGoals'
 import type { Task, Goal } from '../data/types'
 
+// TODO: Add useDragAndDrop for reordering within goal sections
+
 /**
  * OrganizeV2 - Simplified goal-grouped task list
  * 
