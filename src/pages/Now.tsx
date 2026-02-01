@@ -259,7 +259,7 @@ export function NowPage() {
         const current = progressRef.current
         const diff = target - current
         // Use faster animation for more responsive feel
-        const step = diff * 0.2
+        const step = diff * 0.3
 
         if (Math.abs(diff) < 0.01) {
           progressRef.current = target

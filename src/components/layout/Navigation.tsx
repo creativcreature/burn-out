@@ -51,15 +51,17 @@ export function Navigation() {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '4px',
-    padding: '8px 12px',
+    gap: '2px',
+    padding: '8px 4px',
     color: isActive ? 'var(--orb-orange)' : 'var(--text-subtle)',
     background: 'none',
     border: 'none',
     borderRadius: '0',
     cursor: 'pointer',
     transition: 'all var(--transition-normal)',
-    minWidth: '48px'
+    flex: '1 1 0',
+    minWidth: '0',
+    maxWidth: '20%'
   })
 
   const iconStyle = (): CSSProperties => ({
@@ -71,10 +73,14 @@ export function Navigation() {
   })
 
   const labelStyle = (): CSSProperties => ({
-    fontSize: '10px',
+    fontSize: '9px',
     fontWeight: 500,
     textTransform: 'uppercase',
-    letterSpacing: '0.5px'
+    letterSpacing: '0.3px',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    maxWidth: '100%'
   })
 
   return (

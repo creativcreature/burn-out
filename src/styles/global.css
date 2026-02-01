@@ -295,7 +295,7 @@ html, body {
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 430px;
+  max-width: min(430px, 100vw);
   height: calc(var(--nav-height) + var(--safe-bottom));
   padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--bg-card-solid);
@@ -304,6 +304,8 @@ html, body {
   justify-content: space-around;
   align-items: center;
   z-index: 1000;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .nav-item {
