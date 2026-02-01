@@ -7,9 +7,10 @@ html, body {
   font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
-  overflow-x: hidden;
+  overflow-x: clip; /* stronger than hidden */
   overflow-y: auto;
   max-width: 100vw;
+  width: 100%;
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
   overscroll-behavior: none;
