@@ -137,8 +137,11 @@ export function OrganizeV2Page() {
         <div 
           style={goalHeaderStyle} 
           onClick={() => toggleGoalCollapse(goalId)}
+          onKeyDown={(e) => e.key === 'Enter' && toggleGoalCollapse(goalId)}
           role="button"
+          tabIndex={0}
           aria-expanded={!isCollapsed}
+          aria-label={`${goalTitle} section, ${tasks.length} tasks`}
         >
           <span style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>
             ▼
@@ -207,8 +210,11 @@ export function OrganizeV2Page() {
                 opacity: 0.7
               }} 
               onClick={() => setShowCompleted(!showCompleted)}
+              onKeyDown={(e) => e.key === 'Enter' && setShowCompleted(!showCompleted)}
               role="button"
+              tabIndex={0}
               aria-expanded={showCompleted}
+              aria-label={`Completed tasks section, ${completedTasks.length} tasks`}
             >
               <span style={{ transform: showCompleted ? 'rotate(0)' : 'rotate(-90deg)', transition: 'transform 0.2s' }}>
                 ▼
