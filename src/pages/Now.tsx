@@ -6,8 +6,8 @@ import { useTasks } from '../hooks/useTasks'
 import { useEnergy } from '../hooks/useEnergy'
 import { useAI } from '../hooks/useAI'
 import { useGoals } from '../hooks/useGoals'
-import { getData, setPinnedTaskId } from '../utils/storage'
-import type { Task, Settings, FeedLevel } from '../data/types'
+import { getData, setPinnedTaskId, updateData } from '../utils/storage'
+import type { Task, Settings, FeedLevel, BurnoutMode } from '../data/types'
 import type { ExtractedTask } from '../utils/ai'
 
 export function NowPage() {
@@ -16,6 +16,7 @@ export function NowPage() {
   const {
     currentEnergy,
     setEnergy,
+    burnoutMode,
     getSuggestedTask,
     sortTasksByEnergy,
     getMomentumMessage,
@@ -30,6 +31,7 @@ export function NowPage() {
   const [pinnedTaskId, setPinnedTaskIdState] = useState<string | undefined>(undefined)
   const [showCelebration, setShowCelebration] = useState(false)
   const [showGoalPicker, setShowGoalPicker] = useState(false)
+  const [showBurnoutPicker, setShowBurnoutPicker] = useState(false)
   const [showTaskTypeEditor, setShowTaskTypeEditor] = useState(false)
   const [editingVerbLabel, setEditingVerbLabel] = useState('')
   const [editingFeedLevel, setEditingFeedLevel] = useState<FeedLevel>('medium')
@@ -527,6 +529,17 @@ export function NowPage() {
     }
   }
 
+  // Handle burnout mode change
+  const handleBurnoutModeChange = async (mode: BurnoutMode) => {
+    await updateData(data => ({
+      ...data,
+      user: { ...data.user, burnoutMode: mode }
+    }))
+    setShowBurnoutPicker(false)
+    // Force reload to pick up new mode
+    window.location.reload()
+  }
+
   const getEnergyBolts = (level: string) => {
     const num = level === 'low' ? 1 : level === 'medium' ? 2 : 3
     return Array(3).fill(0).map((_, i) => (
@@ -544,6 +557,8 @@ export function NowPage() {
         showDate 
         objective={currentObjective} 
         onObjectiveClick={() => setShowGoalPicker(true)}
+        burnoutMode={burnoutMode}
+        onFlameClick={() => setShowBurnoutPicker(true)}
       />
 
       <main
@@ -869,6 +884,49 @@ export function NowPage() {
               </button>
             ))
           )}
+        </div>
+      </Modal>
+
+      {/* Burnout Mode Picker Modal */}
+      <Modal
+        isOpen={showBurnoutPicker}
+        onClose={() => setShowBurnoutPicker(false)}
+        title="Burnout Mode"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+            How are you feeling? This affects which tasks get surfaced.
+          </p>
+          
+          {([
+            { mode: 'recovery' as BurnoutMode, emoji: '🌱', title: 'Recovery', desc: 'Burnt out. Only show gentle, low-energy tasks. Hide demanding work.' },
+            { mode: 'prevention' as BurnoutMode, emoji: '⚖️', title: 'Prevention', desc: 'Feeling okay but want to maintain balance. Avoid overload.' },
+            { mode: 'balanced' as BurnoutMode, emoji: '🔥', title: 'Balanced', desc: 'Ready to work. Normal productivity mode.' }
+          ]).map(({ mode, emoji, title, desc }) => (
+            <button
+              key={mode}
+              onClick={() => handleBurnoutModeChange(mode)}
+              style={{
+                padding: 'var(--space-md)',
+                background: burnoutMode === mode ? 'var(--orb-orange)' : 'var(--bg-card)',
+                color: burnoutMode === mode ? 'white' : 'var(--text)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all var(--transition-fast)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: '4px' }}>
+                <span style={{ fontSize: '1.5em' }}>{emoji}</span>
+                <span style={{ fontWeight: 600 }}>{title}</span>
+                {burnoutMode === mode && <span style={{ fontSize: 'var(--text-xs)' }}>✓ active</span>}
+              </div>
+              <div style={{ fontSize: 'var(--text-sm)', opacity: 0.8 }}>
+                {desc}
+              </div>
+            </button>
+          ))}
         </div>
       </Modal>
 

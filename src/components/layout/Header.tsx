@@ -1,5 +1,6 @@
 import { ReactNode, CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { BurnoutMode } from '../../data/types'
 
 interface HeaderProps {
   title?: string
@@ -11,9 +12,11 @@ interface HeaderProps {
   subtitleBadge?: boolean
   objective?: string
   onObjectiveClick?: () => void
+  burnoutMode?: BurnoutMode
+  onFlameClick?: () => void
 }
 
-export function Header({ title, showBack = false, rightAction, showLogo = false, showDate = false, subtitle, subtitleBadge = false, objective, onObjectiveClick }: HeaderProps) {
+export function Header({ title, showBack = false, rightAction, showLogo = false, showDate = false, subtitle, subtitleBadge = false, objective, onObjectiveClick, burnoutMode = 'balanced', onFlameClick }: HeaderProps) {
   const navigate = useNavigate()
 
   const now = new Date()
@@ -37,13 +40,23 @@ export function Header({ title, showBack = false, rightAction, showLogo = false,
       <header className="app-header">
         <div className="header-top">
           <span className="logo" onClick={() => navigate('/now')} style={{ cursor: 'pointer' }}>BurnOut</span>
-          <button className="header-flame" title="Toggle theme">
+          <button 
+            className="header-flame" 
+            title={`Burnout mode: ${burnoutMode}`}
+            onClick={onFlameClick}
+            style={{ 
+              cursor: onFlameClick ? 'pointer' : 'default',
+              opacity: burnoutMode === 'recovery' ? 0.4 : burnoutMode === 'prevention' ? 0.7 : 1,
+              transform: burnoutMode === 'recovery' ? 'scale(0.85)' : 'scale(1)',
+              transition: 'all 0.3s ease'
+            }}
+          >
             <svg viewBox="0 0 24 24" fill="none">
               <defs>
                 <linearGradient id="flameGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="var(--orb-red)" />
-                  <stop offset="50%" stopColor="var(--orb-orange)" />
-                  <stop offset="100%" stopColor="var(--orb-magenta)" />
+                  <stop offset="0%" stopColor={burnoutMode === 'recovery' ? '#6B7280' : 'var(--orb-red)'} />
+                  <stop offset="50%" stopColor={burnoutMode === 'recovery' ? '#9CA3AF' : 'var(--orb-orange)'} />
+                  <stop offset="100%" stopColor={burnoutMode === 'recovery' ? '#D1D5DB' : 'var(--orb-magenta)'} />
                 </linearGradient>
               </defs>
               <path
@@ -52,7 +65,7 @@ export function Header({ title, showBack = false, rightAction, showLogo = false,
               />
               <path
                 d="M12 8C12 8 9.5 12 9.5 15C9.5 17 10.5 18.5 12 19C13.5 18.5 14.5 17 14.5 15C14.5 12 12 8 12 8Z"
-                fill="var(--orb-orange)"
+                fill={burnoutMode === 'recovery' ? '#9CA3AF' : 'var(--orb-orange)'}
                 opacity="0.8"
               />
             </svg>
