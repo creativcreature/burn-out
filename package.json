@@ -4,7 +4,7 @@
   "description": "Energy-aware productivity app for neurodivergent users",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev --listen 3000",
+    "dev": "vite",
     "dev:vite": "vite --port 3000",
     "build": "tsc && vite build",
     "preview": "vite preview",

@@ -60,6 +60,7 @@ html, body {
   padding: calc(var(--safe-top) + var(--space-md)) var(--space-md) calc(var(--nav-height) + var(--safe-bottom) + 80px);
   max-width: 430px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 /* Desktop: keep mobile-like experience but centered better */
@@ -920,6 +921,7 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
   overflow-y: auto;
   touch-action: auto;
   -webkit-user-select: none;
