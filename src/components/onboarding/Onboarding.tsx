@@ -4,6 +4,7 @@ import { OnboardingQuick } from './OnboardingQuick'
 import { OnboardingGuided } from './OnboardingGuided'
 import { updateData } from '../../utils/storage'
 import { createDemoData } from '../../data/demoData'
+import { createSampleData } from '../../data/sampleDataV2'
 import { TEMPLATES } from '../../data/templates'
 import type { BurnoutMode, TonePreference, Goal, Project } from '../../data/types'
 
@@ -84,10 +85,13 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const skipWithDemoData = useCallback(async () => {
     const now = new Date().toISOString()
     const demoData = createDemoData()
+    const sampleData = createSampleData() // 73 expanded tasks
 
     await updateData(data => ({
       ...data,
       ...demoData,
+      goals: sampleData.goals, // Use expanded goals
+      tasks: sampleData.tasks, // Use expanded tasks (73 realistic tasks)
       user: {
         ...data.user,
         burnoutMode: 'balanced',
