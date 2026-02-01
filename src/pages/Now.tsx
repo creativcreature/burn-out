@@ -372,7 +372,7 @@ export function NowPage() {
     right: 'calc(100% + 20px)',
     top: '50%',
     transform: 'translateY(-50%)',
-    background: 'var(--orb-red)',
+    background: 'var(--text-muted)',
     color: 'white',
     borderRadius: '50%',
     width: 60,
@@ -382,7 +382,7 @@ export function NowPage() {
     justifyContent: 'center',
     opacity: Math.max(0, -taskSwipeX * 2),
     fontSize: 24,
-    boxShadow: '0 4px 20px rgba(255, 69, 0, 0.4)'
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
   }
 
   const rightActionStyle: CSSProperties = {
@@ -390,7 +390,7 @@ export function NowPage() {
     left: 'calc(100% + 20px)',
     top: '50%',
     transform: 'translateY(-50%)',
-    background: 'var(--orb-orange)',
+    background: 'var(--success, #22c55e)',
     color: 'white',
     borderRadius: '50%',
     width: 60,
@@ -399,7 +399,7 @@ export function NowPage() {
     alignItems: 'center',
     justifyContent: 'center',
     opacity: Math.max(0, taskSwipeX * 2),
-    fontSize: 20,
+    fontSize: 28,
     boxShadow: '0 4px 20px rgba(255, 107, 53, 0.4)'
   }
 
@@ -454,12 +454,14 @@ export function NowPage() {
 
       if (Math.abs(taskSwipeX) > swipeThreshold || Math.abs(horizontalVelocity.current) > velocityThreshold) {
         if (taskSwipeX > 0 || horizontalVelocity.current > velocityThreshold) {
-          // Swipe right = snooze
-          handleSnoozeTask(currentTask)
+          // Swipe right = COMPLETE ✓
+          completeTask(currentTask.id, 0)
+          setShowCelebration(true)
+          refreshMomentum()
           setTaskSwipeX(0)
         } else if (taskSwipeX < 0 || horizontalVelocity.current < -velocityThreshold) {
-          // Swipe left = delete
-          handlePushTask(currentTask)
+          // Swipe left = defer/later
+          handleSnoozeTask(currentTask)
           setTaskSwipeX(0)
         }
       } else if (scrollProgress === 0 && taskSwipeX === 0) {
@@ -493,11 +495,6 @@ export function NowPage() {
   const handleSnoozeTask = async (task: Task) => {
     await snoozeTask(task.id)
     setToast({ message: 'Task snoozed. Will appear later.', type: 'info', visible: true })
-  }
-
-  const handlePushTask = async (task: Task) => {
-    await deferTask(task.id)
-    setToast({ message: 'Task moved to tomorrow.', type: 'info', visible: true })
   }
 
   const getEnergyBolts = (level: string) => {
@@ -578,12 +575,12 @@ export function NowPage() {
             <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
               {/* Left action reveal (delete) */}
               <div style={leftActionStyle}>
-                <span>🗑️</span>
+                <span>💤</span>
               </div>
               
-              {/* Right action reveal (snooze) */}
+              {/* Right action reveal (complete) */}
               <div style={rightActionStyle}>
-                <span>💤</span>
+                <span>✓</span>
               </div>
 
               <div
@@ -657,9 +654,9 @@ export function NowPage() {
                 color: 'var(--text-subtle)',
                 padding: '0 var(--space-sm)'
               }}>
-                <span>← swipe to delete</span>
-                <span>↓ swipe to shuffle</span>
-                <span>swipe to snooze →</span>
+                <span>← later</span>
+                <span>↓ shuffle</span>
+                <span>done →</span>
               </div>
             </div>
             </div>

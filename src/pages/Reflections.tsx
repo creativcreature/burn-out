@@ -1,7 +1,9 @@
-import { useState, CSSProperties } from 'react'
+import { useState, useEffect, CSSProperties } from 'react'
 import { AppLayout } from '../components/layout'
-import { Modal, Button } from '../components/shared'
+import { Modal, Button, Toast } from '../components/shared'
 import { useTasks } from '../hooks/useTasks'
+import { addJournalEntry, getRecentJournalEntries } from '../utils/storage'
+import type { JournalEntry } from '../data/types'
 import { 
   WobblyFlower, 
   WobblyCherries, 
@@ -19,6 +21,13 @@ export function ReflectionsPage() {
   const { completedTasks } = useTasks()
   const [showPlantModal, setShowPlantModal] = useState(false)
   const [thought, setThought] = useState('')
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([])
+  const [toast, setToast] = useState({ message: '', visible: false })
+
+  // Load journal entries
+  useEffect(() => {
+    getRecentJournalEntries(10).then(setJournalEntries)
+  }, [])
 
   // Get recent reflections (last 7 days of completed tasks with notes)
   const weekAgo = new Date()
@@ -89,12 +98,15 @@ export function ReflectionsPage() {
     fontWeight: 500
   }
 
-  const handlePlantThought = () => {
+  const handlePlantThought = async () => {
     if (thought.trim()) {
-      // TODO: Save thought as journal entry
-      console.log('Planting thought:', thought)
+      await addJournalEntry(thought.trim())
+      // Refresh entries
+      const entries = await getRecentJournalEntries(10)
+      setJournalEntries(entries)
       setThought('')
       setShowPlantModal(false)
+      setToast({ message: 'thought planted 🌱', visible: true })
     }
   }
 
@@ -138,8 +150,38 @@ export function ReflectionsPage() {
           <span style={plantTextStyle}>plant thought</span>
         </div>
 
+        {/* Journal entries */}
+        {journalEntries.length > 0 && (
+          <div style={{ 
+            width: '100%', 
+            maxWidth: 320,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-md)'
+          }}>
+            {journalEntries.slice(0, 5).map(entry => (
+              <div 
+                key={entry.id}
+                style={{
+                  padding: 'var(--space-md)',
+                  background: 'var(--bg-card)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: 'var(--text-sm)',
+                  color: 'var(--text-muted)',
+                  lineHeight: 'var(--line-height-relaxed)'
+                }}
+              >
+                <p style={{ margin: 0 }}>{entry.content}</p>
+                <span style={{ fontSize: 'var(--text-xs)', opacity: 0.6 }}>
+                  {new Date(entry.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Gentle message */}
-        {recentReflections.length === 0 && (
+        {journalEntries.length === 0 && recentReflections.length === 0 && (
           <p style={{ 
             color: 'var(--text-muted)', 
             fontSize: 'var(--text-sm)',
@@ -187,6 +229,13 @@ export function ReflectionsPage() {
           </Button>
         </div>
       </Modal>
+
+      {/* Toast */}
+      <Toast 
+        message={toast.message}
+        isVisible={toast.visible}
+        onClose={() => setToast({ message: '', visible: false })}
+      />
     </AppLayout>
   )
 }

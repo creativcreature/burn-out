@@ -1523,6 +1523,39 @@ export async function saveWeeklySummary(summary: WeeklySummary): Promise<void> {
 }
 
 /**
+ * Add a new journal entry (thought/reflection)
+ */
+export async function addJournalEntry(
+  content: string, 
+  mood?: 'struggling' | 'okay' | 'good' | 'great'
+): Promise<void> {
+  const data = await getData()
+  const now = new Date()
+  
+  const entry: JournalEntry = {
+    id: crypto.randomUUID(),
+    date: now.toISOString().split('T')[0],
+    content,
+    mood,
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString()
+  }
+  
+  data.journalEntries.push(entry)
+  await saveData(data)
+}
+
+/**
+ * Get recent journal entries
+ */
+export async function getRecentJournalEntries(limit = 10): Promise<JournalEntry[]> {
+  const data = await getData()
+  return data.journalEntries
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, limit)
+}
+
+/**
  * Calculate the Monday of the current week in YYYY-MM-DD format
  */
 export function getCurrentWeekStartDate(): string {
