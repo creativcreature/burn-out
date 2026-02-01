@@ -20,8 +20,9 @@ import type { Task, Goal } from '../data/types'
  */
 
 export function OrganizeV2Page() {
-  const { pendingTasks, completeTask, deleteTask, addTask } = useTasks()
+  const { pendingTasks, completedTasks, completeTask, deleteTask, addTask } = useTasks()
   const { activeGoals, addGoal, deleteGoal } = useGoals()
+  const [showCompleted, setShowCompleted] = useState(false)
   
   const [showGoalModal, setShowGoalModal] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState('')
@@ -196,6 +197,58 @@ export function OrganizeV2Page() {
         
         {/* Inbox (tasks without goals) */}
         {tasksByGoal['inbox'] && renderGoalSection(null, tasksByGoal['inbox'])}
+        
+        {/* Completed tasks (collapsible) */}
+        {completedTasks.length > 0 && (
+          <div>
+            <div 
+              style={{
+                ...goalHeaderStyle,
+                opacity: 0.7
+              }} 
+              onClick={() => setShowCompleted(!showCompleted)}
+              role="button"
+              aria-expanded={showCompleted}
+            >
+              <span style={{ transform: showCompleted ? 'rotate(0)' : 'rotate(-90deg)', transition: 'transform 0.2s' }}>
+                ▼
+              </span>
+              <span style={{ fontWeight: 600 }}>
+                ✓ Completed
+              </span>
+              <span style={{ color: 'var(--text-subtle)', marginLeft: 'auto' }}>
+                {completedTasks.length}
+              </span>
+            </div>
+            
+            {showCompleted && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
+                {completedTasks.slice(0, 10).map(task => (
+                  <div 
+                    key={task.id} 
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-sm)',
+                      padding: 'var(--space-sm) var(--space-md)',
+                      marginLeft: 'var(--space-md)',
+                      opacity: 0.6,
+                      textDecoration: 'line-through'
+                    }}
+                  >
+                    <span style={{ color: 'var(--success)' }}>✓</span>
+                    <span>{task.taskBody}</span>
+                  </div>
+                ))}
+                {completedTasks.length > 10 && (
+                  <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+                    +{completedTasks.length - 10} more completed
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Empty state */}
         {pendingTasks.length === 0 && (
