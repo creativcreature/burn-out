@@ -9,6 +9,7 @@ html, body {
   color: var(--text);
   overflow-x: hidden;
   overflow-y: auto;
+  max-width: 100vw;
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
   overscroll-behavior: none;
@@ -18,6 +19,8 @@ html, body {
 #root {
   min-height: 100vh;
   min-height: 100dvh;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* Full-screen Orb Background */
@@ -308,6 +311,8 @@ html, body {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 
