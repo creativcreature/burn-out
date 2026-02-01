@@ -19,8 +19,8 @@ export function AppLayout({ children, showNav = true, showOrb = true, showFAB = 
         </div>
       )}
 
-      {/* App Shell */}
-      <div className="app-shell">
+      {/* App Shell with page transition */}
+      <div className="app-shell page-transition">
         {children}
       </div>
 
