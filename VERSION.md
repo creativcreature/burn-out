@@ -1,11 +1,16 @@
 # BurnOut Version
 
-Current Version: **0.5.0**
+Current Version: **0.5.5**
 
 ## Version History
 
 | Version | Date       | Summary                                      |
 |---------|------------|----------------------------------------------|
+| 0.5.5   | 2026-02-01 | Celebration moment on task complete          |
+| 0.5.4   | 2026-02-01 | Page transitions (fade-in)                   |
+| 0.5.3   | 2026-02-01 | Button press states (tactile feel)           |
+| 0.5.2   | 2026-02-01 | Preloader + warm empty states                |
+| 0.5.1   | 2026-02-01 | Tooltip system for first-time hints          |
 | 0.5.0   | 2026-02-01 | Accessibility: keyboard nav + aria labels    |
 | 0.4.9   | 2026-02-01 | Completed tasks section in Organize          |
 | 0.4.8   | 2026-02-01 | Sample data fix + overflow containment       |
