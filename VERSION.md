@@ -1,11 +1,16 @@
 # BurnOut Version
 
-Current Version: **0.4.5**
+Current Version: **0.5.0**
 
 ## Version History
 
 | Version | Date       | Summary                                      |
 |---------|------------|----------------------------------------------|
+| 0.5.0   | 2026-02-01 | Accessibility: keyboard nav + aria labels    |
+| 0.4.9   | 2026-02-01 | Completed tasks section in Organize          |
+| 0.4.8   | 2026-02-01 | Sample data fix + overflow containment       |
+| 0.4.7   | 2026-02-01 | Global FAB + Now page scroll improvements    |
+| 0.4.6   | 2026-02-01 | Spring animations + buttery feel             |
 | 0.4.5   | 2026-02-01 | Code quality: ESLint + TypeScript fixes      |
 | 0.4.4   | 2026-02-01 | Haptic feedback + visual polish for swipe    |
 | 0.4.3   | 2026-02-01 | Load expanded sample data (73 tasks)         |
