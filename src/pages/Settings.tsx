@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, CSSProperties, ChangeEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppLayout, Header } from '../components/layout'
-import { Card, Button } from '../components/shared'
+import { Card, Button, Thinking } from '../components/shared'
 import { useThemeContext } from '../components/shared/ThemeProvider'
 import { useAppContext } from '../contexts/AppContext'
 import { getData, updateData, seedSampleData } from '../utils/storage'
@@ -127,7 +127,7 @@ export function SettingsPage() {
     return (
       <AppLayout>
         <Header title="Settings" />
-        <div style={contentStyle}>Loading...</div>
+        <div style={contentStyle}><Thinking message="loading settings..." /></div>
       </AppLayout>
     )
   }

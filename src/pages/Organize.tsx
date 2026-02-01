@@ -1,7 +1,7 @@
 import { useState, useEffect, CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppLayout, Header } from '../components/layout'
-import { Card, Button, Input, Modal, Toast } from '../components/shared'
+import { Card, Button, Input, Modal, Toast, Thinking } from '../components/shared'
 import { useTasks } from '../hooks/useTasks'
 import { getData, setPinnedTaskId } from '../utils/storage'
 import { useGoals } from '../hooks/useGoals'
@@ -418,7 +418,7 @@ export function OrganizePage() {
       <AppLayout>
         <Header title="Organize" />
         <div style={contentStyle}>
-          <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
+          <Thinking message="loading your tasks..." />
         </div>
       </AppLayout>
     )
