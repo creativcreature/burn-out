@@ -1,11 +1,12 @@
 # BurnOut Version
 
-Current Version: **0.5.6**
+Current Version: **0.5.7**
 
 ## Version History
 
 | Version | Date       | Summary                                      |
 |---------|------------|----------------------------------------------|
+| 0.5.7   | 2026-02-01 | Reflect page redesign (One Day inspired)     |
 | 0.5.6   | 2026-02-01 | Skeleton loaders + warm 'thinking...' states |
 | 0.5.5   | 2026-02-01 | Celebration moment on task complete          |
 | 0.5.4   | 2026-02-01 | Page transitions (fade-in)                   |
