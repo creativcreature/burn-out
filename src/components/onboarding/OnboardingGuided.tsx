@@ -1,16 +1,14 @@
-import { useState, CSSProperties } from 'react'
+import { useState, useRef, useEffect, CSSProperties } from 'react'
 import { Orb } from '../shared/Orb'
-import { Card } from '../shared/Card'
 import { Button } from '../shared/Button'
-import { TEMPLATE_LIST, type OnboardingTemplate } from '../../data/templates'
-import type { BurnoutMode, TonePreference, Goal, Project } from '../../data/types'
+import { useAI } from '../../hooks/useAI'
+import type { BurnoutMode, TonePreference } from '../../data/types'
+import type { ExtractedTask } from '../../utils/ai'
 
 interface GuidedSettings {
   burnoutMode: BurnoutMode
   tonePreference: TonePreference
-  templateId: string
-  goal?: Partial<Goal>
-  project?: Partial<Project>
+  tasks?: ExtractedTask[]
 }
 
 interface OnboardingGuidedProps {
@@ -18,303 +16,246 @@ interface OnboardingGuidedProps {
   onBack: () => void
 }
 
-const TOTAL_STEPS = 6
+interface Message {
+  id: string
+  role: 'assistant' | 'user'
+  content: string
+}
 
+/**
+ * Chat-based brain dump onboarding
+ * User dumps everything on their mind, AI extracts tasks
+ */
 export function OnboardingGuided({ onComplete, onBack }: OnboardingGuidedProps) {
-  const [step, setStep] = useState(1)
-  const [burnoutMode, setBurnoutMode] = useState<BurnoutMode>('balanced')
-  const [tonePreference, setTonePreference] = useState<TonePreference>('gentle')
-  const [selectedTemplate, setSelectedTemplate] = useState<OnboardingTemplate | null>(null)
-  const [goalTitle, setGoalTitle] = useState('')
-  const [projectTitle, setProjectTitle] = useState('')
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      role: 'assistant',
+      content: "hey. what's weighing on you right now?\n\njust dump it all out — tasks, worries, half-formed thoughts. i'll help you sort through it."
+    }
+  ])
+  const [input, setInput] = useState('')
+  const [extractedTasks, setExtractedTasks] = useState<ExtractedTask[]>([])
+  const [showConfirm, setShowConfirm] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const handleTasksCreated = async (tasks: ExtractedTask[]): Promise<string[]> => {
+    setExtractedTasks(prev => [...prev, ...tasks])
+    return tasks.map(t => t.taskBody)
+  }
+
+  const { isLoading, send } = useAI({ onTasksCreated: handleTasksCreated })
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Focus input on mount
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
 
   const containerStyle: CSSProperties = {
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 'var(--space-xl)',
     background: 'var(--bg-primary)'
   }
 
-  const contentStyle: CSSProperties = {
-    maxWidth: 400,
-    width: '100%',
+  const headerStyle: CSSProperties = {
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
-    gap: 'var(--space-xl)',
-    textAlign: 'center'
+    gap: 'var(--space-md)',
+    padding: 'var(--space-lg)',
+    borderBottom: '1px solid var(--border)'
   }
 
-  const titleStyle: CSSProperties = {
-    fontFamily: 'var(--font-display)',
-    fontSize: 'var(--text-2xl)',
-    color: 'var(--text)'
-  }
-
-  const subtitleStyle: CSSProperties = {
-    color: 'var(--text-muted)',
-    fontSize: 'var(--text-md)'
-  }
-
-  const optionsStyle: CSSProperties = {
+  const messagesStyle: CSSProperties = {
+    flex: 1,
+    overflowY: 'auto',
+    padding: 'var(--space-lg)',
     display: 'flex',
     flexDirection: 'column',
-    gap: 'var(--space-sm)',
-    width: '100%'
+    gap: 'var(--space-md)'
   }
 
-  const optionStyle = (isSelected: boolean): CSSProperties => ({
+  const messageStyle = (role: 'assistant' | 'user'): CSSProperties => ({
+    maxWidth: '85%',
     padding: 'var(--space-md)',
-    background: isSelected ? 'var(--orb-orange)' : 'var(--bg-card)',
-    color: isSelected ? 'white' : 'var(--text)',
-    borderRadius: 'var(--radius-md)',
-    border: `2px solid ${isSelected ? 'var(--orb-orange)' : 'var(--border)'}`,
-    cursor: 'pointer',
-    transition: 'all var(--transition-fast)',
-    textAlign: 'left' as const
+    borderRadius: 'var(--radius-lg)',
+    background: role === 'user' ? 'var(--orb-orange)' : 'var(--bg-card)',
+    color: role === 'user' ? 'white' : 'var(--text)',
+    alignSelf: role === 'user' ? 'flex-end' : 'flex-start',
+    whiteSpace: 'pre-wrap',
+    lineHeight: 'var(--line-height-relaxed)'
   })
 
-  const progressStyle: CSSProperties = {
-    display: 'flex',
-    gap: 'var(--space-xs)',
-    marginBottom: 'var(--space-lg)'
+  const inputContainerStyle: CSSProperties = {
+    padding: 'var(--space-md)',
+    borderTop: '1px solid var(--border)',
+    background: 'var(--bg-primary)'
   }
 
-  const dotStyle = (isActive: boolean): CSSProperties => ({
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    background: isActive ? 'var(--orb-orange)' : 'var(--border)',
-    transition: 'background var(--transition-fast)'
-  })
-
-  const actionsStyle: CSSProperties = {
-    display: 'flex',
-    gap: 'var(--space-md)',
-    marginTop: 'var(--space-lg)'
-  }
-
-  const inputStyle: CSSProperties = {
+  const textareaStyle: CSSProperties = {
     width: '100%',
     padding: 'var(--space-md)',
     fontSize: 'var(--text-md)',
     background: 'var(--bg-card)',
-    border: '2px solid var(--border)',
-    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-lg)',
     color: 'var(--text)',
-    outline: 'none',
-    textAlign: 'center'
+    resize: 'none',
+    minHeight: 80,
+    fontFamily: 'var(--font-body)',
+    lineHeight: 'var(--line-height-normal)'
   }
 
-  const handleNext = () => {
-    if (step === TOTAL_STEPS) {
-      // Complete!
-      onComplete({
-        burnoutMode,
-        tonePreference,
-        templateId: selectedTemplate?.id || 'custom',
-        goal: goalTitle ? { title: goalTitle } : selectedTemplate?.goals[0],
-        project: projectTitle ? { title: projectTitle } : selectedTemplate?.projects[0]
-      })
-    } else {
-      setStep(step + 1)
+  const tasksPreviewStyle: CSSProperties = {
+    padding: 'var(--space-lg)',
+    background: 'var(--bg-card)',
+    borderRadius: 'var(--radius-lg)',
+    margin: 'var(--space-md) 0'
+  }
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return
+
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: input.trim()
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    setInput('')
+
+    // Send to AI for task extraction
+    await send(input.trim())
+    
+    // Add acknowledgment message
+    const assistantMessage: Message = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: extractedTasks.length > 0 
+        ? "got it. anything else on your mind? or we can get started with what we have."
+        : "i hear you. keep going — what else is on your plate?"
+    }
+    setMessages(prev => [...prev, assistantMessage])
+
+    // After first brain dump, show confirm option
+    if (messages.length >= 2 && extractedTasks.length > 0) {
+      setShowConfirm(true)
     }
   }
 
-  const handleBack = () => {
-    if (step === 1) {
-      onBack()
-    } else {
-      setStep(step - 1)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
     }
   }
 
-  const renderStep = () => {
-    switch (step) {
-    case 1:
-      return (
-        <>
-          <Orb size="md" breathing />
-          <div>
-            <h1 style={titleStyle}>Let's get started</h1>
-            <p style={subtitleStyle}>
-              We'll set up your workspace in just a few steps. This helps us understand how to best support you.
-            </p>
-          </div>
-        </>
-      )
-
-    case 2:
-      return (
-        <>
-          <div>
-            <h1 style={titleStyle}>How are you feeling?</h1>
-            <p style={subtitleStyle}>This helps us tailor the experience.</p>
-          </div>
-
-          <div style={optionsStyle}>
-            {([
-              { value: 'recovery', label: 'Recovery Mode', desc: 'I\'m burnt out and need gentle support' },
-              { value: 'prevention', label: 'Prevention Mode', desc: 'I want to avoid burning out' },
-              { value: 'balanced', label: 'Balanced Mode', desc: 'I\'m doing okay, staying productive' }
-            ] as const).map(option => (
-              <div
-                key={option.value}
-                style={optionStyle(burnoutMode === option.value)}
-                onClick={() => setBurnoutMode(option.value)}
-              >
-                <strong>{option.label}</strong>
-                <div style={{ fontSize: 'var(--text-sm)', opacity: 0.8, marginTop: 4 }}>
-                  {option.desc}
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )
-
-    case 3:
-      return (
-        <>
-          <div>
-            <h1 style={titleStyle}>Choose a template</h1>
-            <p style={subtitleStyle}>Start with goals tailored to your focus area.</p>
-          </div>
-
-          <div style={optionsStyle}>
-            {TEMPLATE_LIST.map(template => (
-              <div
-                key={template.id}
-                style={optionStyle(selectedTemplate?.id === template.id)}
-                onClick={() => setSelectedTemplate(template)}
-              >
-                <strong>{template.name}</strong>
-                <div style={{ fontSize: 'var(--text-sm)', opacity: 0.8, marginTop: 4 }}>
-                  {template.description}
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )
-
-    case 4:
-      return (
-        <>
-          <div>
-            <h1 style={titleStyle}>Your first goal</h1>
-            <p style={subtitleStyle}>
-              {selectedTemplate?.goals[0]
-                ? 'We\'ve suggested one based on your template. Feel free to customize it.'
-                : 'What do you want to work towards?'}
-            </p>
-          </div>
-
-          <Card>
-            <input
-              type="text"
-              style={inputStyle}
-              value={goalTitle || selectedTemplate?.goals[0]?.title || ''}
-              onChange={(e) => setGoalTitle(e.target.value)}
-              placeholder="e.g., Build better habits"
-            />
-          </Card>
-        </>
-      )
-
-    case 5:
-      return (
-        <>
-          <div>
-            <h1 style={titleStyle}>First project</h1>
-            <p style={subtitleStyle}>
-              Break your goal into a smaller milestone.
-            </p>
-          </div>
-
-          <Card>
-            <input
-              type="text"
-              style={inputStyle}
-              value={projectTitle || selectedTemplate?.projects[0]?.title || ''}
-              onChange={(e) => setProjectTitle(e.target.value)}
-              placeholder="e.g., Morning Routine"
-            />
-          </Card>
-        </>
-      )
-
-    case 6:
-      return (
-        <>
-          <div>
-            <h1 style={titleStyle}>Communication style</h1>
-            <p style={subtitleStyle}>How should I talk to you?</p>
-          </div>
-
-          <div style={optionsStyle}>
-            {([
-              { value: 'gentle', label: 'Gentle', desc: 'Soft, supportive, and understanding' },
-              { value: 'direct', label: 'Direct', desc: 'Clear, concise, and to the point' },
-              { value: 'playful', label: 'Playful', desc: 'Light, fun, and encouraging' }
-            ] as const).map(option => (
-              <div
-                key={option.value}
-                style={optionStyle(tonePreference === option.value)}
-                onClick={() => setTonePreference(option.value)}
-              >
-                <strong>{option.label}</strong>
-                <div style={{ fontSize: 'var(--text-sm)', opacity: 0.8, marginTop: 4 }}>
-                  {option.desc}
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )
-
-    default:
-      return null
-    }
-  }
-
-  const canProceed = () => {
-    switch (step) {
-    case 3:
-      return selectedTemplate !== null
-    case 4:
-      return (goalTitle || selectedTemplate?.goals[0]?.title)
-    case 5:
-      return (projectTitle || selectedTemplate?.projects[0]?.title)
-    default:
-      return true
-    }
+  const handleFinish = () => {
+    onComplete({
+      burnoutMode: 'balanced',
+      tonePreference: 'gentle',
+      tasks: extractedTasks
+    })
   }
 
   return (
     <div style={containerStyle}>
-      <div style={contentStyle}>
-        <div style={progressStyle}>
-          {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-            <div key={i} style={dotStyle(i < step)} />
-          ))}
-        </div>
+      {/* Header */}
+      <div style={headerStyle}>
+        <Button variant="ghost" onClick={onBack}>← back</Button>
+        <Orb size="sm" breathing />
+        <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+          brain dump
+        </span>
+      </div>
 
-        {renderStep()}
+      {/* Messages */}
+      <div style={messagesStyle}>
+        {messages.map(msg => (
+          <div key={msg.id} style={messageStyle(msg.role)}>
+            {msg.content}
+          </div>
+        ))}
 
-        <div style={actionsStyle}>
-          <Button variant="ghost" onClick={handleBack}>
-            Back
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleNext}
-            disabled={!canProceed()}
+        {isLoading && (
+          <div style={messageStyle('assistant')}>
+            <span style={{ opacity: 0.6 }}>thinking...</span>
+          </div>
+        )}
+
+        {/* Extracted tasks preview */}
+        {extractedTasks.length > 0 && showConfirm && (
+          <div style={tasksPreviewStyle}>
+            <p style={{ 
+              fontWeight: 600, 
+              marginBottom: 'var(--space-sm)',
+              color: 'var(--text)'
+            }}>
+              i found {extractedTasks.length} tasks:
+            </p>
+            <ul style={{ 
+              margin: 0, 
+              paddingLeft: 'var(--space-lg)',
+              color: 'var(--text-muted)'
+            }}>
+              {extractedTasks.slice(0, 5).map((task, i) => (
+                <li key={i} style={{ marginBottom: 4 }}>
+                  {task.taskBody}
+                </li>
+              ))}
+              {extractedTasks.length > 5 && (
+                <li style={{ fontStyle: 'italic' }}>
+                  +{extractedTasks.length - 5} more
+                </li>
+              )}
+            </ul>
+            <div style={{ marginTop: 'var(--space-md)', display: 'flex', gap: 'var(--space-sm)' }}>
+              <Button variant="primary" onClick={handleFinish}>
+                looks good, let's go
+              </Button>
+              <Button variant="ghost" onClick={() => setShowConfirm(false)}>
+                add more
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div style={inputContainerStyle}>
+        <textarea
+          ref={inputRef}
+          style={textareaStyle}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="dump everything here..."
+          disabled={isLoading}
+        />
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginTop: 'var(--space-sm)'
+        }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+            shift+enter for new line
+          </span>
+          <Button 
+            variant="primary" 
+            onClick={handleSend}
+            disabled={!input.trim() || isLoading}
           >
-            {step === TOTAL_STEPS ? 'Finish' : step === 1 ? 'Get Started' : 'Continue'}
+            {isLoading ? 'thinking...' : 'send'}
           </Button>
         </div>
       </div>
