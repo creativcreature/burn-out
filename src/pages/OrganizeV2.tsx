@@ -1,6 +1,6 @@
 import { useState, useCallback, CSSProperties } from 'react'
 import { AppLayout, Header } from '../components/layout'
-import { Card, Modal, Button, Input, Toast } from '../components/shared'
+import { Modal, Button, Input, Toast, EmptyState } from '../components/shared'
 import { SwipeableTaskCard } from '../components/shared/SwipeableTaskCard'
 import { useTasks } from '../hooks/useTasks'
 import { useGoals } from '../hooks/useGoals'
@@ -258,11 +258,7 @@ export function OrganizeV2Page() {
         
         {/* Empty state */}
         {pendingTasks.length === 0 && (
-          <Card>
-            <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-              No tasks yet. Tap + to add one!
-            </p>
-          </Card>
+          <EmptyState variant="tasks" />
         )}
       </main>
 

@@ -1503,3 +1503,22 @@ html, body {
     transform: translateX(-50%) translateY(0); 
   }
 }
+
+/* Preloader animations */
+@keyframes preloader-breathe {
+  0%, 100% { 
+    transform: scale(0.9); 
+    opacity: 0.8;
+    box-shadow: 0 0 40px 15px rgba(255, 69, 0, 0.2);
+  }
+  50% { 
+    transform: scale(1.1); 
+    opacity: 1;
+    box-shadow: 0 0 80px 30px rgba(255, 69, 0, 0.4);
+  }
+}
+
+@keyframes preloader-fade {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}

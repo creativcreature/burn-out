@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, CSSProperties, useRef, TouchEvent as ReactTouchEvent, WheelEvent } from 'react'
 import { AppLayout, Header } from '../components/layout'
-import { Button, Toast, FloatingActionButton, QuickAddPanel, Tag, Tooltip } from '../components/shared'
+import { Button, Toast, FloatingActionButton, QuickAddPanel, Tag, Tooltip, EmptyState } from '../components/shared'
 import { TimerOverlay } from '../components/timer'
 import { useTasks } from '../hooks/useTasks'
 import { useEnergy } from '../hooks/useEnergy'
@@ -663,10 +663,7 @@ export function NowPage() {
             </div>
             </div>
           ) : (
-            <div className="empty-state">
-              <h2 className="task-title">Nothing.</h2>
-              <p className="empty-text">Create a new task.</p>
-            </div>
+            <EmptyState variant="tasks" />
           )}
           
           {/* First-time tooltip for swipe hint */}

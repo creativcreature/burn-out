@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from './components/shared/ThemeProvider'
+import { Preloader } from './components/shared'
 import { AppProvider, useAppContext } from './contexts/AppContext'
 import { Onboarding } from './components/onboarding'
 import { NowPage } from './pages/Now'
@@ -81,21 +82,7 @@ export function App() {
   if (isLoading || initialOnboardingComplete === null) {
     return (
       <ThemeProvider>
-        <div style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--bg-primary)'
-        }}>
-          <div style={{
-            width: 60,
-            height: 60,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle at 30% 30%, var(--orb-gradient-1), var(--orb-gradient-2) 50%, var(--orb-gradient-3))',
-            animation: 'orb-breathe 2s ease-in-out infinite'
-          }} />
-        </div>
+        <Preloader />
       </ThemeProvider>
     )
   }
