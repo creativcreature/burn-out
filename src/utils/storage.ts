@@ -1,6 +1,7 @@
 import { get, set } from 'idb-keyval'
 import type { BurnOutData, Theme, WeeklySummary, CompletedTask, JournalEntry } from '../data/types'
 import { STORAGE_KEY, CURRENT_VERSION } from '../data/constants'
+import { createSampleData as createExpandedSampleData } from '../data/sampleDataV2'
 
 function createDefaultData(): BurnOutData {
   return {
@@ -1289,8 +1290,17 @@ export function createSampleData(): BurnOutData {
 }
 
 export async function seedSampleData(): Promise<void> {
-  const sampleData = createSampleData()
-  await set(STORAGE_KEY, sampleData)
+  const baseData = createSampleData()
+  const expandedData = createExpandedSampleData()
+  
+  // Merge expanded goals and tasks (73 realistic tasks)
+  const mergedData: BurnOutData = {
+    ...baseData,
+    goals: expandedData.goals,
+    tasks: expandedData.tasks
+  }
+  
+  await set(STORAGE_KEY, mergedData)
 }
 
 function migrateIfNeeded(data: BurnOutData): BurnOutData {
