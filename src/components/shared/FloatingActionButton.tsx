@@ -37,6 +37,7 @@ export function FloatingActionButton({
   const fabStyle: CSSProperties = {
     position: 'fixed',
     bottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-md))',
+    right: 'var(--space-md)', // Fallback, CSS class overrides for centered layouts
     width: 56,
     height: 56,
     borderRadius: '50%',
