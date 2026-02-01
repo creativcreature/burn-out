@@ -1,4 +1,4 @@
-import { ReactNode, CSSProperties, ButtonHTMLAttributes } from 'react'
+import React, { ReactNode, CSSProperties, ButtonHTMLAttributes } from 'react'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'cta' | 'secondary' | 'ghost' | 'danger'
@@ -98,10 +98,45 @@ export function Button({
     animation: 'rotate-subtle 0.8s linear infinite'
   }
 
+  // Handle active press state
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!disabled && !loading) {
+      (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.96)'
+    }
+    props.onMouseDown?.(e)
+  }
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
+    (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'
+    props.onMouseUp?.(e)
+  }
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'
+    props.onMouseLeave?.(e)
+  }
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLButtonElement>) => {
+    if (!disabled && !loading) {
+      (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.96)'
+    }
+    props.onTouchStart?.(e)
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLButtonElement>) => {
+    (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'
+    props.onTouchEnd?.(e)
+  }
+
   return (
     <button
       style={style}
       disabled={disabled || loading}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       {...props}
     >
       {loading ? (
