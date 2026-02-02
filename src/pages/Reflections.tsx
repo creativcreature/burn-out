@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, CSSProperties, TouchEvent } from 'react'
+import { useState, useEffect, useRef, useCallback, CSSProperties, TouchEvent } from 'react'
 import { AppLayout } from '../components/layout'
 import { Modal } from '../components/shared'
 import { addJournalEntry, getRecentJournalEntries } from '../utils/storage'
@@ -7,14 +7,19 @@ import type { JournalEntry } from '../data/types'
 /**
  * Reflections Page - One Year Journal Clone with Burnout Colors
  *
- * Key features:
- * - 365-day grid showing entire year
- * - Hand-drawn plant illustrations for days with entries
- * - Small dots for empty days
- * - Pinch to zoom in/out
- * - Swipe to navigate
- * - Burnout color palette (orange/red/magenta instead of blue)
+ * POLA-style fluid gesture physics:
+ * - Smooth pinch-to-zoom with momentum
+ * - Fluid panning with inertia/momentum
+ * - Gentle spring-based snap-to-center
+ * - Responsive, immediate feedback
  */
+
+// Physics constants for fluid feel
+const FRICTION = 0.92 // How quickly momentum decays (higher = more slide)
+const SPRING_TENSION = 0.15 // How strongly it snaps back (lower = gentler)
+const SPRING_DAMPING = 0.8 // Reduces spring oscillation
+const MIN_VELOCITY = 0.5 // Stop animating below this velocity
+const ZOOM_SPEED = 0.008 // How responsive zoom feels
 
 // Hand-drawn plant SVGs in Burnout style (warm colors)
 const PlantSVGs: Record<string, (color: string) => JSX.Element> = {
@@ -178,14 +183,30 @@ export function ReflectionsPage() {
   const [entryText, setEntryText] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [journalEntries, setJournalEntries] = useState<Map<string, JournalEntry>>(new Map())
-  const [zoom, setZoom] = useState(1) // 1 = full year, 2 = zoomed in
-  const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 })
+
+  // Transform state - using refs for animation frame updates
+  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 })
 
   const containerRef = useRef<HTMLDivElement>(null)
-  const lastTouchDistance = useRef<number | null>(null)
-  const lastTouchCenter = useRef<{ x: number; y: number } | null>(null)
-  const isDragging = useRef(false)
-  const dragStart = useRef({ x: 0, y: 0 })
+  const gridRef = useRef<HTMLDivElement>(null)
+
+  // Touch tracking refs
+  const lastTouchDistance = useRef<number>(0)
+  const lastTouchCenter = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+  const lastTouchPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+  const lastTouchTime = useRef<number>(0)
+  const touchStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+
+  // Velocity tracking for momentum
+  const velocity = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+
+  // Animation state
+  const isGesturing = useRef(false)
+  const isPinching = useRef(false)
+  const animationFrame = useRef<number>(0)
+
+  // Current transform (for animation frames without re-render)
+  const currentTransform = useRef({ x: 0, y: 0, scale: 1 })
 
   const today = new Date()
   const todayStr = formatDate(today)
@@ -201,9 +222,124 @@ export function ReflectionsPage() {
     })
   }, [])
 
-  // Handle pinch zoom
-  const handleTouchStart = (e: TouchEvent) => {
+  // Get bounds for panning (how far can user pan at current zoom)
+  const getBounds = useCallback(() => {
+    if (!containerRef.current || !gridRef.current) return { minX: 0, maxX: 0, minY: 0, maxY: 0 }
+
+    const container = containerRef.current.getBoundingClientRect()
+    const scale = currentTransform.current.scale
+
+    // Grid dimensions
+    const cols = 15
+    const cellSize = 28
+    const gap = 8
+    const gridWidth = cols * cellSize + (cols - 1) * gap + 32 // +padding
+    const gridHeight = Math.ceil(365 / cols) * (cellSize + 8) + (Math.ceil(365 / cols) - 1) * gap + 32
+
+    const scaledWidth = gridWidth * scale
+    const scaledHeight = gridHeight * scale
+
+    // Allow panning only if content is larger than container
+    const overflowX = Math.max(0, (scaledWidth - container.width) / 2)
+    const overflowY = Math.max(0, (scaledHeight - container.height) / 2)
+
+    return {
+      minX: -overflowX,
+      maxX: overflowX,
+      minY: -overflowY,
+      maxY: overflowY
+    }
+  }, [])
+
+  // Spring animation to gently snap back within bounds
+  const animateSpring = useCallback(() => {
+    const bounds = getBounds()
+    const t = currentTransform.current
+
+    let needsAnimation = false
+    let newX = t.x
+    let newY = t.y
+    let newScale = t.scale
+
+    // Apply momentum (friction decay)
+    if (Math.abs(velocity.current.x) > MIN_VELOCITY || Math.abs(velocity.current.y) > MIN_VELOCITY) {
+      newX += velocity.current.x
+      newY += velocity.current.y
+      velocity.current.x *= FRICTION
+      velocity.current.y *= FRICTION
+      needsAnimation = true
+    }
+
+    // Spring back if out of bounds
+    if (newX < bounds.minX) {
+      const diff = bounds.minX - newX
+      newX += diff * SPRING_TENSION
+      velocity.current.x *= SPRING_DAMPING
+      needsAnimation = true
+    } else if (newX > bounds.maxX) {
+      const diff = bounds.maxX - newX
+      newX += diff * SPRING_TENSION
+      velocity.current.x *= SPRING_DAMPING
+      needsAnimation = true
+    }
+
+    if (newY < bounds.minY) {
+      const diff = bounds.minY - newY
+      newY += diff * SPRING_TENSION
+      velocity.current.y *= SPRING_DAMPING
+      needsAnimation = true
+    } else if (newY > bounds.maxY) {
+      const diff = bounds.maxY - newY
+      newY += diff * SPRING_TENSION
+      velocity.current.y *= SPRING_DAMPING
+      needsAnimation = true
+    }
+
+    // Spring zoom back to 1 if below
+    if (newScale < 1) {
+      newScale += (1 - newScale) * SPRING_TENSION * 2
+      needsAnimation = true
+    }
+
+    // Snap to center when zoom is ~1
+    if (newScale < 1.05 && newScale > 0.95) {
+      newScale = 1
+      if (Math.abs(newX) > 1) {
+        newX *= 0.85
+        needsAnimation = true
+      } else {
+        newX = 0
+      }
+      if (Math.abs(newY) > 1) {
+        newY *= 0.85
+        needsAnimation = true
+      } else {
+        newY = 0
+      }
+    }
+
+    currentTransform.current = { x: newX, y: newY, scale: newScale }
+    setTransform({ x: newX, y: newY, scale: newScale })
+
+    if (needsAnimation && !isGesturing.current) {
+      animationFrame.current = requestAnimationFrame(animateSpring)
+    }
+  }, [getBounds])
+
+  // Start momentum animation after gesture ends
+  const startMomentumAnimation = useCallback(() => {
+    cancelAnimationFrame(animationFrame.current)
+    animationFrame.current = requestAnimationFrame(animateSpring)
+  }, [animateSpring])
+
+  // Handle touch start
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    cancelAnimationFrame(animationFrame.current)
+    isGesturing.current = true
+
     if (e.touches.length === 2) {
+      // Pinch gesture start
+      isPinching.current = true
       const dx = e.touches[0].clientX - e.touches[1].clientX
       const dy = e.touches[0].clientY - e.touches[1].clientY
       lastTouchDistance.current = Math.sqrt(dx * dx + dy * dy)
@@ -211,37 +347,102 @@ export function ReflectionsPage() {
         x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
         y: (e.touches[0].clientY + e.touches[1].clientY) / 2
       }
-    } else if (e.touches.length === 1 && zoom > 1) {
-      isDragging.current = true
-      dragStart.current = {
-        x: e.touches[0].clientX - viewOffset.x,
-        y: e.touches[0].clientY - viewOffset.y
-      }
+    } else if (e.touches.length === 1) {
+      // Single finger pan start
+      isPinching.current = false
+      touchStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      lastTouchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      lastTouchTime.current = Date.now()
+      velocity.current = { x: 0, y: 0 }
     }
-  }
+  }, [])
 
-  const handleTouchMove = (e: TouchEvent) => {
-    if (e.touches.length === 2 && lastTouchDistance.current) {
+  // Handle touch move
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      // Pinch zoom
       e.preventDefault()
+      isPinching.current = true
+
       const dx = e.touches[0].clientX - e.touches[1].clientX
       const dy = e.touches[0].clientY - e.touches[1].clientY
       const distance = Math.sqrt(dx * dx + dy * dy)
-      const scale = distance / lastTouchDistance.current
+      const center = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+      }
 
-      setZoom(prev => Math.max(1, Math.min(3, prev * scale)))
+      if (lastTouchDistance.current > 0) {
+        const scaleDelta = (distance - lastTouchDistance.current) * ZOOM_SPEED
+        const newScale = Math.max(0.5, Math.min(4, currentTransform.current.scale + scaleDelta))
+
+        // Zoom towards pinch center
+        const scaleRatio = newScale / currentTransform.current.scale
+        const newX = center.x - (center.x - currentTransform.current.x) * scaleRatio
+        const newY = center.y - (center.y - currentTransform.current.y) * scaleRatio
+
+        // Also track pan during pinch
+        const panX = center.x - lastTouchCenter.current.x
+        const panY = center.y - lastTouchCenter.current.y
+
+        currentTransform.current = {
+          x: newX + panX,
+          y: newY + panY,
+          scale: newScale
+        }
+        setTransform({ ...currentTransform.current })
+      }
+
       lastTouchDistance.current = distance
-    } else if (e.touches.length === 1 && isDragging.current && zoom > 1) {
-      const newX = e.touches[0].clientX - dragStart.current.x
-      const newY = e.touches[0].clientY - dragStart.current.y
-      setViewOffset({ x: newX, y: newY })
-    }
-  }
+      lastTouchCenter.current = center
 
-  const handleTouchEnd = () => {
-    lastTouchDistance.current = null
-    lastTouchCenter.current = null
-    isDragging.current = false
-  }
+    } else if (e.touches.length === 1 && !isPinching.current && currentTransform.current.scale > 1) {
+      // Single finger pan (only when zoomed in)
+      const now = Date.now()
+      const dt = Math.max(1, now - lastTouchTime.current)
+
+      const dx = e.touches[0].clientX - lastTouchPos.current.x
+      const dy = e.touches[0].clientY - lastTouchPos.current.y
+
+      // Track velocity for momentum
+      velocity.current = {
+        x: dx / dt * 16, // Normalize to ~60fps
+        y: dy / dt * 16
+      }
+
+      currentTransform.current = {
+        ...currentTransform.current,
+        x: currentTransform.current.x + dx,
+        y: currentTransform.current.y + dy
+      }
+      setTransform({ ...currentTransform.current })
+
+      lastTouchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      lastTouchTime.current = now
+    }
+  }, [])
+
+  // Handle touch end
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
+    if (e.touches.length === 0) {
+      isGesturing.current = false
+      isPinching.current = false
+
+      // Start momentum/spring animation
+      startMomentumAnimation()
+    } else if (e.touches.length === 1) {
+      // Transitioned from pinch to single finger
+      isPinching.current = false
+      lastTouchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      lastTouchTime.current = Date.now()
+      velocity.current = { x: 0, y: 0 }
+    }
+  }, [startMomentumAnimation])
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => cancelAnimationFrame(animationFrame.current)
+  }, [])
 
   // Handle day tap
   const handleDayTap = async (dayOfYear: number) => {
@@ -287,10 +488,10 @@ export function ReflectionsPage() {
     setIsEditing(false)
   }
 
-  // Grid configuration
+  // Grid configuration - base sizes (scale applied via transform)
   const cols = 15
-  const cellSize = 28 * zoom
-  const gap = 8 * zoom
+  const baseCellSize = 28
+  const baseGap = 8
 
   // Styles - transparent to show orb
   const containerStyle: CSSProperties = {
@@ -298,7 +499,7 @@ export function ReflectionsPage() {
     minHeight: '100vh',
     background: 'transparent',
     overflow: 'hidden',
-    touchAction: zoom > 1 ? 'none' : 'auto'
+    touchAction: 'none' // We handle all touch
   }
 
   const headerStyle: CSSProperties = {
@@ -328,15 +529,15 @@ export function ReflectionsPage() {
     padding: 'var(--space-md)',
     display: 'flex',
     justifyContent: 'center',
-    transform: `scale(${zoom}) translate(${viewOffset.x / zoom}px, ${viewOffset.y / zoom}px)`,
-    transformOrigin: 'top center',
-    transition: isDragging.current ? 'none' : 'transform 0.2s ease'
+    transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+    transformOrigin: 'center center',
+    willChange: 'transform' // GPU acceleration
   }
 
   const gridStyle: CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
-    gap: `${gap}px`,
+    gridTemplateColumns: `repeat(${cols}, ${baseCellSize}px)`,
+    gap: `${baseGap}px`,
     padding: 'var(--space-md)'
   }
 
@@ -386,14 +587,13 @@ export function ReflectionsPage() {
     const { plant, color } = getPlantForDay(dayOfYear)
 
     const cellStyle: CSSProperties = {
-      width: cellSize,
-      height: cellSize + 8,
+      width: baseCellSize,
+      height: baseCellSize + 8,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       cursor: 'pointer',
-      opacity: isPast || isToday ? 1 : 0.3,
-      transition: 'transform 0.2s ease'
+      opacity: isPast || isToday ? 1 : 0.3
     }
 
     const dotStyle: CSSProperties = {
@@ -413,7 +613,7 @@ export function ReflectionsPage() {
         aria-label={`${date.toLocaleDateString()} ${hasEntry ? '- has memory' : ''}`}
       >
         {hasEntry ? (
-          <div style={{ width: cellSize, height: cellSize + 8 }}>
+          <div style={{ width: baseCellSize, height: baseCellSize + 8 }}>
             {PlantSVGs[plant](color)}
           </div>
         ) : (
@@ -448,7 +648,7 @@ export function ReflectionsPage() {
 
         {/* 365-day grid */}
         <div style={gridContainerStyle}>
-          <div style={gridStyle}>
+          <div ref={gridRef} style={gridStyle}>
             {days.map(day => renderDayCell(day))}
           </div>
         </div>
@@ -460,7 +660,7 @@ export function ReflectionsPage() {
           left: 0,
           right: 0,
           zIndex: 50,
-          opacity: zoom > 1.5 ? 0 : 1,
+          opacity: transform.scale > 1.5 ? 0 : 1,
           transition: 'opacity 0.3s ease'
         }}>
           <div style={{
@@ -546,7 +746,7 @@ export function ReflectionsPage() {
         </div>
 
         {/* Zoom hint */}
-        {zoom === 1 && (
+        {transform.scale < 1.1 && (
           <div style={{
             position: 'fixed',
             bottom: 'calc(var(--nav-height) + var(--safe-bottom) + 170px)',
@@ -554,7 +754,9 @@ export function ReflectionsPage() {
             transform: 'translateX(-50%)',
             fontSize: 'var(--text-xs)',
             color: 'var(--text-subtle)',
-            textAlign: 'center'
+            textAlign: 'center',
+            opacity: transform.scale < 1.05 ? 1 : 0,
+            transition: 'opacity 0.2s ease'
           }}>
             pinch to zoom
           </div>
