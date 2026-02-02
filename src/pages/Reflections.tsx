@@ -292,11 +292,11 @@ export function ReflectionsPage() {
   const cellSize = 28 * zoom
   const gap = 8 * zoom
 
-  // Styles
+  // Styles - transparent to show orb
   const containerStyle: CSSProperties = {
     position: 'relative',
     minHeight: '100vh',
-    background: '#F8F6F3',
+    background: 'transparent',
     overflow: 'hidden',
     touchAction: zoom > 1 ? 'none' : 'auto'
   }
@@ -306,7 +306,7 @@ export function ReflectionsPage() {
     top: 0,
     zIndex: 100,
     padding: 'var(--space-md)',
-    background: '#F8F6F3',
+    background: 'transparent',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -315,12 +315,13 @@ export function ReflectionsPage() {
 
   const yearPillStyle: CSSProperties = {
     padding: '8px 20px',
-    background: 'white',
-    border: '1px solid #E0E0E0',
+    background: 'var(--bg-card)',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid var(--border)',
     borderRadius: 20,
     fontSize: 'var(--text-sm)',
     fontWeight: 500,
-    color: '#333'
+    color: 'var(--text)'
   }
 
   const gridContainerStyle: CSSProperties = {
@@ -355,20 +356,21 @@ export function ReflectionsPage() {
     width: 56,
     height: 56,
     borderRadius: '50%',
-    border: '2px solid #FF4500',
-    background: 'white',
+    border: '2px solid var(--orb-orange)',
+    background: 'var(--bg-card)',
+    backdropFilter: 'blur(10px)',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '24px',
-    color: '#FF4500',
+    color: 'var(--orb-orange)',
     boxShadow: '0 4px 12px rgba(255, 69, 0, 0.2)'
   }
 
   const buttonLabelStyle: CSSProperties = {
     fontSize: 'var(--text-xs)',
-    color: '#FF4500',
+    color: 'var(--orb-orange)',
     fontWeight: 500
   }
 
@@ -398,7 +400,7 @@ export function ReflectionsPage() {
       width: 4,
       height: 4,
       borderRadius: '50%',
-      background: isToday ? '#FF4500' : '#CCC'
+      background: isToday ? 'var(--orb-orange)' : 'var(--text-subtle)'
     }
 
     return (
@@ -428,7 +430,7 @@ export function ReflectionsPage() {
   const memoryCount = journalEntries.size
 
   return (
-    <AppLayout showOrb={false}>
+    <AppLayout showOrb={true}>
       <div
         ref={containerRef}
         style={containerStyle}
@@ -439,7 +441,7 @@ export function ReflectionsPage() {
         {/* Header */}
         <div style={headerStyle}>
           <div style={yearPillStyle}>{currentYear}</div>
-          <p style={{ fontSize: 'var(--text-xs)', color: '#888' }}>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
             {memoryCount} {memoryCount === 1 ? 'memory' : 'memories'} planted
           </p>
         </div>
@@ -451,61 +453,82 @@ export function ReflectionsPage() {
           </div>
         </div>
 
-        {/* Today indicator row - shows plants around today */}
+        {/* Horizontal scroll nav - recent days */}
         <div style={{
           position: 'fixed',
-          top: 100,
+          bottom: 'calc(var(--nav-height) + var(--safe-bottom) + 90px)',
           left: 0,
           right: 0,
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 'var(--space-md)',
-          padding: 'var(--space-sm)',
-          background: 'linear-gradient(180deg, #F8F6F3 0%, rgba(248,246,243,0) 100%)',
           zIndex: 50,
-          pointerEvents: 'none',
           opacity: zoom > 1.5 ? 0 : 1,
           transition: 'opacity 0.3s ease'
         }}>
-          {[-3, -2, -1, 0, 1, 2, 3].map(offset => {
-            const day = todayDayOfYear + offset
-            if (day < 1 || day > 365) return null
-            const { plant, color } = getPlantForDay(day)
-            const hasEntry = journalEntries.has(formatDate(getDateFromDayOfYear(day, currentYear)))
-            const isToday = offset === 0
+          <div style={{
+            display: 'flex',
+            overflowX: 'auto',
+            gap: 'var(--space-sm)',
+            padding: '0 var(--space-md)',
+            scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch',
+            scrollSnapType: 'x mandatory'
+          }}>
+            {/* Show last 14 days */}
+            {Array.from({ length: 14 }, (_, i) => {
+              const day = todayDayOfYear - 13 + i
+              if (day < 1) return null
+              const date = getDateFromDayOfYear(day, currentYear)
+              const dateStr = formatDate(date)
+              const { plant, color } = getPlantForDay(day)
+              const hasEntry = journalEntries.has(dateStr)
+              const isToday = day === todayDayOfYear
 
-            return (
-              <div
-                key={day}
-                style={{
-                  width: 36,
-                  height: 44,
-                  opacity: hasEntry ? 1 : 0.3,
-                  transform: isToday ? 'scale(1.2)' : 'scale(1)',
-                  pointerEvents: 'auto',
-                  cursor: 'pointer'
-                }}
-                onClick={() => handleDayTap(day)}
-              >
-                {hasEntry ? PlantSVGs[plant](color) : (
+              return (
+                <div
+                  key={day}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: 'var(--space-sm)',
+                    background: isToday ? 'var(--bg-card)' : 'transparent',
+                    backdropFilter: isToday ? 'blur(10px)' : 'none',
+                    borderRadius: 'var(--radius-lg)',
+                    border: isToday ? '1px solid var(--orb-orange)' : 'none',
+                    minWidth: 48,
+                    cursor: 'pointer',
+                    scrollSnapAlign: 'center'
+                  }}
+                  onClick={() => handleDayTap(day)}
+                >
                   <div style={{
-                    width: '100%',
-                    height: '100%',
+                    width: 32,
+                    height: 40,
+                    opacity: hasEntry ? 1 : 0.4,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}>
-                    <div style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: isToday ? '#FF4500' : '#CCC'
-                    }} />
+                    {hasEntry ? PlantSVGs[plant](color) : (
+                      <div style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: isToday ? 'var(--orb-orange)' : 'var(--text-muted)'
+                      }} />
+                    )}
                   </div>
-                )}
-              </div>
-            )
-          })}
+                  <span style={{
+                    fontSize: '10px',
+                    color: isToday ? 'var(--orb-orange)' : 'var(--text-muted)',
+                    fontWeight: isToday ? 600 : 400
+                  }}>
+                    {isToday ? 'today' : date.getDate()}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* Plant memory button */}
@@ -526,11 +549,11 @@ export function ReflectionsPage() {
         {zoom === 1 && (
           <div style={{
             position: 'fixed',
-            bottom: 'calc(var(--nav-height) + var(--safe-bottom) + 100px)',
+            bottom: 'calc(var(--nav-height) + var(--safe-bottom) + 170px)',
             left: '50%',
             transform: 'translateX(-50%)',
             fontSize: 'var(--text-xs)',
-            color: '#999',
+            color: 'var(--text-subtle)',
             textAlign: 'center'
           }}>
             pinch to zoom
