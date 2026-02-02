@@ -65,8 +65,10 @@ export function QuickAddPanel({
   const panelStyle: CSSProperties = {
     position: 'fixed',
     bottom: 'calc(var(--nav-height) + var(--safe-bottom))',
-    left: 0,
-    right: 0,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '100%',
+    maxWidth: 430,
     background: 'var(--bg-card-solid)',
     borderTopLeftRadius: 'var(--radius-xl)',
     borderTopRightRadius: 'var(--radius-xl)',

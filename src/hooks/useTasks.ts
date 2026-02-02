@@ -203,6 +203,30 @@ export function useTasks() {
     setTasks(withNewOrder)
   }, [])
 
+  // Reorder a single task (move from fromIndex to toIndex)
+  const reorderTask = useCallback(async (taskId: string, toIndex: number): Promise<void> => {
+    const now = new Date().toISOString()
+    const taskIndex = tasks.findIndex(t => t.id === taskId)
+    if (taskIndex === -1) return
+
+    const reordered = [...tasks]
+    const [removed] = reordered.splice(taskIndex, 1)
+    reordered.splice(toIndex, 0, removed)
+
+    const withNewOrder = reordered.map((task, index) => ({
+      ...task,
+      order: index,
+      updatedAt: now
+    }))
+
+    await updateData(data => ({
+      ...data,
+      tasks: withNewOrder
+    }))
+
+    setTasks(withNewOrder)
+  }, [tasks])
+
   // Refresh tasks from storage (useful when tasks are added externally)
   const refreshTasks = useCallback(async (): Promise<void> => {
     const data = await getData()
@@ -282,6 +306,7 @@ export function useTasks() {
     snoozeTask,
     deleteTask,
     reorderTasks,
+    reorderTask,
     refreshTasks,
     getTasksByProject,
     getNextTaskForProject,

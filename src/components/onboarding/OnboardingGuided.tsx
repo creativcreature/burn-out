@@ -139,8 +139,8 @@ export function OnboardingGuided({ onComplete, onBack }: OnboardingGuidedProps) 
       id: crypto.randomUUID(),
       role: 'assistant',
       content: extractedTasks.length > 0 
-        ? "got it. anything else on your mind? or we can get started with what we have."
-        : "i hear you. keep going — what else is on your plate?"
+        ? 'got it. anything else on your mind? or we can get started with what we have.'
+        : 'i hear you. keep going — what else is on your plate?'
     }
     setMessages(prev => [...prev, assistantMessage])
 

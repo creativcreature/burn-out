@@ -16,12 +16,17 @@ Energy-aware productivity app for neurodivergent users.
 
 ## Commands
 ```bash
-npm run dev        # Start dev server (port 3000)
+npm run dev        # Start dev server (port 5174) - ALWAYS use this unique port
 npm run build      # Production build
 npm run test       # Run test suite
 npm run lint       # ESLint check
 npm run typecheck  # TypeScript check
 ```
+
+## Dev Server
+**ALWAYS use port 5174** - configured in vite.config.ts
+- URL: http://localhost:5174
+- Do NOT use port 3000 (conflicts with other projects)
 
 ## Development Workflow (Boris-Style: Plan → Execute → Verify)
 
@@ -178,20 +183,51 @@ Billing: Tokens x $0.0000225 (Melt) | Personal = track only
 ## File Structure
 ```
 burnout/
-├── CLAUDE.md           # This file - single source of truth
-├── CHANGELOG.md        # All changes documented
-├── VERSION.md          # Current version
-├── .claude/
-│   ├── commands/       # Slash commands
-│   └── agents/         # Subagent definitions
-├── company/            # Infrastructure docs
-├── playbooks/          # Implementation guides
-├── src/
-│   ├── components/     # React components
-│   ├── pages/          # Route-level components
-│   ├── hooks/          # Custom hooks
-│   ├── data/           # Types, constants, state
-│   ├── utils/          # Helper functions
-│   └── styles/         # CSS files
-└── public/             # Static assets + PWA
+├── CLAUDE.md              # This file - single source of truth
+├── CHANGELOG.md           # Version history
+├── VERSION.md             # Current version
+│
+├── docs/                  # ALL documentation consolidated
+│   ├── specs/            # Feature specifications (BURNOUT_MODE_SPEC, REFLECT_REDESIGN_SPEC, etc.)
+│   ├── architecture/     # Technical docs (ARCHITECTURE_DIAGRAM, CODE_TEMPLATES)
+│   ├── guides/           # Implementation guides (QUICK_START, DEPLOY_RULES, PROCESS)
+│   ├── audits/           # Status/audit reports (FUNCTIONALITY_AUDIT, HANDOFF)
+│   └── roadmaps/         # Roadmaps (CEO_ROADMAP, IOS_DEPLOYMENT_ROADMAP)
+│
+├── reference/            # Reference materials (DO NOT DELETE)
+│   ├── oneyearjournal/   # One Year App screenshots (CRITICAL for Reflections)
+│   ├── ONE_YEAR_APP_TEARDOWN.md
+│   ├── SAMPLE_DATA.md
+│   └── ONBOARDING_COPY.md
+│
+├── brand/                # Design reference
+│   ├── BRAND-GUIDELINES.md   # Colors, typography, design principles
+│   ├── QUALITY-GATES.md      # Quality standards
+│   └── playbooks/            # Implementation guides (01-setup through 06-deployment)
+│
+├── history/              # Historical context (rarely needed)
+│   ├── clawdbotmemories/ # Past agent coordination
+│   ├── company/          # Org docs (RACI, ESCALATION)
+│   ├── prompts/          # AI role prompts
+│   └── _reports/         # Audit reports
+│
+├── ceo/                  # CEO notes & visuals
+├── src/                  # Source code
+│   ├── components/       # React components
+│   ├── pages/            # Route-level components
+│   ├── hooks/            # Custom hooks
+│   ├── data/             # Types, constants, state
+│   ├── utils/            # Helper functions
+│   └── styles/           # CSS files
+├── api/                  # Vercel API functions
+├── public/               # Static assets + PWA
+├── scripts/              # Build scripts
+└── tools/                # Dev tools
 ```
+
+### Essential Files to Read Before Implementing
+- `CLAUDE.md` - Project conventions (this file)
+- `docs/specs/*` - What to build
+- `docs/audits/FUNCTIONALITY_AUDIT.md` - What's broken
+- `reference/oneyearjournal/*` - Visual reference for Reflections
+- `brand/BRAND-GUIDELINES.md` - Design constraints

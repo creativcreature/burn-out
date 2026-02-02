@@ -62,12 +62,11 @@ html, body {
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: calc(var(--safe-top) + var(--space-md)) var(--space-md) calc(var(--nav-height) + var(--safe-bottom) + 80px);
+  padding: calc(var(--safe-top) + var(--space-md)) var(--space-sm) calc(var(--nav-height) + var(--safe-bottom) + 80px);
   width: 100%;
   max-width: 430px;
   margin: 0 auto;
-  overflow-x: clip;
-  overflow-x: hidden;
+  overflow-x: visible;
   overflow-y: auto;
   box-sizing: border-box;
   scrollbar-width: none; /* Firefox */
@@ -78,22 +77,35 @@ html, body {
   display: none; /* Chrome/Safari */
 }
 
+/* Utility to hide scrollbars */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Desktop: keep mobile-like experience but centered better */
 @media (min-width: 768px) {
   .app-shell {
-    max-width: 480px;
+    max-width: 430px;
     padding-top: var(--space-xl);
   }
 
-  .orb-main {
+  .orb-main,
+  .orb-main-dynamic {
     width: 350px;
     height: 350px;
     filter: blur(12px);
+  }
+
+  .orb-main {
     box-shadow: 0 0 150px 80px rgba(255, 69, 0, 0.25);
   }
 
   .bottom-nav {
-    max-width: 480px;
+    max-width: 430px;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
@@ -103,17 +115,21 @@ html, body {
 /* Large Desktop: wider container, bigger orb */
 @media (min-width: 1024px) {
   .app-shell {
-    max-width: 520px;
+    max-width: 430px;
+  }
+
+  .orb-main,
+  .orb-main-dynamic {
+    width: 400px;
+    height: 400px;
   }
 
   .orb-main {
-    width: 400px;
-    height: 400px;
     box-shadow: 0 0 180px 100px rgba(255, 69, 0, 0.2);
   }
 
   .bottom-nav {
-    max-width: 520px;
+    max-width: 430px;
   }
 }
 
@@ -306,11 +322,11 @@ html, body {
   background: var(--bg-card-transparent);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 48px var(--space-lg) var(--space-lg);
-  min-height: 50vh;
-  box-shadow: var(--shadow-card);
+  border: none;
+  border-radius: 0;
+  padding: var(--space-lg) var(--space-md);
+  min-height: auto;
+  box-shadow: none;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -953,38 +969,44 @@ html, body {
   color: var(--text-subtle);
 }
 
-/* Main Area */
+/* Main Area - Full screen for task view */
 .main-area {
   flex: 1;
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  min-height: 0;
+  overflow-x: visible;
   overflow-y: auto;
-  touch-action: auto;
+  touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
   overscroll-behavior: none;
+  padding: 0 var(--space-sm);
+  box-sizing: border-box;
 }
 
 .task-display {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   overflow: visible;
   width: 100%;
-  max-width: calc(100vw - 2 * var(--space-md));
+  max-width: 100%;
   overflow-wrap: break-word;
   word-break: break-word;
+  padding: var(--space-md) 0;
 }
 
-/* Force containment on all task elements */
+/* Force containment on all task elements - full width card */
 .task-card,
 .glass-card-transparent {
   width: 100%;
-  max-width: calc(100vw - 2 * var(--space-md));
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
   overflow-wrap: break-word;
   word-break: break-word;
 }
@@ -1123,30 +1145,37 @@ html, body {
   border: 0;
 }
 
-/* Upcoming Sheet Overlay */
+/* Upcoming Sheet Overlay - slides up from bottom when user swipes up */
 .upcoming-sheet {
   --sheet-progress: 0;
   position: fixed;
-  bottom: 0;
+  bottom: calc(var(--nav-height) + var(--safe-bottom));
   left: 50%;
-  width: calc(100% - var(--space-md) * 2);
-  max-width: 430px;
-  top: 15%;
+  width: calc(100% - var(--space-sm) * 2);
+  max-width: 400px;
+  top: 10%;
   background: var(--bg-card-solid);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  z-index: 90;
+  z-index: 1100;
   display: flex;
   flex-direction: column;
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  /* Fully hidden when progress=0, fully visible when progress=1 */
   transform: translateX(-50%) translateY(calc(100% * (1 - var(--sheet-progress))));
   opacity: calc(0.3 + (var(--sheet-progress) * 0.7));
-  pointer-events: auto;
+  /* Only allow interaction when sheet is visible enough */
+  pointer-events: none;
   transition: none;
-  overflow: hidden;
-  /* Add subtle scale effect during drag */
+  overflow: visible;
   scale: calc(0.98 + (var(--sheet-progress) * 0.02));
+}
+
+/* Enable pointer events when sheet is open */
+.upcoming-sheet.sheet-visible {
+  pointer-events: auto;
+  overflow: hidden;
 }
 
 /* Drag zone at top - always controls sheet position */
@@ -1167,11 +1196,14 @@ html, body {
 .sheet-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   padding: 0 var(--space-md);
-  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-xl));
+  padding-bottom: var(--space-xl);
+  touch-action: pan-y;
 }
+
 
 [data-theme="dark"] .upcoming-sheet {
   background: rgba(20, 20, 20, 0.95);

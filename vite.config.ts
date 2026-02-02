@@ -82,8 +82,8 @@ export default defineConfig(({ mode }) => {
     }
   },
   server: {
-    port: 3000,
-    open: true,
+    port: 5174,
+    open: false,
     // Proxy API requests to Vercel dev server when running standalone
     proxy: env.VITE_API_PROXY ? {
       '/api': {

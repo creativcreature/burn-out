@@ -6,16 +6,19 @@ interface SwipeableTaskCardProps {
   task: Task
   onComplete: (taskId: string) => void
   onDelete: (taskId: string) => void
+  onEdit?: (task: Task) => void
 }
 
 /**
  * Task card with swipe gestures
  * Swipe right = complete, Swipe left = delete
+ * Tap task text to edit
  */
 export const SwipeableTaskCard = memo(function SwipeableTaskCard({
   task,
   onComplete,
-  onDelete
+  onDelete,
+  onEdit
 }: SwipeableTaskCardProps) {
   const { swipeX, handlers } = useSwipe({
     threshold: 0.3,
@@ -38,8 +41,8 @@ export const SwipeableTaskCard = memo(function SwipeableTaskCard({
     gap: 'var(--space-sm)',
     padding: 'var(--space-md)',
     background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-md)',
-    marginLeft: 'var(--space-md)',
+    borderRadius: 'var(--radius-lg)',
+    border: '1px solid var(--border)',
     transform: `translateX(${swipeX * 80}px) scale(${1 - Math.abs(swipeX) * 0.02})`,
     opacity: 1 - Math.abs(swipeX) * 0.1,
     transition: swipeX === 0 ? 'transform 0.2s ease-out, opacity 0.2s ease-out' : 'none',
@@ -100,7 +103,8 @@ export const SwipeableTaskCard = memo(function SwipeableTaskCard({
   const taskTitleStyle: CSSProperties = {
     flex: 1,
     fontSize: 'var(--text-md)',
-    color: 'var(--text)'
+    color: 'var(--text)',
+    cursor: onEdit ? 'pointer' : 'default'
   }
 
   const dueDateStyle: CSSProperties = {
@@ -136,9 +140,12 @@ export const SwipeableTaskCard = memo(function SwipeableTaskCard({
           aria-label={`Mark "${task.taskBody}" as complete`}
         />
         
-        {/* Task content */}
-        <div style={{ flex: 1 }}>
-          <div style={taskTitleStyle}>{task.taskBody}</div>
+        {/* Task content - tap to edit */}
+        <div style={{ flex: 1 }} onClick={() => onEdit?.(task)}>
+          <div style={taskTitleStyle}>
+            {task.taskBody}
+            {onEdit && <span style={{ color: 'var(--text-subtle)', marginLeft: '4px', fontSize: 'var(--text-sm)' }}>✎</span>}
+          </div>
           {task.scheduledFor && (
             <div style={dueDateStyle}>
               📅 {new Date(task.scheduledFor).toLocaleDateString()}

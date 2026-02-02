@@ -34,7 +34,7 @@ export function EnergySelector({ value, onChange }: EnergySelectorProps) {
     flexDirection: 'column',
     alignItems: 'center',
     gap: 'var(--space-sm)',
-    padding: 'var(--space-sm)',
+    padding: 'var(--space-sm)'
   }
 
   const batteryContainerStyle: CSSProperties = {
@@ -44,7 +44,7 @@ export function EnergySelector({ value, onChange }: EnergySelectorProps) {
     padding: '8px 16px',
     background: 'var(--bg-card)',
     borderRadius: 'var(--radius-full)',
-    border: '1px solid var(--border)',
+    border: '1px solid var(--border)'
   }
 
   const barStyle = (level: EnergyLevel): CSSProperties => ({
@@ -55,7 +55,7 @@ export function EnergySelector({ value, onChange }: EnergySelectorProps) {
     cursor: 'pointer',
     transition: 'all var(--transition-fast)',
     opacity: level <= value ? 1 : 0.3,
-    transform: level <= value ? 'scaleY(1)' : 'scaleY(0.8)',
+    transform: level <= value ? 'scaleY(1)' : 'scaleY(0.8)'
   })
 
   const labelStyle: CSSProperties = {
@@ -63,7 +63,7 @@ export function EnergySelector({ value, onChange }: EnergySelectorProps) {
     color: colors[value],
     fontWeight: 500,
     textTransform: 'lowercase',
-    letterSpacing: '0.5px',
+    letterSpacing: '0.5px'
   }
 
   return (

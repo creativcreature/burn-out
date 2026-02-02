@@ -57,7 +57,7 @@ export function Toast({ message, type = 'info', isVisible, onClose, duration = 3
     display: 'flex',
     alignItems: 'center',
     gap: 'var(--space-sm)',
-    maxWidth: 'calc(100vw - var(--space-xl))'
+    maxWidth: 'min(430px, calc(100vw - var(--space-xl)))'
   }
 
   const icons = {

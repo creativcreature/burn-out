@@ -1,217 +1,279 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, TouchEvent, MouseEvent } from 'react'
 
-export interface UseDragAndDropOptions<T> {
+interface UseDragAndDropConfig<T> {
   items: T[]
-  onReorder: (items: T[]) => void
-  itemHeight?: number
+  onReorder: (fromIndex: number, toIndex: number, fromGroup?: string, toGroup?: string) => void
 }
 
-export interface DragHandlers {
-  onPointerDown: (e: React.PointerEvent) => void
-}
-
-export interface UseDragAndDropReturn {
+interface DragState {
+  isDragging: boolean
   draggedId: string | null
   draggedIndex: number | null
-  targetIndex: number | null
-  isDragging: boolean
-  dragOffset: number
-  getDragHandlers: (id: string, index: number) => DragHandlers
-  getItemStyle: (id: string, index: number) => React.CSSProperties
+  dropTargetIndex: number | null
+  draggedGroup: string | undefined
+  dropTargetGroup: string | undefined
+  offsetY: number
 }
 
-const DRAG_THRESHOLD = 3 // Very low threshold for instant feel
+interface UseDragAndDropReturn {
+  dragState: DragState
+  getDragHandleProps: (id: string, index: number, groupId?: string) => {
+    onTouchStart: (e: TouchEvent) => void
+    onTouchMove: (e: TouchEvent) => void
+    onTouchEnd: (e: TouchEvent) => void
+    onMouseDown: (e: MouseEvent) => void
+    style: React.CSSProperties
+  }
+  getDropTargetProps: (index: number, groupId?: string) => {
+    onTouchMove: (e: TouchEvent) => void
+    onMouseMove: (e: MouseEvent) => void
+    style: React.CSSProperties
+  }
+}
 
+/**
+ * Hook for drag-to-reorder functionality
+ * Works with touch (long press to drag) and mouse
+ */
 export function useDragAndDrop<T>({
   items,
-  onReorder,
-  itemHeight = 72
-}: UseDragAndDropOptions<T>): UseDragAndDropReturn {
-  const [draggedId, setDraggedId] = useState<string | null>(null)
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
-  const [targetIndex, setTargetIndex] = useState<number | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragOffset, setDragOffset] = useState(0)
+  onReorder
+}: UseDragAndDropConfig<T>): UseDragAndDropReturn {
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    draggedId: null,
+    draggedIndex: null,
+    dropTargetIndex: null,
+    draggedGroup: undefined,
+    dropTargetGroup: undefined,
+    offsetY: 0
+  })
 
-  const startYRef = useRef<number>(0)
-  const pendingRef = useRef<{ id: string; index: number } | null>(null)
+  // Use refs for values that need to be accessed in callbacks without stale closures
+  const dragStateRef = useRef(dragState)
+  const itemsRef = useRef(items)
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
+  const startY = useRef(0)
+  const isMouseDown = useRef(false)
 
-  // Calculate target index based on current drag position
-  const calculateTargetIndex = useCallback((currentY: number, startIndex: number): number => {
-    const deltaY = currentY - startYRef.current
-    const indexDelta = Math.round(deltaY / itemHeight)
-    const newIndex = startIndex + indexDelta
-    return Math.max(0, Math.min(items.length - 1, newIndex))
-  }, [items.length, itemHeight])
+  // Keep refs in sync
+  useEffect(() => {
+    dragStateRef.current = dragState
+  }, [dragState])
 
-  // Start drag
-  const startDrag = useCallback((id: string, index: number, clientY: number) => {
-    setDraggedId(id)
-    setDraggedIndex(index)
-    setTargetIndex(index)
-    setIsDragging(true)
-    setDragOffset(0)
-    startYRef.current = clientY
+  useEffect(() => {
+    itemsRef.current = items
+  }, [items])
+
+  const startDrag = useCallback((id: string, index: number, clientY: number, groupId?: string) => {
+    startY.current = clientY
+    setDragState({
+      isDragging: true,
+      draggedId: id,
+      draggedIndex: index,
+      dropTargetIndex: index,
+      draggedGroup: groupId,
+      dropTargetGroup: groupId,
+      offsetY: 0
+    })
 
     // Haptic feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(10)
+    if (navigator.vibrate) navigator.vibrate(20)
+  }, [])
+
+  const updateDrag = useCallback((clientY: number) => {
+    const state = dragStateRef.current
+    if (!state.isDragging || state.draggedIndex === null) return
+
+    const offsetY = clientY - startY.current
+
+    // Calculate drop target based on position
+    const itemHeight = 60 // Approximate item height
+    const moveSteps = Math.round(offsetY / itemHeight)
+    const newDropIndex = Math.max(0, Math.min(itemsRef.current.length - 1, state.draggedIndex + moveSteps))
+
+    setDragState(prev => ({
+      ...prev,
+      offsetY,
+      dropTargetIndex: newDropIndex
+    }))
+  }, [])
+
+  const endDrag = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+
+    const state = dragStateRef.current
+    if (state.isDragging && state.draggedIndex !== null && state.dropTargetIndex !== null) {
+      if (state.draggedIndex !== state.dropTargetIndex) {
+        onReorder(
+          state.draggedIndex,
+          state.dropTargetIndex,
+          state.draggedGroup,
+          state.dropTargetGroup
+        )
+      }
+    }
+
+    setDragState({
+      isDragging: false,
+      draggedId: null,
+      draggedIndex: null,
+      dropTargetIndex: null,
+      draggedGroup: undefined,
+      dropTargetGroup: undefined,
+      offsetY: 0
+    })
+  }, [onReorder])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current)
+      }
     }
   }, [])
 
-  // End drag
-  const endDrag = useCallback(() => {
-    if (draggedIndex !== null && targetIndex !== null && draggedIndex !== targetIndex) {
-      const newItems = [...items]
-      const [removed] = newItems.splice(draggedIndex, 1)
-      newItems.splice(targetIndex, 0, removed)
-      onReorder(newItems)
-    }
+  const getDragHandleProps = useCallback((id: string, index: number, groupId?: string) => {
+    return {
+      onTouchStart: (e: TouchEvent) => {
+        e.stopPropagation()
+        const clientY = e.touches[0].clientY
+        startY.current = clientY
 
-    setDraggedId(null)
-    setDraggedIndex(null)
-    setTargetIndex(null)
-    setIsDragging(false)
-    setDragOffset(0)
-    pendingRef.current = null
-  }, [items, draggedIndex, targetIndex, onReorder])
+        // Long press to start drag (300ms)
+        longPressTimer.current = setTimeout(() => {
+          startDrag(id, index, clientY, groupId)
+        }, 300)
+      },
+      onTouchMove: (e: TouchEvent) => {
+        const state = dragStateRef.current
 
-  // Global pointer move handler
-  useEffect(() => {
-    if (!isDragging) return
-
-    const handleMove = (e: PointerEvent) => {
-      const deltaY = e.clientY - startYRef.current
-      setDragOffset(deltaY)
-
-      if (draggedIndex !== null) {
-        const newTarget = calculateTargetIndex(e.clientY, draggedIndex)
-        setTargetIndex(newTarget)
-      }
-    }
-
-    const handleUp = () => {
-      endDrag()
-    }
-
-    window.addEventListener('pointermove', handleMove)
-    window.addEventListener('pointerup', handleUp)
-    window.addEventListener('pointercancel', handleUp)
-
-    return () => {
-      window.removeEventListener('pointermove', handleMove)
-      window.removeEventListener('pointerup', handleUp)
-      window.removeEventListener('pointercancel', handleUp)
-    }
-  }, [isDragging, draggedIndex, calculateTargetIndex, endDrag])
-
-  // Pointer down handler
-  const handlePointerDown = useCallback((
-    e: React.PointerEvent,
-    id: string,
-    index: number
-  ) => {
-    if (e.button !== 0) return
-    e.preventDefault()
-
-    startYRef.current = e.clientY
-    pendingRef.current = { id, index }
-
-    // Start drag immediately on any movement
-    const handleFirstMove = (moveEvent: PointerEvent) => {
-      const deltaY = Math.abs(moveEvent.clientY - startYRef.current)
-      const deltaX = Math.abs(moveEvent.clientX - e.clientX)
-
-      if (deltaY > DRAG_THRESHOLD || deltaX > DRAG_THRESHOLD) {
-        if (pendingRef.current && deltaY >= deltaX) {
-          startDrag(pendingRef.current.id, pendingRef.current.index, startYRef.current)
+        // If moved before long press, cancel drag initiation
+        if (longPressTimer.current && !state.isDragging) {
+          const moveDistance = Math.abs(e.touches[0].clientY - startY.current)
+          if (moveDistance > 10) {
+            clearTimeout(longPressTimer.current)
+            longPressTimer.current = null
+            return
+          }
         }
-        pendingRef.current = null
-        window.removeEventListener('pointermove', handleFirstMove)
-        window.removeEventListener('pointerup', handleFirstUp)
-      }
-    }
 
-    const handleFirstUp = () => {
-      pendingRef.current = null
-      window.removeEventListener('pointermove', handleFirstMove)
-      window.removeEventListener('pointerup', handleFirstUp)
-    }
-
-    window.addEventListener('pointermove', handleFirstMove)
-    window.addEventListener('pointerup', handleFirstUp)
-  }, [startDrag])
-
-  // Get handlers for a specific item
-  const getDragHandlers = useCallback((id: string, index: number): DragHandlers => ({
-    onPointerDown: (e) => handlePointerDown(e, id, index)
-  }), [handlePointerDown])
-
-  // Get styles for a specific item
-  const getItemStyle = useCallback((id: string, index: number): React.CSSProperties => {
-    const isDraggedItem = draggedId === id
-
-    if (!isDragging) {
-      return {
-        transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)',
-        transform: 'translateY(0) scale(1)',
-        touchAction: 'pan-x',
-        userSelect: 'none',
-        cursor: 'grab'
-      }
-    }
-
-    if (isDraggedItem) {
-      return {
-        position: 'relative',
-        zIndex: 1000,
-        transform: `translateY(${dragOffset}px) scale(1.03)`,
-        boxShadow: '0 12px 28px rgba(0, 0, 0, 0.2)',
-        transition: 'box-shadow 0.15s ease, scale 0.15s ease',
-        touchAction: 'none',
-        userSelect: 'none',
-        cursor: 'grabbing',
-        willChange: 'transform'
-      }
-    }
-
-    // Calculate offset for other items
-    if (draggedIndex !== null && targetIndex !== null) {
-      let offset = 0
-
-      if (draggedIndex < targetIndex) {
-        if (index > draggedIndex && index <= targetIndex) {
-          offset = -itemHeight
+        if (state.isDragging && state.draggedId === id) {
+          e.preventDefault()
+          e.stopPropagation()
+          updateDrag(e.touches[0].clientY)
         }
-      } else if (draggedIndex > targetIndex) {
-        if (index >= targetIndex && index < draggedIndex) {
-          offset = itemHeight
+      },
+      onTouchEnd: (e: TouchEvent) => {
+        e.stopPropagation()
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current)
+          longPressTimer.current = null
         }
-      }
+        const state = dragStateRef.current
+        if (state.isDragging && state.draggedId === id) {
+          endDrag()
+        }
+      },
+      onMouseDown: (e: MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        isMouseDown.current = true
+        const clientY = e.clientY
+        startY.current = clientY
 
-      return {
-        transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)',
-        transform: `translateY(${offset}px)`,
-        touchAction: 'pan-x',
-        userSelect: 'none',
-        cursor: 'grab'
-      }
+        // Immediate drag on mouse (no long press needed)
+        startDrag(id, index, clientY, groupId)
+
+        // Add global mouse listeners
+        const handleMouseMove = (e: globalThis.MouseEvent) => {
+          if (isMouseDown.current) {
+            updateDrag(e.clientY)
+          }
+        }
+        const handleMouseUp = () => {
+          isMouseDown.current = false
+          endDrag()
+          document.removeEventListener('mousemove', handleMouseMove)
+          document.removeEventListener('mouseup', handleMouseUp)
+        }
+
+        document.addEventListener('mousemove', handleMouseMove)
+        document.addEventListener('mouseup', handleMouseUp)
+      },
+      style: {
+        cursor: dragState.isDragging && dragState.draggedId === id ? 'grabbing' : 'grab',
+        touchAction: 'none' as const,
+        ...(dragState.draggedId === id ? {
+          opacity: 0.9,
+          transform: `translateY(${dragState.offsetY}px) scale(1.02)`,
+          zIndex: 100,
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+          transition: 'none',
+          background: 'var(--bg-card)'
+        } : {
+          transition: 'transform 0.2s ease'
+        })
+      } as React.CSSProperties
     }
+  }, [dragState.isDragging, dragState.draggedId, dragState.offsetY, startDrag, updateDrag, endDrag])
+
+  const getDropTargetProps = useCallback((index: number, _groupId?: string) => {
+    const isAboveDropTarget = dragState.isDragging &&
+      dragState.dropTargetIndex !== null &&
+      dragState.draggedIndex !== null &&
+      index === dragState.dropTargetIndex &&
+      index !== dragState.draggedIndex
+
+    const isBelowDraggedItem = dragState.isDragging &&
+      dragState.draggedIndex !== null &&
+      dragState.dropTargetIndex !== null &&
+      dragState.dropTargetIndex > dragState.draggedIndex &&
+      index > dragState.draggedIndex &&
+      index <= dragState.dropTargetIndex
+
+    const isAboveDraggedItem = dragState.isDragging &&
+      dragState.draggedIndex !== null &&
+      dragState.dropTargetIndex !== null &&
+      dragState.dropTargetIndex < dragState.draggedIndex &&
+      index < dragState.draggedIndex &&
+      index >= dragState.dropTargetIndex
 
     return {
-      touchAction: 'pan-x',
-      userSelect: 'none',
-      cursor: 'grab'
+      onTouchMove: (e: TouchEvent) => {
+        const state = dragStateRef.current
+        if (state.isDragging) {
+          e.preventDefault()
+          updateDrag(e.touches[0].clientY)
+        }
+      },
+      onMouseMove: (e: MouseEvent) => {
+        if (isMouseDown.current) {
+          updateDrag(e.clientY)
+        }
+      },
+      style: {
+        transition: dragState.isDragging ? 'transform 0.15s ease' : 'none',
+        ...(isBelowDraggedItem ? {
+          transform: 'translateY(-60px)'
+        } : {}),
+        ...(isAboveDraggedItem ? {
+          transform: 'translateY(60px)'
+        } : {}),
+        ...(isAboveDropTarget ? {
+          borderTop: '3px solid var(--orb-orange)'
+        } : {})
+      } as React.CSSProperties
     }
-  }, [isDragging, draggedId, draggedIndex, targetIndex, dragOffset, itemHeight])
+  }, [dragState, updateDrag])
 
   return {
-    draggedId,
-    draggedIndex,
-    targetIndex,
-    isDragging,
-    dragOffset,
-    getDragHandlers,
-    getItemStyle
+    dragState,
+    getDragHandleProps,
+    getDropTargetProps
   }
 }

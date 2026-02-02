@@ -1,6 +1,6 @@
 {
   "name": "burnout",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Energy-aware productivity app for neurodivergent users",
   "type": "module",
   "scripts": {

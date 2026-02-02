@@ -1,35 +1,38 @@
-import { useState, useCallback, CSSProperties } from 'react'
+import { useState, useCallback, useRef, CSSProperties } from 'react'
 import { AppLayout, Header } from '../components/layout'
 import { Modal, Button, Input, Toast, EmptyState } from '../components/shared'
 import { SwipeableTaskCard } from '../components/shared/SwipeableTaskCard'
 import { useTasks } from '../hooks/useTasks'
 import { useGoals } from '../hooks/useGoals'
-import type { Task, Goal } from '../data/types'
-
-// TODO: Add useDragAndDrop for reordering within goal sections
+import { useDragAndDrop } from '../hooks/useDragAndDrop'
+import type { Task } from '../data/types'
 
 /**
- * OrganizeV2 - Simplified goal-grouped task list
- * 
+ * OrganizeV2 - Pill-based list selection
+ *
  * Features:
- * - Single scrollable view with tasks grouped under goal headers
- * - Goal management via modal (gear icon)
- * - Minimal task cards (checkbox + title + optional date)
+ * - Horizontal scrollable pill toggles for list selection (Inbox, Goals, Completed)
+ * - Single list view at a time
  * - Swipe to complete/delete
- * - Long-press to drag (future)
+ * - Long-press to drag reorder (mobile) / click-drag (desktop)
+ * - Tap task text to edit
  */
 
 export function OrganizeV2Page() {
-  const { pendingTasks, completedTasks, completeTask, deleteTask, addTask } = useTasks()
+  const { pendingTasks, completedTasks, completeTask, deleteTask, updateTask, reorderTask } = useTasks()
   const { activeGoals, addGoal, deleteGoal } = useGoals()
-  const [showCompleted, setShowCompleted] = useState(false)
-  
+
+  // Selected list - 'inbox' | goalId | 'completed'
+  const [selectedList, setSelectedList] = useState<string>('inbox')
+  const pillScrollRef = useRef<HTMLDivElement>(null)
+
   const [showGoalModal, setShowGoalModal] = useState(false)
-  const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
-  const [collapsedGoals, setCollapsedGoals] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState({ message: '', type: 'success' as const, visible: false })
-  
+
+  // Edit task state
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
+  const [editingText, setEditingText] = useState('')
+
   // New goal form
   const [newGoalTitle, setNewGoalTitle] = useState('')
 
@@ -41,18 +44,27 @@ export function OrganizeV2Page() {
     return acc
   }, {} as Record<string, Task[]>)
 
-  // Toggle goal section collapse
-  const toggleGoalCollapse = (goalId: string) => {
-    setCollapsedGoals(prev => {
-      const next = new Set(prev)
-      if (next.has(goalId)) {
-        next.delete(goalId)
-      } else {
-        next.add(goalId)
-      }
-      return next
-    })
+  // Get tasks for currently selected list
+  const getSelectedTasks = (): Task[] => {
+    if (selectedList === 'completed') {
+      return completedTasks
+    }
+    return tasksByGoal[selectedList] || []
   }
+
+  const selectedTasks = getSelectedTasks()
+
+  // Drag and drop
+  const { getDragHandleProps, getDropTargetProps } = useDragAndDrop({
+    items: selectedTasks,
+    onReorder: (fromIndex, toIndex) => {
+      if (reorderTask && selectedList !== 'completed') {
+        const task = selectedTasks[fromIndex]
+        reorderTask(task.id, toIndex)
+        setToast({ message: 'Task reordered', type: 'success', visible: true })
+      }
+    }
+  })
 
   // Handle task completion
   const handleComplete = useCallback((taskId: string) => {
@@ -66,117 +78,128 @@ export function OrganizeV2Page() {
     setToast({ message: 'Task deleted', type: 'success', visible: true })
   }, [deleteTask])
 
-  // Quick add task
-  const handleQuickAdd = useCallback(() => {
-    if (!newTaskTitle.trim()) return
-    
-    addTask({
-      verbLabel: 'Do',
-      taskBody: newTaskTitle.trim(),
-      timeEstimate: 15,
-      feedLevel: 'medium',
-      goalId: selectedGoalId || undefined
-    })
-    
-    setNewTaskTitle('')
-    setToast({ message: 'Task added', type: 'success', visible: true })
-  }, [newTaskTitle, selectedGoalId, addTask])
+  // Handle tap to edit
+  const handleStartEdit = useCallback((task: Task) => {
+    setEditingTaskId(task.id)
+    setEditingText(task.taskBody)
+  }, [])
+
+  // Handle save edit
+  const handleSaveEdit = useCallback(() => {
+    if (editingTaskId && editingText.trim()) {
+      updateTask(editingTaskId, { taskBody: editingText.trim() })
+      setToast({ message: 'Task updated', type: 'success', visible: true })
+    }
+    setEditingTaskId(null)
+    setEditingText('')
+  }, [editingTaskId, editingText, updateTask])
+
+  // Handle cancel edit
+  const handleCancelEdit = useCallback(() => {
+    setEditingTaskId(null)
+    setEditingText('')
+  }, [])
 
   // Add new goal
   const handleAddGoal = useCallback(() => {
     if (!newGoalTitle.trim()) return
-    
+
     addGoal({
       title: newGoalTitle.trim(),
       timeframe: '3m',
       isActive: false
     })
-    
+
     setNewGoalTitle('')
     setToast({ message: 'Goal created', type: 'success', visible: true })
   }, [newGoalTitle, addGoal])
 
+  // Build list of pills
+  const pills: { id: string; label: string; count: number; icon?: string }[] = [
+    { id: 'inbox', label: 'Inbox', count: tasksByGoal['inbox']?.length || 0, icon: '📥' },
+    ...activeGoals.map(goal => ({
+      id: goal.id,
+      label: goal.title,
+      count: tasksByGoal[goal.id]?.length || 0,
+      icon: '🎯'
+    })),
+    { id: 'completed', label: 'Done', count: completedTasks.length, icon: '✓' }
+  ]
+
+  // Get selected list name
+  const getSelectedListName = () => {
+    if (selectedList === 'inbox') return '📥 Inbox'
+    if (selectedList === 'completed') return '✓ Completed'
+    const goal = activeGoals.find(g => g.id === selectedList)
+    return goal ? `🎯 ${goal.title}` : 'Tasks'
+  }
+
   // Styles
+  const pillContainerStyle: CSSProperties = {
+    display: 'flex',
+    gap: 'var(--space-sm)',
+    overflowX: 'auto',
+    padding: 'var(--space-sm) var(--space-xs)',
+    marginBottom: 'var(--space-md)',
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
+    WebkitOverflowScrolling: 'touch'
+  }
+
+  const pillStyle = (isSelected: boolean): CSSProperties => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-xs)',
+    padding: 'var(--space-sm) var(--space-md)',
+    borderRadius: 'var(--radius-full)',
+    background: isSelected ? 'var(--orb-orange)' : 'var(--bg-card)',
+    color: isSelected ? 'white' : 'var(--text)',
+    border: isSelected ? 'none' : '1px solid var(--border)',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    fontSize: 'var(--text-sm)',
+    fontWeight: isSelected ? 600 : 400,
+    transition: 'all 0.2s ease',
+    flexShrink: 0
+  })
+
+  const countBadgeStyle = (isSelected: boolean): CSSProperties => ({
+    background: isSelected ? 'rgba(255,255,255,0.3)' : 'var(--bg-elevated)',
+    padding: '2px 8px',
+    borderRadius: 'var(--radius-full)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 500
+  })
+
   const containerStyle: CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: 'var(--space-md)',
+    gap: 'var(--space-xs)',
     paddingBottom: 'var(--space-xl)'
   }
 
-  const goalHeaderStyle: CSSProperties = {
+  const listHeaderStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: 'var(--space-sm)',
+    justifyContent: 'space-between',
     padding: 'var(--space-sm) var(--space-md)',
-    background: 'var(--bg-card-transparent)',
-    borderRadius: 'var(--radius-md)',
-    cursor: 'pointer',
-    userSelect: 'none'
+    marginBottom: 'var(--space-sm)'
   }
 
-  const quickAddStyle: CSSProperties = {
-    display: 'flex',
-    gap: 'var(--space-sm)',
-    padding: 'var(--space-md)',
-    background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-md)',
-    position: 'sticky',
-    bottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-md))',
-    boxShadow: 'var(--shadow-card)'
-  }
-
-  const renderGoalSection = (goal: Goal | null, tasks: Task[]) => {
-    const goalId = goal?.id || 'inbox'
-    const goalTitle = goal?.title || '📥 Inbox'
-    const isCollapsed = collapsedGoals.has(goalId)
-    
-    return (
-      <div key={goalId}>
-        {/* Goal Header */}
-        <div 
-          style={goalHeaderStyle} 
-          onClick={() => toggleGoalCollapse(goalId)}
-          onKeyDown={(e) => e.key === 'Enter' && toggleGoalCollapse(goalId)}
-          role="button"
-          tabIndex={0}
-          aria-expanded={!isCollapsed}
-          aria-label={`${goalTitle} section, ${tasks.length} tasks`}
-        >
-          <span style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>
-            ▼
-          </span>
-          <span style={{ fontWeight: 600 }}>
-            {goal ? '🎯 ' : ''}{goalTitle}
-          </span>
-          <span style={{ color: 'var(--text-subtle)', marginLeft: 'auto' }}>
-            {tasks.length}
-          </span>
-        </div>
-        
-        {/* Tasks */}
-        {!isCollapsed && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
-            {tasks.map(task => (
-              <SwipeableTaskCard
-                key={task.id}
-                task={task}
-                onComplete={handleComplete}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    )
+  const dragHintStyle: CSSProperties = {
+    fontSize: 'var(--text-xs)',
+    color: 'var(--text-subtle)',
+    textAlign: 'center',
+    padding: 'var(--space-sm)',
+    marginBottom: 'var(--space-sm)'
   }
 
   return (
     <AppLayout>
-      <Header 
-        title="Organize" 
+      <Header
+        title="Organize"
         rightAction={
-          <button 
+          <button
             onClick={() => setShowGoalModal(true)}
             style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
             aria-label="Manage goals"
@@ -185,115 +208,198 @@ export function OrganizeV2Page() {
           </button>
         }
       />
-      
-      <main style={containerStyle}>
-        {/* Goals with tasks */}
-        {activeGoals.map(goal => 
-          tasksByGoal[goal.id] && renderGoalSection(goal, tasksByGoal[goal.id])
-        )}
-        
-        {/* Goals without tasks (show empty) */}
-        {activeGoals
-          .filter(goal => !tasksByGoal[goal.id])
-          .map(goal => renderGoalSection(goal, []))
-        }
-        
-        {/* Inbox (tasks without goals) */}
-        {tasksByGoal['inbox'] && renderGoalSection(null, tasksByGoal['inbox'])}
-        
-        {/* Completed tasks (collapsible) */}
-        {completedTasks.length > 0 && (
-          <div>
-            <div 
-              style={{
-                ...goalHeaderStyle,
-                opacity: 0.7
-              }} 
-              onClick={() => setShowCompleted(!showCompleted)}
-              onKeyDown={(e) => e.key === 'Enter' && setShowCompleted(!showCompleted)}
-              role="button"
-              tabIndex={0}
-              aria-expanded={showCompleted}
-              aria-label={`Completed tasks section, ${completedTasks.length} tasks`}
+
+      <main>
+        {/* Pill Toggle Bar */}
+        <div
+          ref={pillScrollRef}
+          style={pillContainerStyle}
+          className="hide-scrollbar"
+        >
+          {pills.map(pill => (
+            <button
+              key={pill.id}
+              style={pillStyle(selectedList === pill.id)}
+              onClick={() => setSelectedList(pill.id)}
+              aria-pressed={selectedList === pill.id}
             >
-              <span style={{ transform: showCompleted ? 'rotate(0)' : 'rotate(-90deg)', transition: 'transform 0.2s' }}>
-                ▼
-              </span>
-              <span style={{ fontWeight: 600 }}>
-                ✓ Completed
-              </span>
-              <span style={{ color: 'var(--text-subtle)', marginLeft: 'auto' }}>
-                {completedTasks.length}
-              </span>
-            </div>
-            
-            {showCompleted && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
-                {completedTasks.slice(0, 10).map(task => (
-                  <div 
-                    key={task.id} 
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-sm)',
-                      padding: 'var(--space-sm) var(--space-md)',
-                      marginLeft: 'var(--space-md)',
-                      opacity: 0.6,
-                      textDecoration: 'line-through'
-                    }}
-                  >
-                    <span style={{ color: 'var(--success)' }}>✓</span>
-                    <span>{task.taskBody}</span>
-                  </div>
-                ))}
-                {completedTasks.length > 10 && (
-                  <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
-                    +{completedTasks.length - 10} more completed
-                  </p>
-                )}
-              </div>
-            )}
+              {pill.icon && <span>{pill.icon}</span>}
+              <span>{pill.label}</span>
+              {pill.count > 0 && (
+                <span style={countBadgeStyle(selectedList === pill.id)}>
+                  {pill.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* List Header */}
+        <div style={listHeaderStyle}>
+          <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--text)' }}>
+            {getSelectedListName()}
+          </h2>
+          <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+            {selectedTasks.length} {selectedTasks.length === 1 ? 'task' : 'tasks'}
+          </span>
+        </div>
+
+        {/* Drag hint */}
+        {selectedTasks.length > 1 && selectedList !== 'completed' && (
+          <div style={dragHintStyle}>
+            💡 Drag the ⋮⋮ handle to reorder
           </div>
         )}
-        
-        {/* Empty state */}
-        {pendingTasks.length === 0 && (
-          <EmptyState variant="tasks" />
-        )}
-      </main>
 
-      {/* Quick Add Bar */}
-      <div style={quickAddStyle}>
-        <select
-          value={selectedGoalId || ''}
-          onChange={(e) => setSelectedGoalId(e.target.value || null)}
-          style={{
-            padding: 'var(--space-sm)',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border)',
-            background: 'var(--bg-card)',
-            color: 'var(--text)',
-            fontSize: 'var(--text-sm)',
-            minWidth: 80
-          }}
-          aria-label="Select goal for new task"
-        >
-          <option value="">📥 Inbox</option>
-          {activeGoals.map(goal => (
-            <option key={goal.id} value={goal.id}>🎯 {goal.title}</option>
-          ))}
-        </select>
-        <Input
-          value={newTaskTitle}
-          onChange={(value) => setNewTaskTitle(value)}
-          placeholder="What do you need to do?"
-          onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd()}
-          style={{ flex: 1 }}
-        />
-        <Button onClick={handleQuickAdd} disabled={!newTaskTitle.trim()}>
-          Add
-        </Button>
-      </div>
+        {/* Task List */}
+        <div style={containerStyle}>
+          {selectedTasks.map((task, index) => {
+            const dragProps = getDragHandleProps(task.id, index, selectedList)
+            const dropProps = getDropTargetProps(index, selectedList)
+            const isEditing = editingTaskId === task.id
+
+            return (
+              <div
+                key={task.id}
+                style={{
+                  ...dropProps.style,
+                  ...dragProps.style,
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                onTouchMove={dropProps.onTouchMove}
+                onMouseMove={dropProps.onMouseMove}
+              >
+                {/* Drag handle (not for completed) */}
+                {selectedList !== 'completed' && (
+                  <div
+                    style={{
+                      width: 44,
+                      height: 48,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'grab',
+                      color: 'var(--text-subtle)',
+                      fontSize: 'var(--text-lg)',
+                      flexShrink: 0,
+                      touchAction: 'none',
+                      userSelect: 'none'
+                    }}
+                    onTouchStart={dragProps.onTouchStart}
+                    onTouchMove={dragProps.onTouchMove}
+                    onTouchEnd={dragProps.onTouchEnd}
+                    onMouseDown={dragProps.onMouseDown}
+                  >
+                    ⋮⋮
+                  </div>
+                )}
+
+                {/* Task card or edit mode */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {isEditing ? (
+                    <div style={{
+                      display: 'flex',
+                      gap: 'var(--space-sm)',
+                      padding: 'var(--space-md)',
+                      background: 'var(--bg-card)',
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <input
+                        type="text"
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveEdit()
+                          if (e.key === 'Escape') handleCancelEdit()
+                        }}
+                        autoFocus
+                        style={{
+                          flex: 1,
+                          padding: 'var(--space-sm)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          fontSize: 'var(--text-md)'
+                        }}
+                      />
+                      <button
+                        onClick={handleSaveEdit}
+                        style={{
+                          padding: 'var(--space-sm)',
+                          background: 'var(--orb-orange)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 'var(--radius-sm)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        style={{
+                          padding: 'var(--space-sm)',
+                          background: 'var(--bg-elevated)',
+                          color: 'var(--text)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-sm)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : selectedList === 'completed' ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--space-sm)',
+                        padding: 'var(--space-sm) var(--space-md)',
+                        marginLeft: 'var(--space-md)',
+                        opacity: 0.6,
+                        textDecoration: 'line-through'
+                      }}
+                    >
+                      <span style={{ color: 'var(--success)' }}>✓</span>
+                      <span>{task.taskBody}</span>
+                    </div>
+                  ) : (
+                    <SwipeableTaskCard
+                      task={task}
+                      onComplete={handleComplete}
+                      onDelete={handleDelete}
+                      onEdit={handleStartEdit}
+                    />
+                  )}
+                </div>
+              </div>
+            )
+          })}
+
+          {/* Empty state */}
+          {selectedTasks.length === 0 && (
+            <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+              {selectedList === 'completed' ? (
+                <p style={{ color: 'var(--text-muted)' }}>
+                  No completed tasks yet
+                </p>
+              ) : selectedList === 'inbox' ? (
+                <EmptyState variant="tasks" />
+              ) : (
+                <p style={{ color: 'var(--text-muted)' }}>
+                  No tasks for this goal yet.<br />
+                  <span style={{ fontSize: 'var(--text-sm)' }}>Use the + button to add one!</span>
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
 
       {/* Goal Management Modal */}
       <Modal isOpen={showGoalModal} onClose={() => setShowGoalModal(false)} title="Your Goals">
@@ -305,6 +411,10 @@ export function OrganizeV2Page() {
                 onClick={() => {
                   deleteGoal(goal.id)
                   setToast({ message: 'Goal deleted', type: 'success', visible: true })
+                  // Switch to inbox if we deleted the selected goal
+                  if (selectedList === goal.id) {
+                    setSelectedList('inbox')
+                  }
                 }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               >
@@ -312,13 +422,13 @@ export function OrganizeV2Page() {
               </button>
             </div>
           ))}
-          
+
           {activeGoals.length === 0 && (
             <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
               No goals yet. Create one below!
             </p>
           )}
-          
+
           <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
             <Input
               value={newGoalTitle}

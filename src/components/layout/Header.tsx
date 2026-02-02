@@ -1,6 +1,6 @@
 import { ReactNode, CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { BurnoutMode } from '../../data/types'
+import type { BurnoutMode, EnergyLevel } from '../../data/types'
 
 interface HeaderProps {
   title?: string
@@ -13,10 +13,25 @@ interface HeaderProps {
   objective?: string
   onObjectiveClick?: () => void
   burnoutMode?: BurnoutMode
+  energyLevel?: EnergyLevel
   onFlameClick?: () => void
 }
 
-export function Header({ title, showBack = false, rightAction, showLogo = false, showDate = false, subtitle, subtitleBadge = false, objective, onObjectiveClick, burnoutMode = 'balanced', onFlameClick }: HeaderProps) {
+// Get energy color based on level and burnout mode
+function getEnergyColor(energy: EnergyLevel, burnoutMode: BurnoutMode) {
+  if (burnoutMode === 'recovery') {
+    return '#6B7280' // Gray for recovery mode
+  }
+  switch (energy) {
+    case 1: return '#6B7280' // Gray (depleted)
+    case 2: return '#F59E0B' // Amber (low)
+    case 3: return '#F97316' // Orange (okay)
+    case 4: return '#EA580C' // Deep orange (good)
+    case 5: return '#DC2626' // Red-orange (charged)
+  }
+}
+
+export function Header({ title, showBack = false, rightAction, showLogo = false, showDate = false, subtitle, subtitleBadge = false, objective, onObjectiveClick, burnoutMode = 'balanced', energyLevel = 3, onFlameClick }: HeaderProps) {
   const navigate = useNavigate()
 
   const now = new Date()
@@ -40,33 +55,51 @@ export function Header({ title, showBack = false, rightAction, showLogo = false,
       <header className="app-header">
         <div className="header-top">
           <span className="logo" onClick={() => navigate('/now')} style={{ cursor: 'pointer' }}>BurnOut</span>
-          <button 
-            className="header-flame" 
-            title={`Burnout mode: ${burnoutMode}`}
+          <button
+            className="header-energy"
+            title={`Energy: ${energyLevel}/5 • Tap to change`}
             onClick={onFlameClick}
-            style={{ 
+            style={{
               cursor: onFlameClick ? 'pointer' : 'default',
-              opacity: burnoutMode === 'recovery' ? 0.4 : burnoutMode === 'prevention' ? 0.7 : 1,
-              transform: burnoutMode === 'recovery' ? 'scale(0.85)' : 'scale(1)',
+              opacity: burnoutMode === 'recovery' ? 0.7 : 1,
+              background: 'none',
+              border: 'none',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
               transition: 'all 0.3s ease'
             }}
           >
-            <svg viewBox="0 0 24 24" fill="none">
-              <defs>
-                <linearGradient id="flameGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor={burnoutMode === 'recovery' ? '#6B7280' : 'var(--orb-red)'} />
-                  <stop offset="50%" stopColor={burnoutMode === 'recovery' ? '#9CA3AF' : 'var(--orb-orange)'} />
-                  <stop offset="100%" stopColor={burnoutMode === 'recovery' ? '#D1D5DB' : 'var(--orb-magenta)'} />
-                </linearGradient>
-              </defs>
-              <path
-                d="M12 2C12 2 6.5 9 6.5 14C6.5 17.5 9 20 12 21C15 20 17.5 17.5 17.5 14C17.5 9 12 2 12 2Z"
-                fill="url(#flameGradient)"
+            {/* Simple battery icon showing energy level */}
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+              {/* Battery outline */}
+              <rect
+                x="3"
+                y="6"
+                width="16"
+                height="12"
+                rx="2"
+                stroke={getEnergyColor(energyLevel, burnoutMode)}
+                strokeWidth="2"
+                fill="none"
               />
-              <path
-                d="M12 8C12 8 9.5 12 9.5 15C9.5 17 10.5 18.5 12 19C13.5 18.5 14.5 17 14.5 15C14.5 12 12 8 12 8Z"
-                fill={burnoutMode === 'recovery' ? '#9CA3AF' : 'var(--orb-orange)'}
-                opacity="0.8"
+              {/* Battery tip */}
+              <rect
+                x="19"
+                y="9"
+                width="2"
+                height="6"
+                rx="0.5"
+                fill={getEnergyColor(energyLevel, burnoutMode)}
+              />
+              {/* Battery fill - width based on energy (1-5 maps to 2-12) */}
+              <rect
+                x="5"
+                y="8"
+                width={2 + (energyLevel - 1) * 2.5}
+                height="8"
+                rx="1"
+                fill={getEnergyColor(energyLevel, burnoutMode)}
               />
             </svg>
           </button>

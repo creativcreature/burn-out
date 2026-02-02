@@ -60,13 +60,13 @@ export function Modal({ isOpen, onClose, title, children, showClose = true }: Mo
     background: 'var(--bg-alt)',
     borderRadius: 'var(--radius-xl)',
     padding: 'var(--space-xl)',
-    maxWidth: 480,
+    maxWidth: 'min(430px, calc(100% - var(--space-md) * 2))',
     width: '100%',
     maxHeight: '90vh',
     overflow: 'auto',
     boxShadow: '0 25px 80px rgba(0, 0, 0, 0.4)',
-    animation: isExiting 
-      ? 'modal-slide-out 200ms var(--spring-smooth) forwards' 
+    animation: isExiting
+      ? 'modal-slide-out 200ms var(--spring-smooth) forwards'
       : 'modal-slide-in 300ms var(--spring-bounce)'
   }
 

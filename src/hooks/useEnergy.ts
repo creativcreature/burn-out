@@ -18,14 +18,19 @@ export function useEnergy() {
       setEnergyDefaults(data.user.energyDefaults)
       setBurnoutMode(data.user.burnoutMode)
 
-      // Set current energy based on time of day
-      const hour = new Date().getHours()
-      if (hour >= 6 && hour < 12) {
-        setCurrentEnergy(data.user.energyDefaults.morning)
-      } else if (hour >= 12 && hour < 17) {
-        setCurrentEnergy(data.user.energyDefaults.afternoon)
+      // Load persisted energy, or fall back to time-of-day default
+      if (data.user.currentEnergy) {
+        setCurrentEnergy(data.user.currentEnergy)
       } else {
-        setCurrentEnergy(data.user.energyDefaults.evening)
+        // Set current energy based on time of day
+        const hour = new Date().getHours()
+        if (hour >= 6 && hour < 12) {
+          setCurrentEnergy(data.user.energyDefaults.morning)
+        } else if (hour >= 12 && hour < 17) {
+          setCurrentEnergy(data.user.energyDefaults.afternoon)
+        } else {
+          setCurrentEnergy(data.user.energyDefaults.evening)
+        }
       }
 
       // Calculate momentum (tasks completed today)
@@ -48,6 +53,20 @@ export function useEnergy() {
 
   const setEnergy = useCallback(async (level: EnergyLevel) => {
     setCurrentEnergy(level)
+    // Persist energy to storage
+    await updateData(data => ({
+      ...data,
+      user: { ...data.user, currentEnergy: level }
+    }))
+  }, [])
+
+  // Set burnout mode and persist to storage
+  const setBurnoutModeState = useCallback(async (mode: BurnoutMode) => {
+    setBurnoutMode(mode)
+    await updateData(data => ({
+      ...data,
+      user: { ...data.user, burnoutMode: mode }
+    }))
   }, [])
 
   const updateDefaults = useCallback(async (defaults: typeof energyDefaults) => {
@@ -129,20 +148,37 @@ export function useEnergy() {
   }, [currentEnergy, momentum, burnoutMode, getCurrentTimeOfDay])
 
   const sortTasksByEnergy = useCallback((tasks: Task[]): Task[] => {
-    let filtered = [...tasks]
-    
-    // In recovery mode, filter out high energy tasks entirely
-    if (burnoutMode === 'recovery') {
-      filtered = filtered.filter(t => t.feedLevel !== 'high')
-    }
-    
-    return filtered.sort((a, b) => getTaskScore(b) - getTaskScore(a))
-  }, [getTaskScore, burnoutMode])
+    // Sort tasks by energy-aware scoring (filtering is done separately in Now.tsx)
+    return [...tasks].sort((a, b) => getTaskScore(b) - getTaskScore(a))
+  }, [getTaskScore])
 
   const getSuggestedTask = useCallback((tasks: Task[]): Task | null => {
     const sorted = sortTasksByEnergy(tasks.filter(t => t.status === 'pending'))
     return sorted[0] || null
   }, [sortTasksByEnergy])
+
+  // Get tasks appropriate for burnout mode (max 3, gentlest tasks)
+  const getBurnoutTasks = useCallback((tasks: Task[], limit = 3): Task[] => {
+    const pending = tasks.filter(t => t.status === 'pending')
+
+    // Filter for gentle tasks: low energy, short duration
+    const gentleTasks = pending.filter(t =>
+      t.feedLevel !== 'high' && t.timeEstimate <= 30
+    )
+
+    // Sort by gentleness: prefer low energy, then short time
+    const sorted = gentleTasks.sort((a, b) => {
+      // Prefer low over medium energy
+      const energyOrder = { low: 0, medium: 1, high: 2 }
+      const energyDiff = energyOrder[a.feedLevel] - energyOrder[b.feedLevel]
+      if (energyDiff !== 0) return energyDiff
+
+      // Then prefer shorter tasks
+      return a.timeEstimate - b.timeEstimate
+    })
+
+    return sorted.slice(0, limit)
+  }, [])
 
   // Get a message about current burnout mode
   const getBurnoutModeMessage = useCallback((): string | null => {
@@ -198,6 +234,7 @@ export function useEnergy() {
     energyDefaults,
     getEnergyLabel,
     setEnergy,
+    setBurnoutMode: setBurnoutModeState,
     updateDefaults,
     getCurrentTimeOfDay,
     getGreeting,
@@ -206,6 +243,7 @@ export function useEnergy() {
     refreshMomentum,
     getTaskScore,
     sortTasksByEnergy,
-    getSuggestedTask
+    getSuggestedTask,
+    getBurnoutTasks
   }
 }

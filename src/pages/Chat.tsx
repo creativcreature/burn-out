@@ -78,7 +78,10 @@ export function ChatPage() {
     height: '100%',
     flex: 1,
     minHeight: 0,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    width: '100%',
+    maxWidth: '430px',
+    margin: '0 auto'
   }
 
   const messagesStyle: CSSProperties = {
@@ -89,7 +92,8 @@ export function ChatPage() {
     paddingBottom: 'calc(100px + var(--safe-bottom))',
     display: 'flex',
     flexDirection: 'column',
-    gap: 'var(--space-md)'
+    gap: 'var(--space-md)',
+    width: '100%'
   }
 
   const bubbleStyle = (isUser: boolean): CSSProperties => ({

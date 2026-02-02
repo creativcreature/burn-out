@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, TouchEvent } from 'react'
+import { useState, useRef, useCallback, TouchEvent, MouseEvent } from 'react'
 
 interface SwipeConfig {
   threshold?: number // How far to swipe before triggering action (0-1)
@@ -11,6 +11,10 @@ interface SwipeHandlers {
   onTouchStart: (e: TouchEvent) => void
   onTouchMove: (e: TouchEvent) => void
   onTouchEnd: (e: TouchEvent) => void
+  onMouseDown: (e: MouseEvent) => void
+  onMouseMove: (e: MouseEvent) => void
+  onMouseUp: (e: MouseEvent) => void
+  onMouseLeave: (e: MouseEvent) => void
 }
 
 interface UseSwipeReturn {
@@ -21,8 +25,8 @@ interface UseSwipeReturn {
 }
 
 /**
- * Reusable swipe gesture hook
- * Returns normalized swipeX (-1 to 1) and touch handlers
+ * Reusable swipe gesture hook with mouse + touch support
+ * Returns normalized swipeX (-1 to 1) and handlers
  */
 export function useSwipe(config: SwipeConfig = {}): UseSwipeReturn {
   const {
@@ -34,63 +38,64 @@ export function useSwipe(config: SwipeConfig = {}): UseSwipeReturn {
 
   const [swipeX, setSwipeX] = useState(0)
   const [isSwiping, setIsSwiping] = useState(false)
-  
-  const touchStartX = useRef(0)
-  const touchStartY = useRef(0)
-  const lastTouchX = useRef(0)
+
+  const startX = useRef(0)
+  const startY = useRef(0)
+  const lastX = useRef(0)
   const lastTime = useRef(0)
   const velocity = useRef(0)
-  const isHorizontalSwipe = useRef(false)
+  const isHorizontal = useRef<boolean | null>(null)
+  const isActive = useRef(false)
 
   const reset = useCallback(() => {
     setSwipeX(0)
     setIsSwiping(false)
-    isHorizontalSwipe.current = false
+    isHorizontal.current = null
     velocity.current = 0
+    isActive.current = false
   }, [])
 
-  const onTouchStart = useCallback((e: TouchEvent) => {
-    const touch = e.touches[0]
-    touchStartX.current = touch.clientX
-    touchStartY.current = touch.clientY
-    lastTouchX.current = touch.clientX
+  const handleStart = useCallback((clientX: number, clientY: number) => {
+    startX.current = clientX
+    startY.current = clientY
+    lastX.current = clientX
     lastTime.current = Date.now()
-    isHorizontalSwipe.current = false
+    isHorizontal.current = null
+    isActive.current = true
     setIsSwiping(true)
   }, [])
 
-  const onTouchMove = useCallback((e: TouchEvent) => {
-    if (!isSwiping) return
+  const handleMove = useCallback((clientX: number, clientY: number, preventDefault?: () => void) => {
+    if (!isActive.current) return
 
-    const touch = e.touches[0]
-    const deltaX = touch.clientX - touchStartX.current
-    const deltaY = touch.clientY - touchStartY.current
+    const deltaX = clientX - startX.current
+    const deltaY = clientY - startY.current
     const now = Date.now()
     const dt = now - lastTime.current
 
     // Calculate velocity
     if (dt > 0) {
-      velocity.current = (touch.clientX - lastTouchX.current) / dt
+      velocity.current = (clientX - lastX.current) / dt
     }
-    lastTouchX.current = touch.clientX
+    lastX.current = clientX
     lastTime.current = now
 
-    // Determine if horizontal swipe (only on first significant movement)
-    if (!isHorizontalSwipe.current && (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10)) {
-      isHorizontalSwipe.current = Math.abs(deltaX) > Math.abs(deltaY)
+    // Determine direction on first significant movement
+    if (isHorizontal.current === null && (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10)) {
+      isHorizontal.current = Math.abs(deltaX) > Math.abs(deltaY)
     }
 
-    // Only update swipeX if it's a horizontal swipe
-    if (isHorizontalSwipe.current) {
-      e.preventDefault() // Prevent scroll
-      // Normalize to -1 to 1 (100px = full swipe)
+    // Only handle horizontal swipes
+    if (isHorizontal.current) {
+      preventDefault?.()
       const normalized = Math.max(-1, Math.min(1, deltaX / 100))
       setSwipeX(normalized)
     }
-  }, [isSwiping])
+  }, [])
 
-  const onTouchEnd = useCallback(() => {
-    if (!isSwiping) return
+  const handleEnd = useCallback(() => {
+    if (!isActive.current) return
+    isActive.current = false
 
     const absSwipe = Math.abs(swipeX)
     const absVelocity = Math.abs(velocity.current)
@@ -104,18 +109,51 @@ export function useSwipe(config: SwipeConfig = {}): UseSwipeReturn {
       }
     }
 
-    // Reset after animation
-    setTimeout(reset, 200)
-  }, [isSwiping, swipeX, threshold, velocityThreshold, onSwipeLeft, onSwipeRight, reset])
+    // Reset after brief delay
+    setTimeout(reset, 150)
+  }, [swipeX, threshold, velocityThreshold, onSwipeLeft, onSwipeRight, reset])
+
+  const handlers: SwipeHandlers = {
+    // Touch events
+    onTouchStart: useCallback((e: TouchEvent) => {
+      handleStart(e.touches[0].clientX, e.touches[0].clientY)
+    }, [handleStart]),
+
+    onTouchMove: useCallback((e: TouchEvent) => {
+      handleMove(e.touches[0].clientX, e.touches[0].clientY, () => e.preventDefault())
+    }, [handleMove]),
+
+    onTouchEnd: useCallback(() => {
+      handleEnd()
+    }, [handleEnd]),
+
+    // Mouse events (for desktop)
+    onMouseDown: useCallback((e: MouseEvent) => {
+      e.preventDefault()
+      handleStart(e.clientX, e.clientY)
+    }, [handleStart]),
+
+    onMouseMove: useCallback((e: MouseEvent) => {
+      if (isActive.current) {
+        handleMove(e.clientX, e.clientY)
+      }
+    }, [handleMove]),
+
+    onMouseUp: useCallback(() => {
+      handleEnd()
+    }, [handleEnd]),
+
+    onMouseLeave: useCallback(() => {
+      if (isActive.current) {
+        handleEnd()
+      }
+    }, [handleEnd])
+  }
 
   return {
     swipeX,
     isSwiping,
-    handlers: {
-      onTouchStart,
-      onTouchMove,
-      onTouchEnd
-    },
+    handlers,
     reset
   }
 }

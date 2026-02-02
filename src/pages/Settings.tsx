@@ -366,6 +366,29 @@ export function SettingsPage() {
                 variant="secondary"
                 fullWidth
                 onClick={async () => {
+                  const data = await getData()
+                  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `burnout-backup-${new Date().toISOString().split('T')[0]}.json`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+              >
+                Export Data
+              </Button>
+              <p style={descStyle}>
+                Download all your data as a JSON file for backup.
+              </p>
+            </div>
+          </Card>
+          <Card>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+              <Button
+                variant="secondary"
+                fullWidth
+                onClick={async () => {
                   if (confirm('Load sample data? This will replace your current data with demo content.')) {
                     await seedSampleData()
                     // Navigate to Now page to refresh all hooks with new data
@@ -402,7 +425,7 @@ export function SettingsPage() {
 
         <Card>
           <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-            <p style={{ marginBottom: 'var(--space-sm)' }}>BurnOut v0.3.0</p>
+            <p style={{ marginBottom: 'var(--space-sm)' }}>BurnOut v1.0.0</p>
             <p style={{ fontSize: 'var(--text-xs)' }}>
               Work with your energy, not against it.
             </p>

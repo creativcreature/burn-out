@@ -19,6 +19,7 @@ export interface UserProfile {
   id: string
   createdAt: string
   burnoutMode: BurnoutMode
+  currentEnergy?: EnergyLevel  // Currently set energy level (persisted)
   energyDefaults: {
     morning: EnergyLevel
     afternoon: EnergyLevel

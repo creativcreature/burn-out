@@ -1,113 +1,122 @@
 import { useState, useEffect, CSSProperties } from 'react'
+import { AppLayout } from '../components/layout'
 import { addJournalEntry, getJournalEntryByDate, getRecentJournalEntries } from '../utils/storage'
 import type { JournalEntry } from '../data/types'
 
 /**
  * Reflections Page - One Year App Clone
- * A garden that grows with your memories
- * - Dark navy background
- * - 365 day grid (one cell per day)
- * - Hand-drawn plants on days with entries
- * - Tap to view/edit memories
+ *
+ * Key features from One Year:
+ * - Light gray background (not dark navy)
+ * - Horizontal scrollable row of hand-drawn plants for recent days
+ * - "today" pill badge at top, centered
+ * - Hand-drawn circle + button in center with "plant memory" text
+ * - Very minimal, lots of whitespace
+ * - Bottom nav with two icons
  */
 
-// Simple hand-drawn plant SVGs
-const PlantSVGs = {
-  flower1: (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 38V22" stroke="#8B9A46" strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="20" cy="15" r="6" fill="#F4A261"/>
-      <circle cx="20" cy="15" r="3" fill="#E9C46A"/>
-      <path d="M14 22c-3-2-4-6-2-9" stroke="#8B9A46" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M26 22c3-2 4-6 2-9" stroke="#8B9A46" strokeWidth="1.5" strokeLinecap="round"/>
+// Simple hand-drawn plant SVGs - style matches One Year's blue line drawings
+const PlantSVGs: Record<string, JSX.Element> = {
+  flower: (
+    <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 48V28" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="20" cy="18" r="8" stroke="#4F46E5" strokeWidth="2" fill="none"/>
+      <circle cx="20" cy="18" r="3" fill="#4F46E5"/>
+      <path d="M12 25c-4-2-5-8-2-12" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M28 25c4-2 5-8 2-12" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   ),
   tulip: (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 38V20" stroke="#6B8E23" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M20 8c-4 0-7 4-7 10h14c0-6-3-10-7-10z" fill="#E76F51"/>
-      <path d="M15 18c0-4 2-7 5-8" stroke="#E76F51" strokeWidth="1" opacity="0.5"/>
-    </svg>
-  ),
-  sprout: (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 38V28" stroke="#6B8E23" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M20 28c-5-3-6-8-4-12 3 2 6 6 4 12z" fill="#8B9A46"/>
-      <path d="M20 28c5-3 6-8 4-12-3 2-6 6-4 12z" fill="#9CAF45"/>
-    </svg>
-  ),
-  daisy: (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 38V22" stroke="#6B8E23" strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="20" cy="14" r="4" fill="#E9C46A"/>
-      <ellipse cx="20" cy="6" rx="3" ry="5" fill="white"/>
-      <ellipse cx="12" cy="14" rx="5" ry="3" fill="white"/>
-      <ellipse cx="28" cy="14" rx="5" ry="3" fill="white"/>
-      <ellipse cx="20" cy="22" rx="3" ry="5" fill="white"/>
+    <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 48V24" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 8c-6 0-10 6-10 14h20c0-8-4-14-10-14z" stroke="#4F46E5" strokeWidth="2" fill="none"/>
+      <path d="M14 20c0-6 3-10 6-11" stroke="#4F46E5" strokeWidth="1" opacity="0.5"/>
     </svg>
   ),
   mushroom: (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M17 38V28h6v10" stroke="#D4A574" strokeWidth="2" fill="#E8D4B8"/>
-      <path d="M8 28c0-8 5-14 12-14s12 6 12 14H8z" fill="#E76F51"/>
-      <circle cx="14" cy="22" r="2" fill="white" opacity="0.8"/>
-      <circle cx="24" cy="20" r="2.5" fill="white" opacity="0.8"/>
-      <circle cx="20" cy="25" r="1.5" fill="white" opacity="0.8"/>
+    <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 48V36h8v12" stroke="#4F46E5" strokeWidth="2"/>
+      <path d="M6 36c0-12 6-20 14-20s14 8 14 20H6z" stroke="#4F46E5" strokeWidth="2" fill="none"/>
+      <circle cx="14" cy="28" r="2" fill="#4F46E5"/>
+      <circle cx="24" cy="26" r="2.5" fill="#4F46E5"/>
+      <circle cx="20" cy="32" r="1.5" fill="#4F46E5"/>
     </svg>
   ),
-  cactus: (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="16" y="14" width="8" height="24" rx="4" fill="#6B8E23"/>
-      <rect x="6" y="22" width="10" height="6" rx="3" fill="#8B9A46"/>
-      <rect x="24" y="18" width="10" height="6" rx="3" fill="#8B9A46"/>
+  cherries: (
+    <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 10c-4 8-12 12-12 24" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 10c4 8 12 12 12 24" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="8" cy="38" r="6" stroke="#4F46E5" strokeWidth="2" fill="none"/>
+      <circle cx="32" cy="38" r="6" stroke="#4F46E5" strokeWidth="2" fill="none"/>
     </svg>
   ),
   tree: (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M18 38V26h4v12" fill="#8B7355"/>
-      <path d="M20 6l-12 20h24L20 6z" fill="#6B8E23"/>
-      <path d="M20 10l-8 12h16L20 10z" fill="#8B9A46"/>
+    <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M18 48V34h4v14" stroke="#4F46E5" strokeWidth="2"/>
+      <path d="M20 6l-14 28h28L20 6z" stroke="#4F46E5" strokeWidth="2" fill="none"/>
+      <path d="M20 12l-8 16h16L20 12z" stroke="#4F46E5" strokeWidth="1.5" fill="none"/>
     </svg>
   ),
   fern: (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 38V20" stroke="#6B8E23" strokeWidth="2"/>
-      <path d="M20 20c-8-2-10-8-8-14 4 4 8 10 8 14z" fill="#8B9A46"/>
-      <path d="M20 25c8-2 10-8 8-14-4 4-8 10-8 14z" fill="#6B8E23"/>
-      <path d="M20 30c-6-1-8-5-6-10 3 3 6 7 6 10z" fill="#9CAF45"/>
+    <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 48V24" stroke="#4F46E5" strokeWidth="2"/>
+      <path d="M20 24c-10-2-14-10-10-18 6 6 10 14 10 18z" stroke="#4F46E5" strokeWidth="2" fill="none"/>
+      <path d="M20 30c10-2 14-10 10-18-6 6-10 14-10 18z" stroke="#4F46E5" strokeWidth="2" fill="none"/>
+    </svg>
+  ),
+  sprout: (
+    <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 48V32" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 32c-8-4-10-12-6-18 4 4 8 12 6 18z" stroke="#4F46E5" strokeWidth="2" fill="none"/>
+      <path d="M20 32c8-4 10-12 6-18-4 4-8 12-6 18z" stroke="#4F46E5" strokeWidth="2" fill="none"/>
+    </svg>
+  ),
+  grass: (
+    <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 48c0-20 2-30 8-38" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 48c0-16 1-24 0-36" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M28 48c0-20-2-30-8-38" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )
 }
 
-const plantKeys = Object.keys(PlantSVGs) as (keyof typeof PlantSVGs)[]
+const plantKeys = Object.keys(PlantSVGs)
 
-// Get a consistent plant for a given day
-function getPlantForDay(dayOfYear: number): keyof typeof PlantSVGs {
+// Get consistent plant for a day
+function getPlantForDay(dayOfYear: number): string {
   return plantKeys[dayOfYear % plantKeys.length]
 }
 
-// Get day of year (1-366)
+// Get day of year
 function getDayOfYear(date: Date): number {
   const start = new Date(date.getFullYear(), 0, 0)
   const diff = date.getTime() - start.getTime()
   return Math.floor(diff / (1000 * 60 * 60 * 24))
 }
 
-// Generate all days of the year
-function generateYearDays(year: number): Date[] {
-  const days: Date[] = []
-  const startDate = new Date(year, 0, 1)
-  const endDate = new Date(year, 11, 31)
-  
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-    days.push(new Date(d))
-  }
-  return days
-}
-
 // Format date as YYYY-MM-DD
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0]
+}
+
+// Format date for display (like "01.11.2026")
+function formatDateDisplay(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${month}.${day}.${year}`
+}
+
+// Get last N days
+function getRecentDays(count: number): Date[] {
+  const days: Date[] = []
+  const today = new Date()
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    days.push(d)
+  }
+  return days
 }
 
 export function ReflectionsPage() {
@@ -116,13 +125,12 @@ export function ReflectionsPage() {
   const [entryText, setEntryText] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [journalEntries, setJournalEntries] = useState<Record<string, JournalEntry>>({})
-  const [year] = useState(new Date().getFullYear())
 
   const today = new Date()
   const todayStr = formatDate(today)
-  const yearDays = generateYearDays(year)
+  const recentDays = getRecentDays(7) // Show last 7 days in horizontal row
 
-  // Load all journal entries
+  // Load journal entries
   useEffect(() => {
     getRecentJournalEntries(366).then(entries => {
       const byDate: Record<string, JournalEntry> = {}
@@ -133,12 +141,11 @@ export function ReflectionsPage() {
     })
   }, [])
 
-  // Handle day selection
+  // Handle day click
   const handleDayClick = async (date: Date) => {
     const dateStr = formatDate(date)
     setSelectedDate(date)
-    
-    // Check if entry exists
+
     const entry = journalEntries[dateStr] || await getJournalEntryByDate(dateStr)
     if (entry) {
       setSelectedEntry(entry)
@@ -147,7 +154,7 @@ export function ReflectionsPage() {
       setSelectedEntry(null)
       setEntryText('')
     }
-    
+
     // Only allow editing today
     setIsEditing(dateStr === todayStr)
   }
@@ -155,269 +162,254 @@ export function ReflectionsPage() {
   // Save entry
   const handleSave = async () => {
     if (!selectedDate || !entryText.trim()) return
-    
+
     const dateStr = formatDate(selectedDate)
     const entry = await addJournalEntry(entryText.trim(), dateStr)
-    
+
     setJournalEntries(prev => ({ ...prev, [dateStr]: entry }))
     setSelectedEntry(entry)
     setIsEditing(false)
   }
 
-  // Container style - dark navy background like One Year
+  // One Year style - light gray background
   const containerStyle: CSSProperties = {
     minHeight: '100vh',
-    background: 'linear-gradient(180deg, #1a1f3c 0%, #0f1225 100%)',
-    padding: 'var(--space-md)',
-    paddingBottom: 100 // Space for nav
-  }
-
-  const headerStyle: CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 'var(--space-lg)',
-    color: 'white'
-  }
-
-  const titleStyle: CSSProperties = {
-    fontFamily: 'var(--font-display)',
-    fontSize: 'var(--text-xl)',
-    fontWeight: 500,
-    color: 'rgba(255, 255, 255, 0.9)'
-  }
-
-  const yearStyle: CSSProperties = {
-    fontSize: 'var(--text-lg)',
-    color: 'rgba(255, 255, 255, 0.6)'
-  }
-
-  // Grid style - 7 columns for days of week, rows for weeks
-  const gridContainerStyle: CSSProperties = {
+    background: '#f5f5f5',
     display: 'flex',
     flexDirection: 'column',
-    gap: '2px',
+    alignItems: 'center',
+    padding: 'var(--space-lg)',
+    paddingBottom: 100,
+    width: '100%',
+    maxWidth: 430,
+    margin: '0 auto'
+  }
+
+  // "today" pill badge
+  const dateBadgeStyle: CSSProperties = {
+    background: 'white',
+    border: '1px solid #e5e5e5',
+    borderRadius: 20,
+    padding: '8px 20px',
+    fontSize: 'var(--text-sm)',
+    color: '#333',
+    fontWeight: 500,
     marginBottom: 'var(--space-lg)'
   }
 
-  const weekRowStyle: CSSProperties = {
+  // Horizontal row of recent plants
+  const plantRowStyle: CSSProperties = {
     display: 'flex',
-    gap: '2px',
+    gap: 'var(--space-md)',
+    marginBottom: 'var(--space-3xl)',
+    overflowX: 'auto',
+    padding: '0 var(--space-md)',
+    width: '100%',
     justifyContent: 'center'
   }
 
-  const dayStyle = (isToday: boolean, isSelected: boolean): CSSProperties => ({
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    background: isSelected 
-      ? 'rgba(244, 162, 97, 0.3)' 
-      : isToday 
-        ? 'rgba(244, 162, 97, 0.2)'
-        : 'rgba(255, 255, 255, 0.05)',
-    border: isToday ? '2px solid var(--orb-orange)' : '1px solid rgba(255, 255, 255, 0.1)',
+  const plantItemStyle = (isSelected: boolean, hasEntry: boolean): CSSProperties => ({
+    width: 48,
+    height: 48,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    position: 'relative' as const,
-    overflow: 'hidden'
+    opacity: hasEntry ? 1 : 0.3,
+    transform: isSelected ? 'scale(1.2)' : 'scale(1)',
+    transition: 'transform 0.2s ease'
   })
 
-  const dotStyle: CSSProperties = {
-    width: 8,
-    height: 8,
+  // Main add button (hand-drawn circle with +)
+  const addButtonContainerStyle: CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 'var(--space-md)',
+    marginTop: 'auto',
+    marginBottom: 'auto'
+  }
+
+  const addButtonStyle: CSSProperties = {
+    width: 80,
+    height: 80,
     borderRadius: '50%',
-    background: 'rgba(255, 255, 255, 0.2)'
+    border: '2px solid #4F46E5',
+    background: 'transparent',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    fontSize: 32,
+    color: '#4F46E5',
+    transition: 'transform 0.2s ease, background 0.2s ease'
   }
 
-  const plantContainerStyle: CSSProperties = {
-    width: 32,
-    height: 32
+  const addButtonLabelStyle: CSSProperties = {
+    color: '#4F46E5',
+    fontSize: 'var(--text-md)',
+    fontWeight: 400
   }
 
-  // Entry display at bottom
+  // Entry panel
   const entryPanelStyle: CSSProperties = {
     position: 'fixed',
     bottom: 80,
-    left: 'var(--space-md)',
-    right: 'var(--space-md)',
-    background: 'rgba(26, 31, 60, 0.95)',
-    borderRadius: 'var(--radius-lg)',
-    padding: 'var(--space-md)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(10px)',
-    maxHeight: '40vh',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 'calc(100% - var(--space-md) * 2)',
+    maxWidth: 'calc(430px - var(--space-md) * 2)',
+    background: 'white',
+    borderRadius: 16,
+    padding: 'var(--space-lg)',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+    maxHeight: '50vh',
     overflow: 'auto'
   }
 
   const entryDateStyle: CSSProperties = {
     fontSize: 'var(--text-sm)',
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: '#666',
     marginBottom: 'var(--space-sm)'
-  }
-
-  const entryTextStyle: CSSProperties = {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 'var(--text-md)',
-    lineHeight: 1.6,
-    whiteSpace: 'pre-wrap'
   }
 
   const textareaStyle: CSSProperties = {
     width: '100%',
-    minHeight: 100,
-    padding: 'var(--space-sm)',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    background: 'rgba(255, 255, 255, 0.05)',
-    color: 'white',
+    minHeight: 120,
+    padding: 'var(--space-md)',
+    borderRadius: 12,
+    border: '1px solid #e5e5e5',
+    background: '#fafafa',
+    color: '#333',
     fontSize: 'var(--text-md)',
     fontFamily: 'var(--font-body)',
-    resize: 'vertical'
+    resize: 'none',
+    outline: 'none'
   }
 
-  const buttonStyle: CSSProperties = {
-    marginTop: 'var(--space-sm)',
-    padding: 'var(--space-sm) var(--space-md)',
-    background: 'var(--orb-orange)',
-    color: 'white',
-    border: 'none',
-    borderRadius: 'var(--radius-md)',
-    cursor: 'pointer',
-    fontWeight: 500
-  }
-
-  // Plant today button (always visible)
-  const plantButtonStyle: CSSProperties = {
-    position: 'fixed',
-    bottom: selectedDate ? 'calc(40vh + 100px)' : 100,
-    left: '50%',
-    transform: 'translateX(-50%)',
+  const saveButtonStyle: CSSProperties = {
+    marginTop: 'var(--space-md)',
     padding: 'var(--space-sm) var(--space-lg)',
-    background: 'var(--orb-orange)',
+    background: '#4F46E5',
     color: 'white',
     border: 'none',
-    borderRadius: 'var(--radius-full)',
+    borderRadius: 24,
     cursor: 'pointer',
     fontWeight: 500,
-    fontSize: 'var(--text-sm)',
-    boxShadow: '0 4px 20px rgba(244, 162, 97, 0.4)',
-    transition: 'all 0.2s ease'
+    fontSize: 'var(--text-md)'
   }
 
-  // Group days by week
-  const weeks: Date[][] = []
-  let currentWeek: Date[] = []
-  
-  yearDays.forEach((day, i) => {
-    currentWeek.push(day)
-    if (day.getDay() === 6 || i === yearDays.length - 1) {
-      weeks.push(currentWeek)
-      currentWeek = []
-    }
-  })
+  const closeButtonStyle: CSSProperties = {
+    marginTop: 'var(--space-sm)',
+    padding: 'var(--space-sm) var(--space-lg)',
+    background: 'transparent',
+    color: '#666',
+    border: '1px solid #e5e5e5',
+    borderRadius: 24,
+    cursor: 'pointer',
+    fontSize: 'var(--text-sm)'
+  }
+
+  const hasEntryToday = !!journalEntries[todayStr]
 
   return (
-    <div style={containerStyle}>
-      <header style={headerStyle}>
-        <span style={titleStyle}>your garden</span>
-        <span style={yearStyle}>{year}</span>
-      </header>
+    <AppLayout showOrb={false}>
+      <div style={containerStyle}>
+        {/* Date badge - shows selected date or "today" */}
+        <div style={dateBadgeStyle}>
+          {selectedDate ? formatDateDisplay(selectedDate) : 'today'}
+        </div>
 
-      <div style={gridContainerStyle}>
-        {weeks.map((week, weekIndex) => (
-          <div key={weekIndex} style={weekRowStyle}>
-            {week.map((day) => {
-              const dateStr = formatDate(day)
-              const hasEntry = !!journalEntries[dateStr]
-              const isToday = dateStr === todayStr
-              const isSelected = selectedDate && formatDate(selectedDate) === dateStr
-              const dayOfYear = getDayOfYear(day)
-              
-              return (
-                <div
-                  key={dateStr}
-                  style={dayStyle(isToday, !!isSelected)}
-                  onClick={() => handleDayClick(day)}
-                  title={day.toLocaleDateString()}
-                >
-                  {hasEntry ? (
-                    <div style={plantContainerStyle}>
-                      {PlantSVGs[getPlantForDay(dayOfYear)]}
-                    </div>
-                  ) : (
-                    <div style={dotStyle} />
-                  )}
+        {/* Horizontal row of recent days with plants */}
+        <div style={plantRowStyle}>
+          {recentDays.map((day) => {
+            const dateStr = formatDate(day)
+            const hasEntry = !!journalEntries[dateStr]
+            const isSelected = selectedDate && formatDate(selectedDate) === dateStr
+            const dayOfYear = getDayOfYear(day)
+            const plantKey = getPlantForDay(dayOfYear)
+
+            return (
+              <div
+                key={dateStr}
+                style={plantItemStyle(!!isSelected, hasEntry)}
+                onClick={() => handleDayClick(day)}
+                title={day.toLocaleDateString()}
+              >
+                {PlantSVGs[plantKey]}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Main content area - either add button or entry panel */}
+        {!selectedDate ? (
+          <div style={addButtonContainerStyle}>
+            <button
+              style={addButtonStyle}
+              onClick={() => handleDayClick(today)}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)'
+                e.currentTarget.style.background = 'rgba(79, 70, 229, 0.05)'
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+                e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              +
+            </button>
+            <span style={addButtonLabelStyle}>
+              {hasEntryToday ? 'no memory' : 'plant memory'}
+            </span>
+          </div>
+        ) : (
+          <div style={entryPanelStyle}>
+            <div style={entryDateStyle}>
+              {selectedDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </div>
+
+            {isEditing ? (
+              <>
+                <textarea
+                  style={textareaStyle}
+                  value={entryText}
+                  onChange={(e) => setEntryText(e.target.value)}
+                  placeholder="what's on your mind today?"
+                  autoFocus
+                />
+                <div style={{ display: 'flex', gap: 'var(--space-sm)', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button style={saveButtonStyle} onClick={handleSave}>
+                    plant memory 🌱
+                  </button>
+                  <button style={closeButtonStyle} onClick={() => setSelectedDate(null)}>
+                    close
+                  </button>
                 </div>
-              )
-            })}
-          </div>
-        ))}
-      </div>
-
-      {/* Entry panel - shows when day selected */}
-      {selectedDate && (
-        <div style={entryPanelStyle}>
-          <div style={entryDateStyle}>
-            {selectedDate.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </div>
-          
-          {isEditing ? (
-            <>
-              <textarea
-                style={textareaStyle}
-                value={entryText}
-                onChange={(e) => setEntryText(e.target.value)}
-                placeholder="what's on your mind today?"
-                autoFocus
-              />
-              <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-                <button style={buttonStyle} onClick={handleSave}>
-                  plant memory 🌱
-                </button>
-                <button 
-                  style={{ ...buttonStyle, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }}
-                  onClick={() => setSelectedDate(null)}
-                >
+              </>
+            ) : (
+              <>
+                {selectedEntry ? (
+                  <p style={{ color: '#333', fontSize: 'var(--text-md)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                    {selectedEntry.content}
+                  </p>
+                ) : (
+                  <p style={{ color: '#999', fontSize: 'var(--text-md)' }}>
+                    no memory planted this day
+                  </p>
+                )}
+                <button style={closeButtonStyle} onClick={() => setSelectedDate(null)}>
                   close
                 </button>
-              </div>
-            </>
-          ) : (
-            <>
-              {selectedEntry ? (
-                <p style={entryTextStyle}>{selectedEntry.content}</p>
-              ) : (
-                <p style={{ ...entryTextStyle, opacity: 0.5 }}>
-                  no memory planted this day
-                </p>
-              )}
-              <button 
-                style={{ ...buttonStyle, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }}
-                onClick={() => setSelectedDate(null)}
-              >
-                close
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Plant today button - only show if not already viewing entry */}
-      {!selectedDate && !journalEntries[todayStr] && (
-        <button 
-          style={plantButtonStyle}
-          onClick={() => handleDayClick(today)}
-        >
-          plant today's memory 🌱
-        </button>
-      )}
-    </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </AppLayout>
   )
 }
