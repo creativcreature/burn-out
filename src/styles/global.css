@@ -133,16 +133,12 @@ html, body {
   }
 }
 
-/* Header - Glassmorphism */
+/* Header - No Card, Transparent */
 .app-header {
   padding: var(--space-md) 20px;
   display: flex;
   flex-direction: column;
-  background: var(--bg-card);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-bottom: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  background: transparent;
   margin-bottom: var(--space-md);
 }
 
@@ -319,16 +315,16 @@ html, body {
 }
 
 .glass-card-transparent {
-  background: var(--bg-card-transparent);
+  background: var(--bg-card);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: none;
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
   padding: var(--space-lg) var(--space-md);
   min-height: auto;
-  box-shadow: none;
-  width: 100%;
-  max-width: 100%;
+  box-shadow: var(--shadow-card);
+  width: calc(100% - var(--space-md) * 2);
+  max-width: calc(100% - var(--space-md) * 2);
   box-sizing: border-box;
   margin-left: auto;
   margin-right: auto;
@@ -338,21 +334,23 @@ html, body {
 /* Bottom Navigation */
 .bottom-nav {
   position: fixed;
-  bottom: 0;
+  bottom: var(--space-sm);
   left: 50%;
   transform: translateX(-50%);
-  width: 100%;
-  max-width: min(430px, 100vw);
-  height: calc(var(--nav-height) + var(--safe-bottom));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  width: calc(100% - var(--space-md) * 2);
+  max-width: min(400px, calc(100vw - var(--space-md) * 2));
+  height: calc(var(--nav-height) - 8px);
+  padding-bottom: 0;
   background: var(--bg-card-solid);
-  border-top: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
   display: flex;
   justify-content: space-around;
   align-items: center;
   z-index: 1000;
   overflow: hidden;
   box-sizing: border-box;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .nav-item {
