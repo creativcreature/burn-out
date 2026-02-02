@@ -1,92 +1,159 @@
-import { useState, useEffect, useRef, CSSProperties } from 'react'
+import { useState, useEffect, useRef, CSSProperties, TouchEvent } from 'react'
 import { AppLayout } from '../components/layout'
 import { Modal } from '../components/shared'
 import { addJournalEntry, getRecentJournalEntries } from '../utils/storage'
 import type { JournalEntry } from '../data/types'
 
 /**
- * Reflections Page - POLA-inspired floating memories
+ * Reflections Page - One Year Journal Clone with Burnout Colors
  *
  * Key features:
- * - Warm cream background with Burnout accent colors
- * - Floating memory icons scattered across the screen
- * - Tap a memory to view/edit
- * - Parallax-style scroll effect
- * - Large "plant memory" button for today
+ * - 365-day grid showing entire year
+ * - Hand-drawn plant illustrations for days with entries
+ * - Small dots for empty days
+ * - Pinch to zoom in/out
+ * - Swipe to navigate
+ * - Burnout color palette (orange/red/magenta instead of blue)
  */
 
-// Memory icon SVGs - abstract shapes in Burnout colors
-const MemoryIcons: Record<string, (color: string) => JSX.Element> = {
-  circle: (color) => (
-    <svg viewBox="0 0 60 60" fill="none">
-      <circle cx="30" cy="30" r="28" fill={color} />
+// Hand-drawn plant SVGs in Burnout style (warm colors)
+const PlantSVGs: Record<string, (color: string) => JSX.Element> = {
+  tulip: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 28V16" />
+      <path d="M12 8C8 8 6 12 6 16H18C18 12 16 8 12 8Z" />
+      <path d="M9 18C7 20 8 24 12 24C16 24 17 20 15 18" />
     </svg>
   ),
-  blob1: (color) => (
-    <svg viewBox="0 0 60 60" fill="none">
-      <path d="M30 5C45 5 55 15 55 30C55 45 45 55 30 55C15 55 5 45 5 30C5 15 20 5 30 5Z" fill={color} />
+  flower: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 28V18" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 4V8" />
+      <path d="M6 12H8" />
+      <path d="M16 12H18" />
+      <path d="M8 8L10 10" />
+      <path d="M14 10L16 8" />
+      <path d="M8 16L10 14" />
+      <path d="M14 14L16 16" />
     </svg>
   ),
-  blob2: (color) => (
-    <svg viewBox="0 0 60 60" fill="none">
-      <path d="M15 10C35 5 55 15 55 35C55 55 35 55 20 50C5 45 -5 15 15 10Z" fill={color} />
+  mushroom: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 28V22H14V28" />
+      <path d="M4 22C4 14 8 10 12 10C16 10 20 14 20 22H4Z" />
+      <circle cx="9" cy="16" r="1.5" fill={color} />
+      <circle cx="15" cy="18" r="1" fill={color} />
     </svg>
   ),
-  heart: (color) => (
-    <svg viewBox="0 0 60 60" fill="none">
-      <path d="M30 55C30 55 5 35 5 20C5 10 15 5 25 10C28 12 30 15 30 15C30 15 32 12 35 10C45 5 55 10 55 20C55 35 30 55 30 55Z" fill={color} />
+  sprout: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 28V18" />
+      <path d="M12 18C8 14 6 10 10 6C12 10 12 14 12 18" />
+      <path d="M12 18C16 14 18 10 14 6C12 10 12 14 12 18" />
     </svg>
   ),
-  star: (color) => (
-    <svg viewBox="0 0 60 60" fill="none">
-      <path d="M30 5L35 22L55 22L40 35L45 55L30 42L15 55L20 35L5 22L25 22L30 5Z" fill={color} />
+  fern: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 28V12" />
+      <path d="M12 20C8 18 6 14 8 10" />
+      <path d="M12 20C16 18 18 14 16 10" />
+      <path d="M12 16C9 15 7 12 9 9" />
+      <path d="M12 16C15 15 17 12 15 9" />
     </svg>
   ),
-  drop: (color) => (
-    <svg viewBox="0 0 60 60" fill="none">
-      <path d="M30 5C30 5 50 25 50 38C50 50 41 55 30 55C19 55 10 50 10 38C10 25 30 5 30 5Z" fill={color} />
+  daisy: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 28V16" />
+      <circle cx="12" cy="10" r="2" fill={color} />
+      <ellipse cx="12" cy="5" rx="2" ry="3" />
+      <ellipse cx="12" cy="15" rx="2" ry="3" />
+      <ellipse cx="7" cy="10" rx="3" ry="2" />
+      <ellipse cx="17" cy="10" rx="3" ry="2" />
+      <path d="M8 22C10 20 14 20 16 22" />
     </svg>
   ),
-  leaf: (color) => (
-    <svg viewBox="0 0 60 60" fill="none">
-      <path d="M10 50C10 50 10 20 30 10C50 0 55 30 45 45C35 60 10 50 10 50Z" fill={color} />
-      <path d="M10 50C15 40 25 30 40 25" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+  succulent: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <ellipse cx="12" cy="24" rx="8" ry="4" />
+      <path d="M12 20C12 16 10 14 12 10C14 14 12 16 12 20" />
+      <path d="M8 22C6 18 4 16 6 12" />
+      <path d="M16 22C18 18 20 16 18 12" />
     </svg>
   ),
-  cloud: (color) => (
-    <svg viewBox="0 0 60 60" fill="none">
-      <ellipse cx="30" cy="35" rx="25" ry="15" fill={color} />
-      <circle cx="20" cy="28" r="12" fill={color} />
-      <circle cx="38" cy="25" r="14" fill={color} />
+  cactus: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 28V12C10 8 14 8 14 12V28" />
+      <path d="M10 18H6C4 18 4 14 6 14H10" />
+      <path d="M14 16H18C20 16 20 20 18 20H14" />
+    </svg>
+  ),
+  cherry: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 8C8 12 4 16 6 24" />
+      <path d="M12 8C16 12 20 16 18 24" />
+      <circle cx="6" cy="26" r="3" />
+      <circle cx="18" cy="26" r="3" />
+    </svg>
+  ),
+  herb: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 28V14" />
+      <path d="M8 26L12 22L16 26" />
+      <path d="M6 22L12 16L18 22" />
+      <path d="M8 18L12 14L16 18" />
+      <path d="M10 14L12 10L14 14" />
+    </svg>
+  ),
+  lotus: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 28V20" />
+      <path d="M12 12C12 8 10 6 12 4C14 6 12 8 12 12" />
+      <path d="M8 16C4 14 2 12 4 8C8 10 8 14 8 16" />
+      <path d="M16 16C20 14 22 12 20 8C16 10 16 14 16 16" />
+      <path d="M6 24C4 20 6 16 12 16C18 16 20 20 18 24" />
+    </svg>
+  ),
+  sunflower: (color) => (
+    <svg viewBox="0 0 24 32" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 28V16" />
+      <circle cx="12" cy="10" r="3" fill={color} />
+      <path d="M12 3V5" />
+      <path d="M12 15V17" />
+      <path d="M5 10H7" />
+      <path d="M17 10H19" />
+      <path d="M7 5L8.5 6.5" />
+      <path d="M15.5 13.5L17 15" />
+      <path d="M17 5L15.5 6.5" />
+      <path d="M8.5 13.5L7 15" />
+      <path d="M8 22C10 20 14 20 16 22" />
     </svg>
   )
 }
 
-const iconKeys = Object.keys(MemoryIcons)
+const plantKeys = Object.keys(PlantSVGs)
 
-// Burnout color palette
-const colors = [
-  '#FF4500', // orb-orange
+// Burnout color palette for plants
+const burnoutColors = [
+  '#FF4500', // orange
   '#FF6B35', // warm orange
-  '#FF2200', // orb-red
-  '#E84393', // magenta/pink
-  '#9B59B6', // purple
+  '#FF2200', // red
+  '#E84393', // magenta
   '#FF9F43', // gold
-  '#6C5CE7', // indigo
-  '#FFA07A', // light salmon
+  '#D63031', // dark red
+  '#FD79A8', // pink
+  '#E17055', // coral
 ]
 
-// Get consistent icon and color for a day
-function getMemoryStyle(dayOfYear: number): { icon: string; color: string; rotation: number; scale: number } {
+// Get consistent plant and color for a day
+function getPlantForDay(dayOfYear: number): { plant: string; color: string } {
   return {
-    icon: iconKeys[dayOfYear % iconKeys.length],
-    color: colors[dayOfYear % colors.length],
-    rotation: ((dayOfYear * 37) % 60) - 30, // -30 to 30 degrees
-    scale: 0.8 + ((dayOfYear * 13) % 40) / 100 // 0.8 to 1.2
+    plant: plantKeys[dayOfYear % plantKeys.length],
+    color: burnoutColors[dayOfYear % burnoutColors.length]
   }
 }
 
-// Get day of year
+// Get day of year (1-365)
 function getDayOfYear(date: Date): number {
   const start = new Date(date.getFullYear(), 0, 0)
   const diff = date.getTime() - start.getTime()
@@ -98,25 +165,11 @@ function formatDate(date: Date): string {
   return date.toISOString().split('T')[0]
 }
 
-// Grid position for scattered layout
-function getGridPosition(index: number): { x: number; y: number } {
-  // Create a flowing, organic layout
-  const cols = 4
-  const row = Math.floor(index / cols)
-  const col = index % cols
-
-  // Stagger positions for organic feel
-  const baseX = 10 + (col * 22) + ((row % 2) * 11)
-  const baseY = row * 120
-
-  // Add some randomness based on index
-  const offsetX = ((index * 17) % 10) - 5
-  const offsetY = ((index * 23) % 20) - 10
-
-  return {
-    x: Math.max(5, Math.min(75, baseX + offsetX)),
-    y: baseY + offsetY
-  }
+// Get date from day of year
+function getDateFromDayOfYear(dayOfYear: number, year: number): Date {
+  const date = new Date(year, 0, 1)
+  date.setDate(dayOfYear)
+  return date
 }
 
 export function ReflectionsPage() {
@@ -124,54 +177,89 @@ export function ReflectionsPage() {
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null)
   const [entryText, setEntryText] = useState('')
   const [isEditing, setIsEditing] = useState(false)
-  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([])
-  const [scrollY, setScrollY] = useState(0)
+  const [journalEntries, setJournalEntries] = useState<Map<string, JournalEntry>>(new Map())
+  const [zoom, setZoom] = useState(1) // 1 = full year, 2 = zoomed in
+  const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 })
+
   const containerRef = useRef<HTMLDivElement>(null)
+  const lastTouchDistance = useRef<number | null>(null)
+  const lastTouchCenter = useRef<{ x: number; y: number } | null>(null)
+  const isDragging = useRef(false)
+  const dragStart = useRef({ x: 0, y: 0 })
 
   const today = new Date()
   const todayStr = formatDate(today)
+  const currentYear = today.getFullYear()
+  const todayDayOfYear = getDayOfYear(today)
 
   // Load journal entries
   useEffect(() => {
-    getRecentJournalEntries(60).then(entries => {
-      setJournalEntries(entries)
+    getRecentJournalEntries(366).then(entries => {
+      const map = new Map<string, JournalEntry>()
+      entries.forEach(e => map.set(e.date, e))
+      setJournalEntries(map)
     })
   }, [])
 
-  // Track scroll for parallax
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const handleScroll = () => {
-      setScrollY(container.scrollTop)
+  // Handle pinch zoom
+  const handleTouchStart = (e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      lastTouchDistance.current = Math.sqrt(dx * dx + dy * dy)
+      lastTouchCenter.current = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+      }
+    } else if (e.touches.length === 1 && zoom > 1) {
+      isDragging.current = true
+      dragStart.current = {
+        x: e.touches[0].clientX - viewOffset.x,
+        y: e.touches[0].clientY - viewOffset.y
+      }
     }
-
-    container.addEventListener('scroll', handleScroll, { passive: true })
-    return () => container.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // Handle memory click
-  const handleMemoryClick = async (entry: JournalEntry) => {
-    const date = new Date(entry.date)
-    setSelectedDate(date)
-    setSelectedEntry(entry)
-    setEntryText(entry.content)
-    setIsEditing(entry.date === todayStr)
   }
 
-  // Handle today click
-  const handleTodayClick = async () => {
-    setSelectedDate(today)
-    const existing = journalEntries.find(e => e.date === todayStr)
-    if (existing) {
-      setSelectedEntry(existing)
-      setEntryText(existing.content)
+  const handleTouchMove = (e: TouchEvent) => {
+    if (e.touches.length === 2 && lastTouchDistance.current) {
+      e.preventDefault()
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      const scale = distance / lastTouchDistance.current
+
+      setZoom(prev => Math.max(1, Math.min(3, prev * scale)))
+      lastTouchDistance.current = distance
+    } else if (e.touches.length === 1 && isDragging.current && zoom > 1) {
+      const newX = e.touches[0].clientX - dragStart.current.x
+      const newY = e.touches[0].clientY - dragStart.current.y
+      setViewOffset({ x: newX, y: newY })
+    }
+  }
+
+  const handleTouchEnd = () => {
+    lastTouchDistance.current = null
+    lastTouchCenter.current = null
+    isDragging.current = false
+  }
+
+  // Handle day tap
+  const handleDayTap = async (dayOfYear: number) => {
+    const date = getDateFromDayOfYear(dayOfYear, currentYear)
+    const dateStr = formatDate(date)
+
+    setSelectedDate(date)
+    const entry = journalEntries.get(dateStr)
+
+    if (entry) {
+      setSelectedEntry(entry)
+      setEntryText(entry.content)
+      setIsEditing(dateStr === todayStr)
     } else {
       setSelectedEntry(null)
       setEntryText('')
+      setIsEditing(dateStr === todayStr)
     }
-    setIsEditing(true)
   }
 
   // Save entry
@@ -181,10 +269,10 @@ export function ReflectionsPage() {
     const dateStr = formatDate(selectedDate)
     const entry = await addJournalEntry(entryText.trim(), dateStr)
 
-    // Update local state
     setJournalEntries(prev => {
-      const filtered = prev.filter(e => e.date !== dateStr)
-      return [entry, ...filtered]
+      const newMap = new Map(prev)
+      newMap.set(dateStr, entry)
+      return newMap
     })
     setSelectedEntry(entry)
     setIsEditing(false)
@@ -199,224 +287,255 @@ export function ReflectionsPage() {
     setIsEditing(false)
   }
 
-  const hasEntryToday = journalEntries.some(e => e.date === todayStr)
+  // Grid configuration
+  const cols = 15
+  const cellSize = 28 * zoom
+  const gap = 8 * zoom
 
-  // Container style - warm cream background
+  // Styles
   const containerStyle: CSSProperties = {
     position: 'relative',
     minHeight: '100vh',
-    background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF0E6 50%, #FFE8DC 100%)',
-    overflowY: 'auto',
-    overflowX: 'hidden'
+    background: '#F8F6F3',
+    overflow: 'hidden',
+    touchAction: zoom > 1 ? 'none' : 'auto'
   }
 
-  // Header style
   const headerStyle: CSSProperties = {
     position: 'sticky',
     top: 0,
     zIndex: 100,
-    padding: 'var(--space-lg) var(--space-md)',
-    background: 'linear-gradient(180deg, #FFF8F0 0%, rgba(255,248,240,0.9) 100%)',
-    backdropFilter: 'blur(10px)'
-  }
-
-  const titleStyle: CSSProperties = {
-    fontFamily: 'var(--font-display)',
-    fontSize: 'var(--text-2xl)',
-    fontWeight: 600,
-    color: '#2D2D2D',
-    marginBottom: 'var(--space-xs)'
-  }
-
-  const subtitleStyle: CSSProperties = {
-    fontSize: 'var(--text-sm)',
-    color: '#666'
-  }
-
-  // Plant memory button
-  const plantButtonStyle: CSSProperties = {
-    position: 'fixed',
-    bottom: 'calc(var(--nav-height) + var(--safe-bottom) + 80px)',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    zIndex: 200,
+    padding: 'var(--space-md)',
+    background: '#F8F6F3',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: 'var(--space-sm)'
   }
 
-  const buttonCircleStyle: CSSProperties = {
-    width: 72,
-    height: 72,
+  const yearPillStyle: CSSProperties = {
+    padding: '8px 20px',
+    background: 'white',
+    border: '1px solid #E0E0E0',
+    borderRadius: 20,
+    fontSize: 'var(--text-sm)',
+    fontWeight: 500,
+    color: '#333'
+  }
+
+  const gridContainerStyle: CSSProperties = {
+    padding: 'var(--space-md)',
+    display: 'flex',
+    justifyContent: 'center',
+    transform: `scale(${zoom}) translate(${viewOffset.x / zoom}px, ${viewOffset.y / zoom}px)`,
+    transformOrigin: 'top center',
+    transition: isDragging.current ? 'none' : 'transform 0.2s ease'
+  }
+
+  const gridStyle: CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
+    gap: `${gap}px`,
+    padding: 'var(--space-md)'
+  }
+
+  const plantButtonStyle: CSSProperties = {
+    position: 'fixed',
+    bottom: 'calc(var(--nav-height) + var(--safe-bottom) + 24px)',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 200,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 'var(--space-xs)'
+  }
+
+  const addButtonStyle: CSSProperties = {
+    width: 56,
+    height: 56,
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #FF4500 0%, #FF6B35 100%)',
-    border: 'none',
-    boxShadow: '0 8px 32px rgba(255, 69, 0, 0.35)',
+    border: '2px solid #FF4500',
+    background: 'white',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '32px',
-    color: 'white',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+    fontSize: '24px',
+    color: '#FF4500',
+    boxShadow: '0 4px 12px rgba(255, 69, 0, 0.2)'
   }
 
   const buttonLabelStyle: CSSProperties = {
-    fontSize: 'var(--text-sm)',
-    fontWeight: 500,
-    color: '#FF4500'
+    fontSize: 'var(--text-xs)',
+    color: '#FF4500',
+    fontWeight: 500
   }
 
-  // Memory icon style
-  const getMemoryIconStyle = (index: number, entry: JournalEntry): CSSProperties => {
-    const dayOfYear = getDayOfYear(new Date(entry.date))
-    const style = getMemoryStyle(dayOfYear)
-    const pos = getGridPosition(index)
+  // Render a single day cell
+  const renderDayCell = (dayOfYear: number) => {
+    if (dayOfYear > 365) return null
 
-    // Parallax offset based on scroll
-    const parallaxFactor = 0.1 + (index % 3) * 0.05
-    const yOffset = scrollY * parallaxFactor
+    const date = getDateFromDayOfYear(dayOfYear, currentYear)
+    const dateStr = formatDate(date)
+    const hasEntry = journalEntries.has(dateStr)
+    const isToday = dayOfYear === todayDayOfYear
+    const isPast = dayOfYear < todayDayOfYear
+    const { plant, color } = getPlantForDay(dayOfYear)
 
-    return {
-      position: 'absolute',
-      left: `${pos.x}%`,
-      top: `${pos.y + 150 - yOffset}px`,
-      width: 60 * style.scale,
-      height: 60 * style.scale,
-      transform: `rotate(${style.rotation}deg)`,
+    const cellStyle: CSSProperties = {
+      width: cellSize,
+      height: cellSize + 8,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       cursor: 'pointer',
-      transition: 'transform 0.3s ease',
-      opacity: 0.9,
-      filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
+      opacity: isPast || isToday ? 1 : 0.3,
+      transition: 'transform 0.2s ease'
     }
+
+    const dotStyle: CSSProperties = {
+      width: 4,
+      height: 4,
+      borderRadius: '50%',
+      background: isToday ? '#FF4500' : '#CCC'
+    }
+
+    return (
+      <div
+        key={dayOfYear}
+        style={cellStyle}
+        onClick={() => handleDayTap(dayOfYear)}
+        role="button"
+        tabIndex={0}
+        aria-label={`${date.toLocaleDateString()} ${hasEntry ? '- has memory' : ''}`}
+      >
+        {hasEntry ? (
+          <div style={{ width: cellSize, height: cellSize + 8 }}>
+            {PlantSVGs[plant](color)}
+          </div>
+        ) : (
+          <div style={dotStyle} />
+        )}
+      </div>
+    )
   }
 
-  // Modal styles
-  const modalContentStyle: CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 'var(--space-md)'
-  }
+  // Generate all days
+  const days = Array.from({ length: 365 }, (_, i) => i + 1)
 
-  const textareaStyle: CSSProperties = {
-    width: '100%',
-    minHeight: 150,
-    padding: 'var(--space-md)',
-    borderRadius: 'var(--radius-lg)',
-    border: '2px solid #FFE0D0',
-    background: '#FFF8F4',
-    color: '#2D2D2D',
-    fontSize: 'var(--text-md)',
-    fontFamily: 'var(--font-body)',
-    resize: 'none',
-    outline: 'none',
-    lineHeight: 1.6
-  }
-
-  const readOnlyTextStyle: CSSProperties = {
-    padding: 'var(--space-md)',
-    background: '#FFF8F4',
-    borderRadius: 'var(--radius-lg)',
-    color: '#2D2D2D',
-    fontSize: 'var(--text-md)',
-    lineHeight: 1.6,
-    whiteSpace: 'pre-wrap'
-  }
-
-  const saveButtonStyle: CSSProperties = {
-    padding: 'var(--space-md) var(--space-xl)',
-    background: 'linear-gradient(135deg, #FF4500 0%, #FF6B35 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: 'var(--radius-full)',
-    cursor: 'pointer',
-    fontWeight: 600,
-    fontSize: 'var(--text-md)',
-    boxShadow: '0 4px 16px rgba(255, 69, 0, 0.3)'
-  }
-
-  // Calculate content height based on entries
-  const contentHeight = Math.max(600, journalEntries.length * 100 + 300)
+  // Count memories
+  const memoryCount = journalEntries.size
 
   return (
     <AppLayout showOrb={false}>
-      <div ref={containerRef} style={containerStyle}>
+      <div
+        ref={containerRef}
+        style={containerStyle}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Header */}
         <div style={headerStyle}>
-          <h1 style={titleStyle}>Reflections</h1>
-          <p style={subtitleStyle}>
-            {journalEntries.length} memories planted
+          <div style={yearPillStyle}>{currentYear}</div>
+          <p style={{ fontSize: 'var(--text-xs)', color: '#888' }}>
+            {memoryCount} {memoryCount === 1 ? 'memory' : 'memories'} planted
           </p>
         </div>
 
-        {/* Floating memories area */}
-        <div style={{ position: 'relative', height: contentHeight, width: '100%' }}>
-          {journalEntries.map((entry, index) => {
-            const dayOfYear = getDayOfYear(new Date(entry.date))
-            const style = getMemoryStyle(dayOfYear)
-            const IconComponent = MemoryIcons[style.icon]
+        {/* 365-day grid */}
+        <div style={gridContainerStyle}>
+          <div style={gridStyle}>
+            {days.map(day => renderDayCell(day))}
+          </div>
+        </div>
+
+        {/* Today indicator row - shows plants around today */}
+        <div style={{
+          position: 'fixed',
+          top: 100,
+          left: 0,
+          right: 0,
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 'var(--space-md)',
+          padding: 'var(--space-sm)',
+          background: 'linear-gradient(180deg, #F8F6F3 0%, rgba(248,246,243,0) 100%)',
+          zIndex: 50,
+          pointerEvents: 'none',
+          opacity: zoom > 1.5 ? 0 : 1,
+          transition: 'opacity 0.3s ease'
+        }}>
+          {[-3, -2, -1, 0, 1, 2, 3].map(offset => {
+            const day = todayDayOfYear + offset
+            if (day < 1 || day > 365) return null
+            const { plant, color } = getPlantForDay(day)
+            const hasEntry = journalEntries.has(formatDate(getDateFromDayOfYear(day, currentYear)))
+            const isToday = offset === 0
 
             return (
               <div
-                key={entry.id}
-                style={getMemoryIconStyle(index, entry)}
-                onClick={() => handleMemoryClick(entry)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && handleMemoryClick(entry)}
-                aria-label={`Memory from ${new Date(entry.date).toLocaleDateString()}`}
+                key={day}
+                style={{
+                  width: 36,
+                  height: 44,
+                  opacity: hasEntry ? 1 : 0.3,
+                  transform: isToday ? 'scale(1.2)' : 'scale(1)',
+                  pointerEvents: 'auto',
+                  cursor: 'pointer'
+                }}
+                onClick={() => handleDayTap(day)}
               >
-                {IconComponent(style.color)}
+                {hasEntry ? PlantSVGs[plant](color) : (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <div style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: isToday ? '#FF4500' : '#CCC'
+                    }} />
+                  </div>
+                )}
               </div>
             )
           })}
-
-          {/* Empty state */}
-          {journalEntries.length === 0 && (
-            <div style={{
-              position: 'absolute',
-              top: '40%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              textAlign: 'center',
-              color: '#999',
-              padding: 'var(--space-xl)'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: 'var(--space-md)' }}>
-                🌱
-              </div>
-              <p style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-sm)' }}>
-                No memories yet
-              </p>
-              <p style={{ fontSize: 'var(--text-sm)' }}>
-                Tap the button below to plant your first memory
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Plant memory button */}
         <div style={plantButtonStyle}>
           <button
-            style={buttonCircleStyle}
-            onClick={handleTodayClick}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'scale(1.1)'
-              e.currentTarget.style.boxShadow = '0 12px 40px rgba(255, 69, 0, 0.45)'
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'scale(1)'
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(255, 69, 0, 0.35)'
-            }}
+            style={addButtonStyle}
+            onClick={() => handleDayTap(todayDayOfYear)}
             aria-label="Plant a memory"
           >
             +
           </button>
           <span style={buttonLabelStyle}>
-            {hasEntryToday ? 'edit today' : 'plant memory'}
+            {journalEntries.has(todayStr) ? 'edit today' : 'plant memory'}
           </span>
         </div>
+
+        {/* Zoom hint */}
+        {zoom === 1 && (
+          <div style={{
+            position: 'fixed',
+            bottom: 'calc(var(--nav-height) + var(--safe-bottom) + 100px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: 'var(--text-xs)',
+            color: '#999',
+            textAlign: 'center'
+          }}>
+            pinch to zoom
+          </div>
+        )}
       </div>
 
       {/* Entry Modal */}
@@ -429,27 +548,58 @@ export function ReflectionsPage() {
           day: 'numeric'
         })}
       >
-        <div style={modalContentStyle}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
           {isEditing ? (
             <>
               <textarea
-                style={textareaStyle}
+                style={{
+                  width: '100%',
+                  minHeight: 150,
+                  padding: 'var(--space-md)',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '2px solid #FFE0D0',
+                  background: '#FFFAF8',
+                  color: '#2D2D2D',
+                  fontSize: 'var(--text-md)',
+                  fontFamily: 'var(--font-body)',
+                  resize: 'none',
+                  outline: 'none',
+                  lineHeight: 1.6
+                }}
                 value={entryText}
                 onChange={(e) => setEntryText(e.target.value)}
                 placeholder="What's on your mind today?"
                 autoFocus
               />
               <button
-                style={saveButtonStyle}
+                style={{
+                  padding: 'var(--space-md) var(--space-xl)',
+                  background: '#FF4500',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 'var(--text-md)'
+                }}
                 onClick={handleSave}
                 disabled={!entryText.trim()}
               >
-                Plant Memory 🌱
+                plant memory
               </button>
             </>
           ) : (
-            <div style={readOnlyTextStyle}>
-              {selectedEntry?.content || 'No memory for this day'}
+            <div style={{
+              padding: 'var(--space-md)',
+              background: '#FFFAF8',
+              borderRadius: 'var(--radius-lg)',
+              color: '#2D2D2D',
+              fontSize: 'var(--text-md)',
+              lineHeight: 1.6,
+              whiteSpace: 'pre-wrap',
+              minHeight: 100
+            }}>
+              {selectedEntry?.content || 'no memory'}
             </div>
           )}
         </div>
