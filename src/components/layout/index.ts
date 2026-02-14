@@ -1,3 +1,6 @@
 export { AppLayout } from './AppLayout'
+export { BottomNav } from './BottomNav'
 export { Header } from './Header'
 export { Navigation } from './Navigation'
+export { OrganizePanel } from './OrganizePanel'
+export { WellnessPanel } from './WellnessPanel'
